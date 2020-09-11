@@ -3,23 +3,9 @@
   (:require [clojure.data.csv :as csv] ;; Useful for CSV handling
             [clojure.java.io :as io]
             [clojure.set :as set]
-            [clojure.pprint :as pprint])) ;; For input-output handling
+            [clojure.pprint :as pprint])) ;; For input-output 
 
-(defn load-csv
-  "Loads a specified CSV file from the resources folder
-  in project directory"
-  [filename]
-  (with-open [file (io/reader (str "resources/" filename))]
-    (doall
-     (csv/read-csv file))))
-
-(defn get-keys
-  "Converts the first row in a vector of vectors to
-  mappable keywords:"
-  [head & tail]
-  (map keyword head))
-
-(defn test [] println "x")(defn csv->map
+(defn csv->map
   "Convert parsed CSV vectors into maps with headers as keys"
   [csv-data]
   (map zipmap
