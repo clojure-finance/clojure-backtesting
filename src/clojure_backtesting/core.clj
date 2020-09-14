@@ -1,18 +1,35 @@
 (ns clojure-backtesting.core
-  (:gen-class)
   (:require [clojure.data.csv :as csv] ;; Useful for CSV handling
-            [clojure.java.io :as io])) ;; For input-output handling
+            [clojure.java.io :as io])  ;; For input-output handling
+            [clojure.set :as set]      ;;    
+            [clojure.pprint :as pprint]
+  ) 
 
-(defn load-csv
-  "Loads a specified CSV file from the resources folder
-  in project directory"
+(defn csv->map
+  "Convert parsed CSV vectors into maps with headers as keys"
+  [csv-data]
+  (map zipmap ;; make the first row as headers and the following rows as values in a map structure e.g. {:tic AAPL} 
+       (->> (first csv-data) ;; take the first row of the csv-data
+            (map keyword) ;; make the header be the "key" in the map 
+            repeat)      ;; repeat the process for all the headers
+       (rest csv-data))) ;; use the rest rows as values of the map
+
+(defn update-by-keys
+  "Update values in a map (m) by applying function (f) on keys"
+  [m keys f]
+  (reduce (fn [m k] (update m k f)) m keys))  
+
+(defn parse-int
+  "Parse integer from string. May return nil."
+  [str]
+  (try (Integer/parseInt str) 
+       (catch Exception e nil)))
+
+(defn slurp-csv
+  "Read CSV data into memory"
   [filename]
-  (with-open [file (io/reader (str "resources/" filename))]
-    (doall
-     (csv/read-csv file))))
+  (with-open [reader (io/reader filename)]
+    (->> (csv/read-csv reader)
+         csv->map           ;; change the csv to a map with the csv->map fn
+         doall)))
 
-(defn get-keys
-  "Converts the first row in a vector of vectors to
-  mappable keywords:"
-  [head & tail]
-  (map keyword head))
