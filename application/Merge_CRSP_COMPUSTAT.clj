@@ -3,6 +3,23 @@
             [clojure-backtesting.core :refer :all]
             [clojure.string :as str]))
 
+(defn get-set
+  "return a list of datadate, need to be converted to set"
+  [file2]
+  (loop [remaining file2
+         result-set []]
+    (if (empty? remaining)
+      result-set
+      (let [first-line (first remaining)
+            next-remaining (rest remaining)
+            next-result-set (conj result-set (get first-line :datadate))]
+        (recur next-remaining next-result-set)
+      )
+    )
+  )
+)
+
+
 (defn merge-data
   "merge 2 csv files "
   [file1 file2]
@@ -10,11 +27,11 @@
   
   (def file2 (slurp-csv file2)) ;;file 2 Is COMPUSTAT
   
-  (def set 
-    (doseq temp (slurp-csv file2))
-    (set (get data :datadate))) 
+  () 
 
-  (def file0 (insert-col file1 set)))
+  ;;(def file0 (insert-col file1 set))
+   
+   )
   
   ;; need to parse-int later
 )

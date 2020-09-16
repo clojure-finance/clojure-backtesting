@@ -37,3 +37,6 @@
 ;;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
 
 ;;(def file2 "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
+
+;;(def a (slurp-csv file1))
+;;(def b (slurp-csv file2))
