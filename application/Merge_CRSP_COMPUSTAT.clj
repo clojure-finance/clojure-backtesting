@@ -1,6 +1,7 @@
 (ns clojure-backtesting.application
   (:require [clojure.test :refer :all]
-            [clojure-backtesting.core :refer :all]))
+            [clojure-backtesting.core :refer :all]
+            [clojure.string :as str]))
 
 (defn merge
   "merge 2 csv files "
@@ -26,7 +27,15 @@
   ;;add a thing in each map using key and value
   ;;run loop, length of the loop = length of the list, 
   ;;read the value of the key "date", compare with "leo think of the algo"
+  (for [row file1] (concat row {:datadate (last_quar row)}))
 
+  )
 
-
+  (defn last_quar
+    "return the last quarter date of a given row"
+    [row]
+    (let [date (get row :date)]
+      (let [[year month day] (map parse-int (str/split date #"-"))]
+        if(...))
+    )
   )
