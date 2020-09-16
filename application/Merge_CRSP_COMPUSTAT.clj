@@ -5,20 +5,25 @@
 (defn merge
   "merge 2 csv files "
   [file1 file2]
-  (def file1 ;;file 1 CRSP
-
-    )
+  (def file1 (slurp-csv file1)) ;;file 1 is CRSP
   
-  (def file2
-    )
+  (def file2 (slurp-csv file2)) ;;file 2 is COMPUSTAT
   
+  (def set 
+    (doseq temp (slurp-csv file2))
+    (set (get data :datadate))) 
+
+  (def file0 (insert-col file1 set))
+  
+  ;; need to parse-int later
+  ()
 
 
-  ;; get a set of datadate from compustat
-  (defn get_set)
-  (def file0 insert-col file1 set )
+)
 
- )
+
+
+
 
 (defn insert-col
   "insert the date col from COMPUSTAT into CRSP"
@@ -30,3 +35,5 @@
 
 
   )
+
+
