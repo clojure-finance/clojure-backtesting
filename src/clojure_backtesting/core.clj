@@ -1,9 +1,9 @@
 (ns clojure-backtesting.core
   (:require [clojure.data.csv :as csv] ;; Useful for CSV handling
-            [clojure.java.io :as io])  ;; For input-output handling
+            [clojure.java.io :as io] 
             [clojure.set :as set]      ;;    
-            [clojure.pprint :as pprint]
-  ) 
+            [clojure.pprint :as pprint] )  ;; For input-output handling
+     ) 
 
 (defn csv->map
   "Convert parsed CSV vectors into maps with headers as keys"
@@ -32,4 +32,12 @@
     (->> (csv/read-csv reader)
          csv->map           ;; change the csv to a map with the csv->map fn
          doall)))
+
+;;file 1 and 2 address store for testing purpose
+;;(def file1 "../resources/CRSP-extract.csv")
+
+;;(def file2 "../../resources/Compustat-extract.csv")
+
+;;(def a (slurp-csv file1))
+;;(def b (slurp-csv file2))
 
