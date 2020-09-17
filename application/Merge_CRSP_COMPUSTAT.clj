@@ -43,13 +43,13 @@
   (for [row file1] (concat row {:datadate (condp contains? (last-quar row) set (last-quar row) "")}))
 )
 
-(defn merge-data
+(defn merge-data-row
   "merge 2 csv files "
   [file1 file2]
   
-  (def f1 (slurp-csv file1)) ;;file 1 is CRSP
+  (def f1 (read-csv-row file1)) ;;file 1 is CRSP
 
-  (def f2 (slurp-csv file2)) ;;file 2 Is COMPUSTAT
+  (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
   
   (def date-set (into #{} (get-set f2)))
   

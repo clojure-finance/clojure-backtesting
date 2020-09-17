@@ -14,6 +14,13 @@
             repeat)      ;; repeat the process for all the headers
        (rest csv-data))) ;; use the rest rows as values of the map
 
+(defn csv->map_col
+  [csv-data]
+  (zipmap
+    (->> (first csv-data)
+      (map keyword))
+    (apply map vector (rest csv-data))))
+
 (defn update-by-keys
   "Update values in a map (m) by applying function (f) on keys"
   [m keys f]
@@ -25,12 +32,20 @@
   (try (Integer/parseInt str) 
        (catch Exception e nil)))
 
-(defn slurp-csv
+(defn read-csv-row
   "Read CSV data into memory"
   [filename]
   (with-open [reader (io/reader filename)]
     (->> (csv/read-csv reader)
          csv->map           ;; change the csv to a map with the csv->map fn
+         doall)))
+
+(defn read-csv-col
+  "Read CSV data into memory"
+  [filename]
+  (with-open [reader (io/reader filename)]
+    (->> (csv/read-csv reader)
+         csv->map_col          ;; change the csv to a map with the csv->map fn
          doall)))
 
 ;;file 1 and 2 address store for testing purpose
