@@ -23,12 +23,12 @@
   "return the last quarter date of a given row"
   [row]
   (let [date (get row :date)]
-    (let [[year month day] (map parse-int (str/split date #"/"))]
+    (let [[year month day] (map parse-int (str/split date #"-"))]
       (cond
-      (or (and (= month 12) (= day 31))(= month 1) (= month 2) (and (= month 3) (<= day 30))) (str (- year 1) "/" 12 "/" 31)
-      (or (and (= month 3) (= day 31)) (= month 4) (= month 5) (and (= month 6) (<= day 29))) (str year "/3/" 31)
-      (or (and (= month 6) (= day 30)) (= month 7) (= month 8) (and (= month 9) (<= day 30))) (str year "/6/" 30)
-      (or (and (= month 9) (= day 31)) (= month 10) (= month 11) (and (= month 12) (<= day 30))) (str year "/" 9 "/" 31))
+      (or (and (= month 12) (= day 31))(= month 1) (= month 2) (and (= month 3) (<= day 30))) (str (- year 1) "-" 12 "-" 31)
+      (or (and (= month 3) (= day 31)) (= month 4) (= month 5) (and (= month 6) (<= day 29))) (str year "-3-" 31)
+      (or (and (= month 6) (= day 30)) (= month 7) (= month 8) (and (= month 9) (<= day 30))) (str year "-6-" 30)
+      (or (and (= month 9) (= day 31)) (= month 10) (= month 11) (and (= month 12) (<= day 30))) (str year "-" 9 "-" 30))
     )
   )
 )
@@ -46,23 +46,16 @@
 (defn merge-data
   "merge 2 csv files "
   [file1 file2]
-  (
-   (def f1 (slurp-csv file1)) ;;file 1 is CRSP
   
-   (def f2 (slurp-csv file2)) ;;file 2 Is COMPUSTAT
-   
-   (def date-set (set (get-set (file2 :datadate))))
+  (def f1 (slurp-csv file1)) ;;file 1 is CRSP
 
-   (def mergefile 
-     (insert-col f1 date-set )
-
-
-   )
+  (def f2 (slurp-csv file2)) ;;file 2 Is COMPUSTAT
+  
+  (def date-set (into #{} (get-set f2)))
+  
+  (def f0 (insert-col f1 date-set))
 
   ;;(def file0 (insert-col file1 set))
-   
-   )
-  
   ;; need to parse-int later
 )
 
