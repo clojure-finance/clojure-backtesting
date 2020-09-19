@@ -1,7 +1,8 @@
 (ns clojure-backtesting.application
   (:require [clojure.test :refer :all]
             [clojure-backtesting.core :refer :all]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.set :as s]))
 
 (defn get-set
   "return a list of datadate, need to be converted to set"
@@ -51,11 +52,17 @@
 
   (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
   
-  (def date-set (into #{} (get-set f2)))
-  
-  (def f0 (insert-col f1 date-set))
+  (def f0 (insert-col f1 (into #{} (get-set f2)))) ;;insert datadate to file 1
+
+  (left-join f0 f2 {:datadate :datadate :tic :TICKER})
 
   ;;(def file0 (insert-col file1 set))
   ;; need to parse-int later
+)
+
+(defn merge-data-col
+  "merge 2 csv files based on the column model"
+  [file1 file2]
+  (row->col (merge-data-row file1 file2))
 )
 
