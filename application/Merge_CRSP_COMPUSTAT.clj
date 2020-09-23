@@ -40,7 +40,6 @@
   [file1 set] ;; key: before the insert col; file1: insert into this file; set: col to be inserted
   ;;add a thing in each map using key and value
   ;;run loop, length of the loop = length of the list
-
   (for [row file1] (concat row {:datadate (condp contains? (last-quar row) set (last-quar row) "")}))
 )
 
@@ -65,4 +64,5 @@
   [file1 file2]
   (row->col (merge-data-row file1 file2))
 )
+
 
