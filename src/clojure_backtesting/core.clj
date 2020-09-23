@@ -1,16 +1,17 @@
 (ns clojure-backtesting.core
   (:require [clojure.data.csv :as csv] ;; Useful for CSV handling
-            [clojure.java.io :as io] 
-            [clojure.set :as set]      ;;    
-            [clojure.pprint :as pprint] )  ;; For input-output handling
-     ) 
+            [clojure.java.io :as io]
+            [clojure.set :as set]      ;;
+            [clojure.pprint :as pprint] ) ;; For input-output handling
+            [clj-time.core :as t]  ;; datetime object
+     )
 
 (defn csv->map
   "Convert parsed CSV vectors into maps with headers as keys"
   [csv-data]
-  (map zipmap ;; make the first row as headers and the following rows as values in a map structure e.g. {:tic AAPL} 
+  (map zipmap ;; make the first row as headers and the following rows as values in a map structure e.g. {:tic AAPL}
        (->> (first csv-data) ;; take the first row of the csv-data
-            (map keyword) ;; make the header be the "key" in the map 
+            (map keyword) ;; make the header be the "key" in the map
             repeat)      ;; repeat the process for all the headers
        (rest csv-data))) ;; use the rest rows as values of the map
 
@@ -24,13 +25,25 @@
 (defn update-by-keys
   "Update values in a map (m) by applying function (f) on keys"
   [m keys f]
-  (reduce (fn [m k] (update m k f)) m keys))  
+  (reduce (fn [m k] (update m k f)) m keys))
 
 (defn parse-int
   "Parse integer from string. May return nil."
   [str]
-  (try (Integer/parseInt str) 
+  (try (Integer/parseInt str)
        (catch Exception e nil)))
+
+(defn parse-float
+  "Parse float from string. May return nil"
+  [str]
+  (try (Float/parseFloat str)
+       (catch Exception e nil)))
+
+(defn parse-date
+  "Parse datetime object from string"
+  [str]
+  (use 'clj-time.format)
+    (parse (formatter "dd/MM/YYYY") str))
 
 (defn read-csv-row
   "Read CSV data into memory"
@@ -56,6 +69,22 @@
     (-> (keys (first row-based))
     (zipmap (apply map vector (map vals (rest row-based))))))
 
+(defn data-filter
+  "This function is used to filter the sub-dataframe according to certain criterion the user inputs.
+  sec is for security name. (year, month, day) is the date the user wishes to stand. It returns all historical information before that date"
+  [sec year month day dataset]
+   (->> dataset
+   (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day))true)))))
+
+(defn average
+ "This function returns the average value of a vector"
+  [vec]
+  (/ (reduce + vec) (count vec)))
+
+(defn moving-average
+ "This function returns the moving average of len(window) days. The first len(window) days are recorded as 0"
+  [window vec]
+  (concat (repeat (- window 1) 0) (map average (partition window 1 vec))))
 
 (defn left-join
   "When passed 2 rels, returns the rel corresponding to the natural
@@ -80,16 +109,24 @@
                  (conj ret x)))
              #{} xrel))))
 
+(defn initialize
+  "initialize three vectors to record current position, trade list and the trade time"
+ []
+ (def current_position [])
+ (def trade_list [])
+ (def trade_time []))
+
+(defn order
+  "update the three recording vectors"
+ [time qty]
+ (def current_position (conj current_position (+ (reduce + trade_list) qty)))
+ (def trade_list (conj trade_list qty))
+ (def trade_time (conj tradetime time)))
+
 
 ;;file 1 and 2 address store for testing purpose
 ;;(def file1 "../resources/CRSP-extract.csv")
 ;;(def file2 "../../resources/Compustat-extract.csv")
 
-;;file 1 and 2 directories for Kony
-;;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
-;;(def file2 "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
-
-;;(def a (read-csv-row file1))
-;;(def b (read-csv-row file2))
-
-
+;;(def a (slurp-csv file1))
+;;(def b (slurp-csv file2))

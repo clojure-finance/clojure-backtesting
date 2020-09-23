@@ -46,17 +46,17 @@
 (defn merge-data-row
   "merge 2 csv files "
   [file1 file2]
-  
+
   (def f1 (read-csv-row file1)) ;;file 1 is CRSP
 
   (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
-  
+
   (def f0 (insert-col f1 (into #{} (get-set f2)))) ;;insert datadate to file 1
 
   (left-join f0 f2 {:datadate :datadate :tic :TICKER})
 
   ;;(def file0 (insert-col file1 set))
-  ;; need to parse-int later
+  ;; need to parse later
 )
 
 (defn merge-data-col
@@ -64,5 +64,3 @@
   [file1 file2]
   (row->col (merge-data-row file1 file2))
 )
-
-
