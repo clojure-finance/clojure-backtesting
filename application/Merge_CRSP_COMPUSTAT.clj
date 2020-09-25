@@ -64,3 +64,29 @@
   [file1 file2]
   (row->col (merge-data-row file1 file2))
 )
+
+(defn data-filter
+  "This function is used to filter the sub-dataframe according to certain criterion the user inputs.
+  sec is for security name. (year, month, day) is the date the user wishes to stand. It returns all historical information before that date"
+  [sec year month day dataset]
+   (->> dataset
+   (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day)) true)))))
+
+;; User input (example strategy: momentum strategy based on moving average crossing)
+(def data (read-csv-row "data-testing-merged.csv"))
+(def parse-time-data (map #(update-by-keys % [:datadate] parse-date) data))
+(def newdata (map #(update-by-keys % [:PRC] parse-float) parse-time-data))
+
+(def aapl (data-filter "AAPL" 1982 01 01 newdata))
+(def aapl-data (row->col aapl))
+
+(def price-data (:PRC aapl-data))
+(def date-data (:datadate aapl-data))
+
+(def short-ma-5 (moving-average 5 price-data))
+(def long-ma-20  (moving-average 20 price-data))
+
+;; interact with the backtester
+(for [x (range 21 (count price-data))]
+  (if (and (> (get short-ma-5 x) (get long-ma-20 x)) (< (get short-ma-5 (- x 1)) (get long-ma-20 (- x 1)))) (order (get date-data x) 1)
+      (if (and (< (get short-ma-5 x) (get long-ma-20 x)) (> (get short-ma-5 (- x 1)) (get long-ma-20 (- x 1)))) (order (get date-data x) -1))))

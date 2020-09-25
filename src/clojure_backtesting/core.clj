@@ -2,8 +2,9 @@
   (:require [clojure.data.csv :as csv] ;; Useful for CSV handling
             [clojure.java.io :as io]
             [clojure.set :as set]      ;;
-            [clojure.pprint :as pprint] ) ;; For input-output handling
-            [clj-time.core :as t]  ;; datetime object
+            [clojure.pprint :as pprint]
+            [clj-time.core :as t]
+            [clj-time.format :as f])  ;; datetime object) ;; For input-output handling
      )
 
 (defn csv->map
@@ -42,8 +43,7 @@
 (defn parse-date
   "Parse datetime object from string"
   [str]
-  (use 'clj-time.format)
-    (parse (formatter "dd/MM/YYYY") str))
+    (f/parse (f/formatter "YYYY-MM-dd") str))
 
 (defn read-csv-row
   "Read CSV data into memory"
@@ -68,13 +68,6 @@
   "This function can parse the seq like ({}{}{}) to {: [] : []}"
     (-> (keys (first row-based))
     (zipmap (apply map vector (map vals (rest row-based))))))
-
-(defn data-filter
-  "This function is used to filter the sub-dataframe according to certain criterion the user inputs.
-  sec is for security name. (year, month, day) is the date the user wishes to stand. It returns all historical information before that date"
-  [sec year month day dataset]
-   (->> dataset
-   (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day))true)))))
 
 (defn average
  "This function returns the average value of a vector"
@@ -117,13 +110,40 @@
  (def trade_time []))
 
 (defn order
-  "update the three recording vectors"
- [time qty]
- (def current_position (conj current_position (+ (reduce + trade_list) qty)))
- (def trade_list (conj trade_list qty))
- (def trade_time (conj tradetime time)))
+ "update the three recording vectors"
+  [time qty]
+  (def current_position (conj current_position (+ (reduce + trade_list) qty)))
+  (def trade_list (conj trade_list qty))
+  (def trade_time (conj trade_time time)))
 
+(defn get_position
+  "get current position"
+  []
+  current_position)
 
+(defn get_tradelist
+  "get current trade list"
+  []
+  trade_list)
+
+(defn get_numberoftrade
+  "get the number of trades done"
+  []
+  (count trade_list))
+ ;;(defn initialize2
+   ;;"initialize three vectors to record current position, trade list and the trade time"
+  ;;([security]
+  ;;{:current_position [], :trade_list [], :trade_time []})
+  ;;([a b c]
+  ;;{:current_position a, :trade_list b, :trade_time c}))
+
+;;(defn order2
+  ;; "update the three recording vectors"
+  ;;[security time qty]
+  ;;(let [[a b c] [(conj (:current_position security) (+ (reduce + :trade_list security) qty))
+  ;;(conj (:trade_list security) qty)
+  ;;(conj (:trade_time security) qty)]]
+  ;;(def security initialize2 a b c)))
 ;;file 1 and 2 address store for testing purpose
 ;;(def file1 "../resources/CRSP-extract.csv")
 ;;(def file2 "../../resources/Compustat-extract.csv")
