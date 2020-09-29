@@ -1,11 +1,11 @@
-(ns clojure-backtesting.core
+(ns clojure-backtesting.data
   (:require [clojure.data.csv :as csv] ;; Useful for CSV handling
             [clojure.java.io :as io]
             [clojure.set :as set]      ;;
-            [clojure.pprint :as pprint]
-            [clj-time.core :as t]
-            [clj-time.format :as f])  ;; datetime object) ;; For input-output handling
+            [clojure.pprint :as pprint] )  ;; For input-output handling
      )
+
+;;This file is to construct the basic data structure of the backtesting
 
 (defn csv->map
   "Convert parsed CSV vectors into maps with headers as keys"
