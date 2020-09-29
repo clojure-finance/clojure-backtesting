@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [clojure-backtesting.core :refer :all]
             [clojure.string :as str]
+            [clj-time.core :as t]
             [clojure.set :as s]))
 
 (defn get-set
@@ -73,10 +74,9 @@
    (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day)) true)))))
 
 ;; User input (example strategy: momentum strategy based on moving average crossing)
-(def data (read-csv-row "data-testing-merged.csv"))
+(def data (read-csv-row "resources/data-testing-merged.csv"))
 (def parse-time-data (map #(update-by-keys % [:datadate] parse-date) data))
 (def newdata (map #(update-by-keys % [:PRC] parse-float) parse-time-data))
-
 (def aapl (data-filter "AAPL" 1982 01 01 newdata))
 (def aapl-data (row->col aapl))
 
@@ -87,6 +87,8 @@
 (def long-ma-20  (moving-average 20 price-data))
 
 ;; interact with the backtester
+(initialize)
+
 (for [x (range 21 (count price-data))]
-  (if (and (> (get short-ma-5 x) (get long-ma-20 x)) (< (get short-ma-5 (- x 1)) (get long-ma-20 (- x 1)))) (order (get date-data x) 1)
-      (if (and (< (get short-ma-5 x) (get long-ma-20 x)) (> (get short-ma-5 (- x 1)) (get long-ma-20 (- x 1)))) (order (get date-data x) -1))))
+  (if (and (> (nth short-ma-5 x) (nth long-ma-20 x)) (< (nth short-ma-5 (- x 1)) (nth long-ma-20 (- x 1)))) (order (nth date-data x) 1)
+      (if (and (< (nth short-ma-5 x) (nth long-ma-20 x)) (> (nth short-ma-5 (- x 1)) (nth long-ma-20 (- x 1)))) (order (nth date-data x) -1))))

@@ -130,6 +130,8 @@
   "get the number of trades done"
   []
   (count trade_list))
+
+
  ;;(defn initialize2
    ;;"initialize three vectors to record current position, trade list and the trade time"
   ;;([security]
