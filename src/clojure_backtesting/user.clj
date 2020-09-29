@@ -1,6 +1,7 @@
-(ns clojure-backtesting.application
+(ns clojure-backtesting.user
   (:require [clojure.test :refer :all]
-            [clojure-backtesting.core :refer :all]
+            [clojure-backtesting.data :refer :all]
+            ;;[clojure-backtesting.order :refer :all]
             [clojure.string :as str]
             [clojure.set :as s]))
 
@@ -64,5 +65,10 @@
   [file1 file2]
   (row->col (merge-data-row file1 file2))
 )
+
+(defn -main
+  "Write your code here"
+  [& args]
+    (println "hello world"))
 
 
