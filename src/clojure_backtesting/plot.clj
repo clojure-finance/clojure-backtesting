@@ -44,6 +44,8 @@
 "plot out the porfolio changes/return over a period of time "
 [start-date end-date]
 
+pie (xxxx)
+line (xxxx)
 
 )
 
@@ -51,18 +53,27 @@
 "plot out stock price for multiple stocks"
 [stock-list ]
 
+line (xxxx)
+line (xxxx)
+
+
 }
 
 ;;tech-analysis
 {defn MA-x
 "plot MAs or other technical indicators on the chart"
 [days ] ;;MA20/ MA50 or multiple MAs?
+
+line (xxxx)
+
+
 }
 
 ;; see if you would like to add more technical analysis tools for the users to analysize it
 {defn Boll
 
-
+line (xxxx)
+line (xxxx)
 
 }
 
