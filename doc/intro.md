@@ -1,3 +1,3 @@
 # Introduction to clojure-backtesting
-
-TODO: write [great documentation](http://jacobian.org/writing/what-to-write/)
+Assumptions:
+The user must place the order in time series.
