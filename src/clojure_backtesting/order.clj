@@ -5,16 +5,16 @@
 ;;This file is for ordering related functions
 
 
-(defn order
+(defn order_iternal
 	"This is the main order function"
-	[data tic quantity]
+	[date tic quantity]
 	;;@date date-and-time trading date
 	;;@tic  trading ticker
 	;;@quantity exact number to buy(+) or sell(-)
 	()
-	;;{:tic ({:date :price :quan :total :reference}{})}
+	atoms {:tic ({:date :price :quan :total :reference}{})}
 
-	[data tic quantity remaining]
+	[date tic quantity remaining]
 	;;@date trading date
 	;;@tic  trading ticker
 	;;@quantity remaining quantity (either sell or buy to reach such quantity)
