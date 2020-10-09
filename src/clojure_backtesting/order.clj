@@ -7,16 +7,52 @@
 (def order_record (atom[]))
 (def total_record (atom{}))
 
-(defn test
-	(println f0))
+;;
+;;(defn test 
+;; (println f0))
+
+
+;;testing purpose
+
+(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
+;;(def file2 "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
+
+(def a (read-csv-row file1))
+;;(def b (read-csv-row file2))
+
 
 (defn search_in_order
 	"This function try to retrieve the matching entry from the dataset"
 	[date tic quantity]
 	;;return [false 0 0] if no match
 	;;return [true price reference] otherwise
-	([true 15 354])
+	
+	;;any global variable for the order dataset?
+	;;I let it be @a first
+
+	(loop [count 0 
+			remaining a]
+		(if (empty? remaining)
+			([false 0 0])
+			(do
+				(let [first-line (first remaining)
+					next-remaining (rest remaining)]
+					(if (and 	(= get first-line :date date) 
+								(= get first-line :tic tic)
+								;;(= get first-line :quantity quantity)
+						)
+						(do 
+							(let [price get first-line :price]
+								([true price count])
+							)
+						)
+						(recur (inc count) next-remaining)
+					)
+				)
+			)
+		)
 	)
+)
 
 (defn total_cal
 	"this function returns the remaining total stock of a tic"
@@ -53,7 +89,6 @@
 	(pmap order_parl args));;needs more work
 
 	)
-
 
 
 
