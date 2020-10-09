@@ -7,9 +7,6 @@
 (def order_record (atom[]))
 (def total_record (atom{}))
 
-(defn debug []
-	(println "testing"))
-
 (defn search_in_order
 	"This function tries to retrieve the matching entry from the dataset"
 	[date tic quantity]
