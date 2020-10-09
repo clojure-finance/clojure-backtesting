@@ -7,11 +7,11 @@
 (def order_record (atom[]))
 (def total_record (atom{}))
 
-(defn test
-	(println f0))
+(defn debug []
+	(println "testing"))
 
 (defn search_in_order
-	"This function try to retrieve the matching entry from the dataset"
+	"This function tries to retrieve the matching entry from the dataset"
 	[date tic quantity]
 	;;return [false 0 0] if no match
 	;;return [true price reference] otherwise

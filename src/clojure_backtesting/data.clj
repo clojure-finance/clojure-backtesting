@@ -5,13 +5,12 @@
             [clojure.pprint :as pprint] )  ;; For input-output handling
      )
 
-;;This file is to construct the basic data structure of the backtesting 
+;; This file is to construct the basic data structure for backtesting 
 
-(def data-set (atom [])) ;;this should be the main dataset(to be changed by the user)
+(def data-set (atom [])) ;; main dataset (to be changed by the user)
 
-(defn test_data 
-  []
-  (def f0 1))
+; (defn test
+;   (def f0 1))
 
 (defn csv->map
   "Convert parsed CSV vectors into maps with headers as keys"
@@ -90,8 +89,8 @@
 
 
 ;;file 1 and 2 address store for testing purpose
-;;(def file1 "../resources/CRSP-extract.csv")
-;;(def file2 "../../resources/Compustat-extract.csv")
+(def file1 "./resources/CRSP-extract_test.csv")
+(def file2 "./resources/Compustat-extract_test.csv")
 
 ;;file 1 and 2 directories for Kony
 ;;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
@@ -100,4 +99,5 @@
 ;;(def a (read-csv-row file1))
 ;;(def b (read-csv-row file2))
 
-
+(def memory (read-csv-col file1))
+(println (count (take 1 memory)))

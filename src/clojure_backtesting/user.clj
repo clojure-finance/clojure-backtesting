@@ -71,7 +71,7 @@
   "Write your code here"
   [& args]
   (println "hello world")
-  (test_data)
-  (test))
+;   (test_data)
+  (debug))
 
 
