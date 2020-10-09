@@ -7,6 +7,12 @@
 
 ;;This file is to construct the basic data structure of the backtesting 
 
+(def data-set (atom [])) ;;this should be the main dataset(to be changed by the user)
+
+(defn test_data 
+  []
+  (def f0 1))
+
 (defn csv->map
   "Convert parsed CSV vectors into maps with headers as keys"
   [csv-data]
