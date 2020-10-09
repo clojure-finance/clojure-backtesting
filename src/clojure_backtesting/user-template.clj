@@ -3,8 +3,8 @@
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
             [clojure.string :as str]
-            [clj-time.core :as t]
-            [clojure.set :as s]))
+            ;;[clojure.set :as s]
+            ))
 
 (defn get-set
     "return a list of datadate, need to be converted to set"
@@ -48,11 +48,11 @@
 (defn merge-data-row
     "merge 2 csv files "
     [file1 file2]
-
+    
     (def f1 (read-csv-row file1)) ;;file 1 is CRSP
 
     (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
-
+    
     (def f0 (insert-col f1 (into #{} (get-set f2)))) ;;insert datadate to file 1
 
     (left-join f0 f2 {:datadate :datadate :tic :TICKER})
@@ -68,13 +68,8 @@
 )
 
 (defn -main
-  "Write your code here"
-  [& args]
-  (println "hello world")
-  (test_data)
-  (test))
+    "Write your code here"
+    [& args]
+    (println "hello world"))
 
 
-(for [x (range 21 (count price-data))]
-  (if (and (> (nth short-ma-5 x) (nth long-ma-20 x)) (< (nth short-ma-5 (- x 1)) (nth long-ma-20 (- x 1)))) (order (nth date-data x) 1)
-      (if (and (< (nth short-ma-5 x) (nth long-ma-20 x)) (> (nth short-ma-5 (- x 1)) (nth long-ma-20 (- x 1)))) (order (nth date-data x) -1))))
