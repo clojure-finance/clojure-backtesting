@@ -2,8 +2,8 @@
   (:require [clojure.test :refer :all]
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
-            [clojure-backtesting.plot :refer :all]
-            [clojure-backtesting.parameters :refer :all]
+            ;;[clojure-backtesting.plot :refer :all]
+            ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             ))
 
@@ -22,6 +22,7 @@
         )
     )
 )
+
 
 (defn last-quar
     "return the last quarter date of a given row"
@@ -68,11 +69,15 @@
     (row->col (merge-data-row file1 file2))
 )
 
-(defn -main
-  "Write your code here"
-  [& args]
-  (println "hello world")
-  (test_data)
-  (test))
+
+(comment
+
+  (defn -main
+    "Write your code here"
+    [& args]
+    (println "hello world")
+    (test_data)
+    (test))
 
 
+  )
