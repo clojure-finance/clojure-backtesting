@@ -13,45 +13,34 @@
 
 
 ;;testing purpose
-
 (def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
-;;(def file2 "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
-
 (def a (read-csv-row file1))
-;;(def b (read-csv-row file2))
-
 
 (defn search_in_order
 	"This function try to retrieve the matching entry from the dataset"
 	[date tic quantity]
+	;;a is the data-set now, a is from the CRSP dataset, may have to change the keys below later
+	;;date e.g. "DD/MM?YYYY"
+	;;tic e.g. "AAPL"
 	;;return [false 0 0] if no match
 	;;return [true price reference] otherwise
-	
-	;;any global variable for the order dataset?
-	;;I let it be @a first
 
-	(loop [count 0 
-			remaining a]
-		(if (empty? remaining)
-			([false 0 0])
-			(do
-				(let [first-line (first remaining)
-					next-remaining (rest remaining)]
-					(if (and 	(= get first-line :date date) 
-								(= get first-line :tic tic)
-								;;(= get first-line :quantity quantity)
-						)
-						(do 
-							(let [price get first-line :price]
-								([true price count])
-							)
-						)
-						(recur (inc count) next-remaining)
+	(loop [count 0 remaining a]
+        (if (empty? remaining)
+          [false 0 0]
+			(let [first-line (first remaining)
+				next-remaining (rest remaining)]
+				(if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys
+						(= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys
 					)
+					(let [price (get first-line :PRC)]
+						[true price count]
+					)
+					(recur (inc count) next-remaining)
 				)
 			)
-		)
-	)
+	    )
+	)	
 )
 
 (defn total_cal

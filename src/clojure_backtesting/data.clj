@@ -97,7 +97,7 @@
 ;;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
 ;;(def file2 "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
 
-;;(def a (read-csv-row file1))
-;;(def b (read-csv-row file2))
+;;(def a (first (read-csv-row file1)))
+;;(def b (first (read-csv-row file2)))
 
 
