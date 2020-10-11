@@ -9,7 +9,7 @@
 
 (def data-set (atom [])) ;;this should be the main dataset(to be changed by the user)
 
-(defn test_data 
+(defn test_data
   []
   (def f0 1))
 
@@ -74,6 +74,19 @@
   "This function can parse the seq like ({}{}{}) to {: [] : []}"
     (-> (keys (first row-based))
     (zipmap (apply map vector (map vals (rest row-based))))))
+
+;; filter the data by security and date
+(defn data-filter
+  ([sec data]
+    (->> data
+    (filter #(= (:tic %) sec))))
+  ([sec year month day data]
+   (->> data
+  (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day))true))))))
+
+(defn count-days
+  [row-data]
+  (count row-data))
 
 (defn average
  "This function returns the average value of a vector"
