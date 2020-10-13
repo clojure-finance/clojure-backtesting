@@ -70,8 +70,6 @@
 (defn -main
   "Write your code here"
   [& args]
-  (println "hello world")
-  (test_data)
-  (test))
+  (println ))
 
 

@@ -6,13 +6,11 @@
 
 (def order_record (atom[]))
 (def total_record (atom{}))
-
-(defn test
-	(println f0))
+;;{:tic [date total] }
 
 (defn search_in_order
 	"This function try to retrieve the matching entry from the dataset"
-	[date tic quantity]
+	[date tic]
 	;;return [false 0 0] if no match
 	;;return [true price reference] otherwise
 	([true 15 354])
@@ -36,10 +34,10 @@
 	;;@date date-and-time trading date
 	;;@tic  trading ticker
 	;;@quantity exact number to buy(+) or sell(-)
-	(let [[match price reference] (search_in_order date tic quantity)]
+	(let [[match price reference] (search_in_order date tic)]
 	(if match
 		(do (swap! order_record concat [{:date date :tic tic :quantity quantity :total (total_cal date tic)}])))))
-	;;atoms [({:date :tic :price :quan :total :reference}{})]
+	;;atoms [{:date :tic :price :quan :total :reference}{}]
 
 	([date tic quantity remaining]
 	;;@date trading date
