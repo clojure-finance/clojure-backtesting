@@ -6,9 +6,22 @@
 
 (def order_record (atom[]))
 (def total_record (atom{}))
+;; Create initial portfolio with cash only (User input thei initial-capital)
+(defn initiate_portfolio
+  [init-capital]
+  (def portfolio (atom {:cash init-capital}))
+  (def portfolio_value (atom init-capital)))
 
-(defn test
-	(println f0))
+(defn update_portfolio
+  [tic quantity price]
+  (if-not (contains? (deref portfolio) tic)
+    (let [tot_val (* price quantity)]
+      (do (swap! portfolio (fn [curr_port] (conj curr_port [tic {:price price :quantity quantity :tot_val tot_val}])))
+      (swap! portfolio assoc :cash (- (:cash (deref portfolio)) tot_val))))
+    (let [[tot_val qty] [(* price quantity) (get-in (deref portfolio) [tic :quantity])]]
+      (do (swap! portfolio assoc tic [:price price :quantity (+ qty quantity) :tot_val (* price (+ qty quantity))])
+      (swap! portfolio assoc :cash (- (:cash (deref portfolio)) tot_val)))))
+      )
 
 (defn search_in_order
 	"This function try to retrieve the matching entry from the dataset"
@@ -53,7 +66,3 @@
 	(pmap order_parl args));;needs more work
 
 	)
-
-
-
-

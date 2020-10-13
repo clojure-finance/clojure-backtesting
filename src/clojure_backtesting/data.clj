@@ -121,35 +121,10 @@
                  (conj ret x)))
              #{} xrel))))
 
-(defn initialize
-  "initialize three vectors to record current position, trade list and the trade time"
- []
- (def current_position [])
- (def trade_list [])
- (def trade_time []))
-
-(defn order
- "update the three recording vectors"
-  [time qty]
-  (def current_position (conj current_position (+ (reduce + trade_list) qty)))
-  (def trade_list (conj trade_list qty))
-  (def trade_time (conj trade_time time)))
-
-(defn get_position
-  "get current position"
-  []
-  current_position)
-
-(defn get_tradelist
-  "get current trade list"
-  []
-  trade_list)
-
-(defn get_numberoftrade
-  "get the number of trades done"
-  []
-  (count trade_list))
-
+(defn select-cols
+  [data [& cols]]
+  (->> data
+       (map #(select-keys % cols)))) ;; format: (select-cols lazy-seq data [:arg1 :arg2 ...]
 
  ;;(defn initialize2
    ;;"initialize three vectors to record current position, trade list and the trade time"
