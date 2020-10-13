@@ -2,8 +2,9 @@
   (:require [clojure.test :refer :all]
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
+            ;;[clojure-backtesting.plot :refer :all]
+            ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
-            ;;[clojure.set :as s]
             ))
 
 (defn get-set
@@ -22,6 +23,7 @@
     )
 )
 
+
 (defn last-quar
     "return the last quarter date of a given row"
     [row]
@@ -38,8 +40,8 @@
 
 
 (defn insert-col
-    "insert the date col from COMPUSTAT into CRSP"
-    [file1 set] ;; key: before the insert col; file1: insert into this file; set: col to be inserted
+  "insert the date col from COMPUSTAT into CRSP"
+  [file1 set] ;; key: before the insert col; file1: insert into this file; set: col to be inserted
     ;;add a thing in each map using key and value
     ;;run loop, length of the loop = length of the list
     (for [row file1] (concat row {:datadate (condp contains? (last-quar row) set (last-quar row) "")}))
@@ -73,3 +75,4 @@
   (println ))
 
 
+  )
