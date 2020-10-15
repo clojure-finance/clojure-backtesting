@@ -91,8 +91,11 @@
 ; (def file2 "./resources/Compustat-extract_test.csv")
 
 ;;file 1 and 2 directories for Kony
-;;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
-;;(def file2 "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
+(comment
+(def file1 "./resources/CRSP-extract.csv")
+(def file2 "./resources/Compustat-extract.csv")
 
-;;(def a (read-csv-row file1))
-;;(def b (read-csv-row file2))
+(def c (first (read-csv-row file1)))
+(def d (first (read-csv-row file2)))
+)
+
