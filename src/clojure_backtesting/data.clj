@@ -1,9 +1,9 @@
 (ns clojure-backtesting.data
   (:require [clojure.data.csv :as csv] ;; Useful for CSV handling
-            [clojure.java.io :as io] 
+            [clojure.java.io :as io]
             [clojure.set :as set]      ;;    
-            [clojure.pprint :as pprint] )  ;; For input-output handling
-     )
+            [clojure.pprint :as pprint])  ;; For input-output handling
+  )
 
 ;; This file is to construct the basic data structure for backtesting 
 
@@ -22,19 +22,19 @@
   "Convert parsed CSV vectors into maps with headers as keys, by column"
   [csv-data]
   (zipmap
-    (->> (first csv-data)
-      (map keyword))
-    (apply map vector (rest csv-data))))
+   (->> (first csv-data)
+        (map keyword))
+   (apply map vector (rest csv-data))))
 
 (defn update-by-keys
   "Update values in a map by applying function (f) on keys"
   [map keys f]
-  (reduce (fn [map k] (update map k f)) map keys))  
+  (reduce (fn [map k] (update map k f)) map keys))
 
 (defn parse-int
   "Parse integer from string. May return nil."
   [str]
-  (try (Integer/parseInt str) 
+  (try (Integer/parseInt str)
        (catch Exception e nil)))
 
 ; Returns a list of maps, e.g. ({:col1 1, :col2 2} {:col1 3, :col2 4})
@@ -60,9 +60,8 @@
 (defn row->col
   [row-based]
   "This function can parse the seq like ({} {} {}) to {: [] : []}"
-    (-> (keys (first row-based))
-    (zipmap (apply map vector (map vals (rest row-based))))))
-
+  (-> (keys (first row-based))
+      (zipmap (apply map vector (map vals (rest row-based))))))
 
 (defn left-join
   "When passed 2 rels, returns the rel corresponding to the natural
@@ -71,7 +70,7 @@
   ([xrel yrel]
    (if (and (seq xrel) (seq yrel))
      (let [ks (set/intersection (set (keys (first xrel)))
-                            (set (keys (first yrel))))
+                                (set (keys (first yrel))))
            idx (set/index yrel ks)]
        (reduce (fn [ret x]
                  (if-let [found (idx (select-keys x ks))]
@@ -90,12 +89,11 @@
 ; (def file1 "./resources/CRSP-extract_test.csv")
 ; (def file2 "./resources/Compustat-extract_test.csv")
 
-;;file 1 and 2 directories for Kony
+;;file 1 and 2 directories
 (comment
-(def file1 "./resources/CRSP-extract.csv")
-(def file2 "./resources/Compustat-extract.csv")
+  (def file1 "./resources/CRSP-extract.csv")
+  (def file2 "./resources/Compustat-extract.csv")
 
-(def c (first (read-csv-row file1)))
-(def d (first (read-csv-row file2)))
-)
+  (def c (first (read-csv-row file1)))
+  (def d (first (read-csv-row file2))))
 
