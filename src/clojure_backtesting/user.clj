@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
+            [clojure-backtesting.evaluate :refer :all]
             [clojure.string :as str]
             ;;[clojure.set :as s]
             ))
@@ -71,6 +72,8 @@
   "Write your code here"
   [& args]
   (println "hello world")
+  (def coll [0 2 3])
+  ;(debug "hi")
+  (def sd (standard-deviation coll))
+　(println sd)
 )
-
-

@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
+            [clojure-backtesting.evaluate :refer :all]
             [clojure.string :as str]
             ;;[clojure.set :as s]
             ))
@@ -70,8 +71,4 @@
     "Write your code here"
     [& args]
     (println "hello world")
-    (def mem (csv->map "./resources/debug.csv"))
-    (doseq [keyval db] (prn mem))
 )
-
-
