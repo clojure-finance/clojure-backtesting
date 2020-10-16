@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
+            [clojure-backtesting.evaluate :refer :all]
             ;;[clojure-backtesting.plot :refer :all]
             ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]

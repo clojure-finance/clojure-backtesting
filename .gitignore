@@ -11,3 +11,6 @@ pom.xml.asc
 /.prepl-port
 .hgignore
 .hg/
+Compustat-extract_test.csv
+CRSP-extract_test.csv
+debug.csv

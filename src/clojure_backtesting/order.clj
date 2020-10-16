@@ -7,11 +7,6 @@
 (def order_record (atom[]))
 (def total_record (atom{}))
 
-;;
-;;(defn test 
-;; (println f0))
-
-
 ;;testing purpose
 (def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
 ;;(def a (read-csv-row file1))
