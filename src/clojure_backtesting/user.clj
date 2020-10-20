@@ -2,23 +2,33 @@
   (:require [clojure.test :refer :all]
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
-            [clojure-backtesting.evaluate :refer :all]
+            ;; [clojure-backtesting.evaluate :refer :all]
             ;;[clojure-backtesting.plot :refer :all]
             ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
             ))
 
+;;testing purpose
+(comment 
+(def filex "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
+
+(def a (read-csv-row filex))
+)        
+
+
 (defn get-set
-    "return a list of datadate, need to be converted to set"
+    "return a set of maps of tickers and datadate" ;;{:tic "AAPL", :datadate "1981/3/31"}
     [file2]
     (loop [remaining file2
             result-set []]
         (if (empty? remaining)
-            result-set
+            (into #{} result-set)
             (let [first-line (first remaining)
                 next-remaining (rest remaining)
-                next-result-set (conj result-set (get first-line :datadate))]
+                ;;next-result-set (conj result-set (get first-line :datadate)
+                next-result-set (conj result-set {:tic (get first-line :TICKER) :datadate (get first-line :datadate)})
+                ]
             (recur next-remaining next-result-set)
             )
         )
@@ -57,7 +67,7 @@
 
     (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
     
-    (def f0 (insert-col f1 (into #{} (get-set f2)))) ;;insert datadate to file 1
+    (def f0 (insert-col f1 (get-set f2)))) ;;insert datadate to file 1
 
     (left-join f0 f2 {:datadate :datadate :tic :TICKER})
 
