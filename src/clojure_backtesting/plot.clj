@@ -1,6 +1,9 @@
+
 (ns clojure-backtesting.rename
   (:require [clojure-backtesting.data :refer :all]) ;; require all libriaries from core
-    )
+  (:require [com.hypirion.clj-xchart :as c]) ;;not sure how to require this lib
+
+)
 
 ;;This file is for plotting related functions
 
@@ -15,13 +18,52 @@
 ;;4) Incanter - more statistical, can plot time-series data, but more on histogram, hypothesis testing
 
 
-(defn line
+(defn plot-help
 
-"plot single/ multiple line graphs, e.g. stock price changes, portfolio return changes"
+"this function is for giving instructions to the users on other plot functions"
 
+[]
+
+(println "(c/view chart1 chart2) : to view a chart")
+(println "(c/to-bytes my-chart :png) :  returns a byte array of the output")
 
 
 )
+
+
+
+
+(def chart
+  (c/xy-chart {"Expected rate" [(range 10) (range 10)]
+               "Actual rate" [(range 10) (map #(+ % (rand-int 5) -2) (range 10))]}))
+
+(comment 
+
+;;plot historical price
+(defn price
+
+"Simple X-Y Chart. Require a map for input
+
+c/xy-chart {\"Stock 1\" [(X-axis vector1: all dates) (Y-axis vector2: all prices)]
+ \"Stock 2\" [(X-axis vector1: all dates) (Y-axis vector2: all prices)] 
+
+}"
+
+[stock start-date end-date]
+
+;;take the stock name, the start and end date to do the plotting 
+;;1. get the list of dates 2. get the list of prices 3. c/xy-chart 4.c/view chart to display charts
+;;multiple lines allowed, then need to store inputs/ use overload structure
+
+;;need to use overload structure for several stocks
+
+[stock1 stock2 start-date end-date]
+
+
+)
+
+
+
 
 (defn bar
 
@@ -81,3 +123,6 @@ line (xxxx)
 ;;- visualize the winning rate over time
 ;;- visualize the accumulative gain/loss for multiple strategies
 ;;- etc.
+
+
+)
