@@ -10,7 +10,8 @@
 (defn initiate_portfolio
 
   [date init-capital]
-
+  ;; example: portfolio -> {:cash {:tot_val 10000} :"AAPL" {:price 400 :quantity 100 :tot_val 40000}}
+  ;; example: portfolio_value {:date xxxx :tot_value 50000}
   (def portfolio (atom {:cash {:tot_val init-capital}}))
   (def portfolio_value (atom [{:date date :tot_value init-capital}])))
 
@@ -33,7 +34,7 @@
         (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
           (do (swap! portfolio assoc ticker  {:price price_ticker :quantity qty_ticker :tot_val (* price_ticker qty_ticker)}))))))
 
-    (let [tot_value (reduce + (map :tot_val (vals (deref portfolio))))] ;; update the portfolio_vector vector which records the daily portfolio value 
+    (let [tot_value (reduce + (map :tot_val (vals (deref portfolio))))] ;; update the portfolio_vector vector which records the daily portfolio value
       (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value})))))
 
 (defn search_in_order
