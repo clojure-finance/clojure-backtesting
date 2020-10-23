@@ -6,6 +6,7 @@
             ;;[clojure-backtesting.plot :refer :all]
             ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
+            [clojure.pprint :as pprint]
             ))
 
 (defn get-set
@@ -72,10 +73,13 @@
 
 (defn -main
   "Write your code here"
-  [& args]
-  (println "hello world")
-  (def coll [0 2 3])
-  ;(debug "hi")
-  (def sd (standard-deviation coll))
-　(println sd)
-)
+    [& args]
+    (println args)
+    (reset! data-set (read-csv-row (first args)))
+    (order_internal "1980-12-16" "AAPL" 10)
+    (order_internal "1980-12-17" "AAPL" 10 true)
+    (order_internal "1980-12-14" "AAPL" 10)
+    (order_internal [["1980-12-19" "AAPL" 10]["1980-12-18" "AAPL" 10 true]])
+    (pprint/print-table (deref order_record)))
+;;sample activation command: 
+;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"
