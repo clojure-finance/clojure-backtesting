@@ -8,11 +8,12 @@
 (def total_record (atom{}))
 
 ;;testing purpose
-(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
+;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
+(def file1 "./resources/CRSP-extract.csv")
 ;;(def a (read-csv-row file1))
 
 (defn search_in_order
-	"This function try to retrieve the matching entry from the dataset"
+	"This function tries to retrieve the matching entry from the dataset"
 	[date tic]
 	;;date e.g. "DD/MM?YYYY"
 	;;tic e.g. "AAPL"
