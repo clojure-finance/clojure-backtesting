@@ -38,9 +38,8 @@
       (let [ret (Math/log (/ tot_value prev_value))]
         (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret)}))))))
 
-
 (defn search_in_order
-	"This function try to retrieve the matching entry from the dataset"
+	"This function tries to retrieve the matching entry from the dataset"
 	[date tic]
 	;;date e.g. "DD/MM?YYYY"
 	;;tic e.g. "AAPL"
