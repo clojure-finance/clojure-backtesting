@@ -1,7 +1,11 @@
+
 (ns clojure-backtesting.plot
   (:require [clojure-backtesting.data :refer :all]
-            [com.hypirion.clj-xchart :as c])
-    )
+            [com.hypirion.clj-xchart :as c]
+  ) ;; require all libriaries from core
+
+  (:use clojure.pprint)
+)
 
     (def r (java.util.Random. 42))
  (defn test
@@ -22,80 +26,68 @@
 
 ;;This file is for plotting related functions
 
-;;Potential clojure plot functions libraries:
-;;1) [Preferred] clj-xchart: line charts, scatter charts, area charts, bar charts, pie charts, donut charts
+;;clj-xchart: line charts, scatter charts, area charts, bar charts, pie charts, donut charts
 	;; https://github.com/hypirion/clj-xchart
 	;; https://hypirion.github.io/clj-xchart/
 
-;;2) [Preferred] vaga-lite via Oz: for data visualizaitons: multiple line charts, stack charts, 
-  ;; https://github.com/metasoarous/oz
-;;3) cljplot - more academic, single line chart, ACF/PACF chart, P-P plot, Q-Q plot
-;;4) Incanter - more statistical, can plot time-series data, but more on histogram, hypothesis testing
+
+;;"Simple X-Y Chart. Require a map for input
+;;c/xy-chart {"Stock 1" [(X-axis vector1: all dates) (Y-axis vector2: all prices)]
+;;            "Stock 2" [(X-axis vector1: all dates) (Y-axis vector2: all prices)]}
+
+(defn plot-help
+
+"this is to give an example on how the plotting function is being used"
+[]
+
+(println "Please use the following format for the plot function. An example has been done for you. If successfully executed, a pop-up window with the graph will be shown.")
+
+(println "")
 
 
-(defn line
+(println 
 
-"plot single/ multiple line graphs, e.g. stock price changes, portfolio return changes"
-
-
-
+ "(plot {\"Expected rate\" {:x (range 10) :y (range 10) :style {:line-color :red}}
+         \"Actual rate\"   {:x (range 10) :y (map #(+ % (rand-int 5) -2) (range 10)) :style {:line-color :blue}}}
+         {:title \"This is the title of the chart\"
+          :y-axis {:title \"This is the title for y axis\"}
+          :x-axis {:title \"This is the title for x axis\"}
+          :legend {:position :inside-ne}
+          })"
 )
 
-(defn bar
-
-"plot bar charts/ staccked bar charts to e.g. show asset changes"
-
+(plot {"Expected rate" {:x (range 10) :y (range 10) :style {:line-color :red}}
+         "Actual rate"   {:x (range 10) :y (map #(+ % (rand-int 5) -2) (range 10)) :style {:line-color :blue}}}
+         {:title "This is the title of the chart"
+          :y-axis {:title "This is the title for y axis"}
+          :x-axis {:title "This is the title for x axis"}
+          :legend {:position :inside-ne}
+          })
+ 
 )
 
 
-(defn pie
-"plot pie chart, to e.g. show portfolio return changes, portfolio composition "
-
+(comment
+  ;for documentation purpose only, a comprehensive function"
+  (plot {"Line A" {:x (range 10) :y (range 10) :style {:line-color :red}}
+         "Line B" {:x (range 10) :y (map #(+ % (rand-int 5) -2) (range 10)) :style {:line-color :blue}}}
+         {:title "This is the title of the chart"
+          :y-axis {:title "This is the title for y axis"}
+          :x-axis {:title "This is the title for x axis"}
+          ;;:legend {:position :inside-ne}
+          })
 )
 
-(defn area
-"plot area chart, to e.g. show stock prices movements "
+
+(defn plot
+  
+  "this is the function that allows the users to plot charts,"
+ 
+  [data title]
+  (c/view
+       (c/xy-chart data title)
+  )
 )
 
-;; functions below can move to core/ user as applications
-(defn portfolio-graph
-"plot out the porfolio changes/return over a period of time "
-[start-date end-date]
-
-pie (xxxx)
-line (xxxx)
-
-)
-
-{defn stock-price
-"plot out stock price for multiple stocks"
-[stock-list ]
-
-line (xxxx)
-line (xxxx)
 
 
-}
-
-;;tech-analysis
-{defn MA-x
-"plot MAs or other technical indicators on the chart"
-[days ] ;;MA20/ MA50 or multiple MAs?
-
-line (xxxx)
-
-
-}
-
-;; see if you would like to add more technical analysis tools for the users to analysize it
-{defn Boll
-
-line (xxxx)
-line (xxxx)
-
-}
-
-;;other plot functions can include
-;;- visualize the winning rate over time
-;;- visualize the accumulative gain/loss for multiple strategies
-;;- etc.
