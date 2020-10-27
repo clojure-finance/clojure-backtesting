@@ -52,11 +52,11 @@
 (defn merge-data-row
     "merge 2 csv files "
     [file1 file2]
-    
+
     (def f1 (read-csv-row file1)) ;;file 1 is CRSP
 
     (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
-    
+
     (def f0 (insert-col f1 (into #{} (get-set f2)))) ;;insert datadate to file 1
 
     (left-join f0 f2 {:datadate :datadate :tic :TICKER})
@@ -81,5 +81,5 @@
     (order_internal "1980-12-14" "AAPL" 10)
     (order_internal [["1980-12-19" "AAPL" 10]["1980-12-18" "AAPL" 10 true]])
     (pprint/print-table (deref order_record)))
-;;sample activation command: 
+;;sample activation command:
 ;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"

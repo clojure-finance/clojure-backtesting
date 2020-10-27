@@ -6,11 +6,39 @@
 
 (def order_record (atom[]))
 (def total_record (atom{}))
+;; Create initial portfolio with cash only (User input thei initial-capital)
+(defn initiate_portfolio
 
-;;testing purpose
-;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
-(def file1 "./resources/CRSP-extract.csv")
-;;(def a (read-csv-row file1))
+  [date init-capital dataset] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it 
+  ;; example: portfolio -> {:cash {:tot_val 10000} :"AAPL" {:price 400 :quantity 100 :tot_val 40000}}
+  ;; example: portfolio_value {:date xxxx :tot_value 50000}
+  (def init-capital init-capital)
+  (def num-of-tradays (count dataset))
+  (def portfolio (atom {:cash {:tot_val init-capital}}))
+  (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0}])))
+
+(defn update_portfolio
+
+  [date tic quantity price]
+
+  (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
+    (let [tot_val (* price quantity)]
+      (do (swap! portfolio (fn [curr_port] (conj curr_port [tic {:price price :quantity quantity :tot_val tot_val}])))
+      (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})))
+
+    (let [[tot_val qty] [(* price quantity) (get-in (deref portfolio) [tic :quantity])]] ;; if already has it, just update the quantity
+      (do (swap! portfolio assoc tic {:price price :quantity (+ qty quantity) :tot_val (* price (+ qty quantity))})
+      (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)}))))
+
+  (doseq [[ticker _] portfolio] ;; then update the price of the securities in the portfolio
+    (let [[match price_ticker _] (search_in_order date ticker)]
+      (if match
+        (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
+          (do (swap! portfolio assoc ticker  {:price price_ticker :quantity qty_ticker :tot_val (* price_ticker qty_ticker)}))))))
+
+    (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last portfolio_value))]] ;; update the portfolio_vector vector which records the daily portfolio value
+      (let [ret (Math/log (/ tot_value prev_value))]
+        (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret)}))))))
 
 (defn search_in_order
 	"This function tries to retrieve the matching entry from the dataset"
@@ -35,7 +63,7 @@
 				)
 			)
 	    )
-	)	
+	)
 )
 
 (defn total_cal
@@ -70,7 +98,7 @@
 	(let [[match price reference] (search_in_order date tic)]
 	;;(let [[match price reference] [true "10" 348]]
 	(if match
-		(do 
+		(do
 			(swap! order_record concat [{:date date :tic tic :price price :quantity quantity :total "TBI" :reference reference}]))
 		(println (format "The order request for date: %s, tic: %s, quantity: %d falses" date tic quantity)))));;else
 	;;atoms [{:date :tic :price :quan :total :reference}{}]
@@ -84,7 +112,7 @@
 		(let [[match price reference] (search_in_order date tic)]
 		;;(let [[match price reference] [true "10" 348]]
 		(if match
-			(do 
+			(do
 				(swap! order_record concat [{:date date :tic tic :price price :quantity "TBI" :total quantity :reference reference}]))
 			(println (format "The order request for date: %s, tic: %s, quantity: %d falses" date tic quantity))))
 	(order_internal date tic quantity)))
@@ -94,6 +122,3 @@
 	(swap! order_record concat (pmap order_parl args))
 	(shutdown-agents));;needs more work
 	)
-
-
-
