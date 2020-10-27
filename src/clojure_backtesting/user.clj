@@ -2,8 +2,8 @@
   (:require [clojure.test :refer :all]
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
-            [clojure-backtesting.evaluate :refer :all]
-            ;;[clojure-backtesting.plot :refer :all]
+            ;;[clojure-backtesting.evaluate :refer :all]
+            [clojure-backtesting.plot :refer :all]
             ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
@@ -74,6 +74,7 @@
 (defn -main
   "Write your code here"
     [& args]
+    (test)
     (println args)
     (reset! data-set (read-csv-row (first args)))
     (order_internal "1980-12-16" "AAPL" 10)

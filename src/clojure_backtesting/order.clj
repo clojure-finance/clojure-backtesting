@@ -1,5 +1,6 @@
 (ns clojure-backtesting.order
-  (:require [clojure-backtesting.data :refer :all]) ;; Useful for CSV handling
+  (:require [clojure-backtesting.data :refer :all]
+			[clojure-backtesting.paremeters :refer :all]) ;; Useful for CSV handling
     )
 
 ;;This file is for ordering related functions
@@ -11,7 +12,16 @@
 (def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
 ;;(def a (read-csv-row file1))
 
+(defn look_ahead_i_days
+	;;return date
+	[date i]
+	)
+
 (defn search_in_order
+	[date tic]
+	(search_in_search date))
+
+(defn search_in_search
 	"This function try to retrieve the matching entry from the dataset"
 	[date tic]
 	;;date e.g. "DD/MM?YYYY"
@@ -71,7 +81,7 @@
 	(if match
 		(do 
 			(swap! order_record concat [{:date date :tic tic :price price :quantity quantity :total "TBI" :reference reference}]))
-		(println (format "The order request for date: %s, tic: %s, quantity: %d falses" date tic quantity)))));;else
+		(println (format "The order request for date: %s, tic: %s, quantity: %d fails" date tic quantity)))));;else
 	;;atoms [{:date :tic :price :quan :total :reference}{}]
 
 	([date tic quantity remaining]

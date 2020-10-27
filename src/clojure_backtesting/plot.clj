@@ -1,6 +1,24 @@
-(ns clojure-backtesting.rename
-  (:require [clojure-backtesting.data :refer :all]) ;; require all libriaries from core
+(ns clojure-backtesting.plot
+  (:require [clojure-backtesting.data :refer :all]
+            [com.hypirion.clj-xchart :as c])
     )
+
+    (def r (java.util.Random. 42))
+ (defn test
+   []
+   (c/view
+     (c/xy-chart
+      {"Maxime" {:x (range 10)
+                 :y (mapv #(+ % (* 3 (.nextDouble r)))
+                          (range 10))}
+       "Tyrone" {:x (range 10)
+                 :y (mapv #(+ 2 % (* 4 (.nextDouble r)))
+                          (range 0 5 0.5))}}
+      {:title "Longest running distance"
+       :x-axis {:title "Months (since start)"}
+       :y-axis {:title "Distance"
+                :decimal-pattern "##.## km"}
+       :theme :matlab})))
 
 ;;This file is for plotting related functions
 
