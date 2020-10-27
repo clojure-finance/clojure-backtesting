@@ -9,9 +9,11 @@
 ;; Create initial portfolio with cash only (User input thei initial-capital)
 (defn initiate_portfolio
 
-  [date init-capital]
+  [date init-capital dataset] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it 
   ;; example: portfolio -> {:cash {:tot_val 10000} :"AAPL" {:price 400 :quantity 100 :tot_val 40000}}
   ;; example: portfolio_value {:date xxxx :tot_value 50000}
+  (def init-capital init-capital)
+  (def num-of-tradays (count dataset))
   (def portfolio (atom {:cash {:tot_val init-capital}}))
   (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0}])))
 
