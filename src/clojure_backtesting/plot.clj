@@ -7,23 +7,6 @@
   (:use clojure.pprint)
 )
 
-    (def r (java.util.Random. 42))
- (defn test
-   []
-   (c/view
-     (c/xy-chart
-      {"Maxime" {:x (range 10)
-                 :y (mapv #(+ % (* 3 (.nextDouble r)))
-                          (range 10))}
-       "Tyrone" {:x (range 10)
-                 :y (mapv #(+ 2 % (* 4 (.nextDouble r)))
-                          (range 0 5 0.5))}}
-      {:title "Longest running distance"
-       :x-axis {:title "Months (since start)"}
-       :y-axis {:title "Distance"
-                :decimal-pattern "##.## km"}
-       :theme :matlab})))
-
 ;;This file is for plotting related functions
 
 ;;clj-xchart: line charts, scatter charts, area charts, bar charts, pie charts, donut charts
@@ -34,6 +17,16 @@
 ;;"Simple X-Y Chart. Require a map for input
 ;;c/xy-chart {"Stock 1" [(X-axis vector1: all dates) (Y-axis vector2: all prices)]
 ;;            "Stock 2" [(X-axis vector1: all dates) (Y-axis vector2: all prices)]}
+
+(defn plot
+  
+  "this is the function that allows the users to plot charts,"
+ 
+  [data title]
+  (c/view
+       (c/xy-chart data title)
+  )
+)
 
 (defn plot-help
 
@@ -76,17 +69,6 @@
           :x-axis {:title "This is the title for x axis"}
           ;;:legend {:position :inside-ne}
           })
-)
-
-
-(defn plot
-  
-  "this is the function that allows the users to plot charts,"
- 
-  [data title]
-  (c/view
-       (c/xy-chart data title)
-  )
 )
 
 

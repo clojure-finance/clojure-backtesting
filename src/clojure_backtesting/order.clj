@@ -17,11 +17,11 @@
 	[date i]
 	)
 
-(defn search_in_order
-	[date tic]
-	(search_in_search date))
+; (defn search_in_
+; 	[date tic]
+; 	(search_in_search date))
 
-(defn search_in_search
+(defn search_in_order
 	"This function try to retrieve the matching entry from the dataset"
 	[date tic]
 	;;date e.g. "DD/MM?YYYY"
