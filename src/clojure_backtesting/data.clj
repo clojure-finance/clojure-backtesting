@@ -7,7 +7,15 @@
 
 ;; This file is to construct the basic data structure for backtesting 
 
+<<<<<<< HEAD
 (def data-set (atom [])) ;; main dataset (to be changed by the user)
+=======
+(def data-set (atom [])) ;;this should be the main dataset (to be changed by the user)
+
+(defn test_data
+  []
+  (def f0 1))
+>>>>>>> master
 
 (defn csv->map
   "Convert parsed CSV vectors into maps with headers as keys, by row"
@@ -59,9 +67,33 @@
 ;; dataset and the row based dataset
 (defn row->col
   [row-based]
-  "This function can parse the seq like ({} {} {}) to {: [] : []}"
-  (-> (keys (first row-based))
-      (zipmap (apply map vector (map vals (rest row-based))))))
+  "This function can parse the seq like ({}{}{}) to {: [] : []}"
+    (-> (keys (first row-based))
+    (zipmap (apply map vector (map vals (rest row-based))))))
+
+;; filter the data by security and date
+(defn data-filter
+  ([sec data]
+    (->> data
+    (filter #(= (:tic %) sec))))
+  ([sec year month day data]
+   (->> data
+  (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day))true))))))
+
+(defn count-days
+  [row-data]
+  (count row-data))
+
+(defn average
+ "This function returns the average value of a vector."
+  [vec]
+  (/ (reduce + vec) (count vec)))
+
+(defn moving-average
+ "This function returns the moving average of len(window) days. 
+ The first len(window) days are recorded as 0."
+  [window vec]
+  (concat (repeat (- window 1) 0) (map average (partition window 1 vec))))
 
 (defn left-join
   "When passed 2 rels, returns the rel corresponding to the natural
