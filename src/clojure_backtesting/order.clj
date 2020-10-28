@@ -6,20 +6,29 @@
 
 (def order_record (atom[]))
 (def total_record (atom{}))
-;; Create initial portfolio with cash only (User input thei initial-capital)
-(defn initiate_portfolio
 
-  [date init-capital dataset] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it 
-  ;; example: portfolio -> {:cash {:tot_val 10000} :"AAPL" {:price 400 :quantity 100 :tot_val 40000}}
-  ;; example: portfolio_value {:date xxxx :tot_value 50000}
+;; for each security:
+;; cumulative return = log(1+RET) (sum this every day)
+;; adjusted price = stock price on 1st day of given time period * exp(cumulative return)
+(defn add_aprc [dataset]
+	(println "hello world"))
+
+;; Create initial portfolio with cash only (User input thei initial-capital)
+(defn init_portfolio
+
+  [date init-capital dataset] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
+  ;; NOTE: example changed for adjusted prices
+  ;; 
+  ;; example: portfolio -> {:cash {:tot_val 10000} :"AAPL" {:price 400 :aprc adj_price :quantity 100 :tot_val 40000}}
+  ;; example: portfolio_value {:date xxxx :tot_value 50000 :daily_ret 0}
   (def init-capital init-capital)
   (def num-of-tradays (count dataset))
   (def portfolio (atom {:cash {:tot_val init-capital}}))
   (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0}])))
 
 (defn update_portfolio
-
-  [date tic quantity price]
+  ;; added aprc
+  [date tic quantity price aprc]
 
   (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
     (let [tot_val (* price quantity)]
@@ -38,7 +47,7 @@
 
     (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last portfolio_value))]] ;; update the portfolio_vector vector which records the daily portfolio value
       (let [ret (Math/log (/ tot_value prev_value))]
-        (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret)}))))))
+        (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret}))))))
 
 (defn search_in_order
 	"This function tries to retrieve the matching entry from the dataset"
