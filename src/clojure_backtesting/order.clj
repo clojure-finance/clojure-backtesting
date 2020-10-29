@@ -13,6 +13,32 @@
 (defn add_aprc [dataset]
 	(println "hello world"))
 
+	(defn search_in_order
+		"This function tries to retrieve the matching entry from the dataset"
+		[date tic]
+		;;date e.g. "DD/MM?YYYY"
+		;;tic e.g. "AAPL"
+		;;return [false 0 0] if no match
+		;;return [true price reference] otherwise
+	
+		(loop [count 0 remaining (deref data-set)]
+			(if (empty? remaining)
+				  [false 0 0]
+				(let [first-line (first remaining)
+					next-remaining (rest remaining)]
+					(if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys
+							(= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys
+						)
+						(let [price (get first-line :PRC)]
+							[true price count]
+						)
+						(recur (inc count) next-remaining)
+					)
+				)
+			)
+		)
+	)
+
 ;; Create initial portfolio with cash only (User input thei initial-capital)
 (defn init_portfolio
 
@@ -28,7 +54,7 @@
 
 (defn update_portfolio
   ;; added aprc
-  [date tic quantity price aprc]
+  [date tic quantity price]
 
   (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
     (let [tot_val (* price quantity)]
@@ -47,32 +73,7 @@
 
     (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last portfolio_value))]] ;; update the portfolio_vector vector which records the daily portfolio value
       (let [ret (Math/log (/ tot_value prev_value))]
-        (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret}))))))
-
-(defn search_in_order
-	"This function tries to retrieve the matching entry from the dataset"
-	[date tic]
-	;;date e.g. "DD/MM?YYYY"
-	;;tic e.g. "AAPL"
-	;;return [false 0 0] if no match
-	;;return [true price reference] otherwise
-
-	(loop [count 0 remaining (deref data-set)]
-        (if (empty? remaining)
-          	[false 0 0]
-			(let [first-line (first remaining)
-				next-remaining (rest remaining)]
-				(if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys
-						(= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys
-					)
-					(let [price (get first-line :PRC)]
-						[true price count]
-					)
-					(recur (inc count) next-remaining)
-				)
-			)
-	    )
-	)
+		(do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret}))))))
 )
 
 (defn total_cal
