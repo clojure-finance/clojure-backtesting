@@ -14,3 +14,4 @@ pom.xml.asc
 Compustat-extract_test.csv
 CRSP-extract_test.csv
 debug.csv
+.DS_Store

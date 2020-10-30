@@ -17,6 +17,8 @@
   []
   (get-return init-capital order_record))
 
+; not optimal to reference variables from other files? hard to trace
+; could create helper function for getting num-of-tradays / init-capital
 ; (defn get-annualized-return
 ;   [atom-coll]
 ;   (- (Math/pow (+ 1 (get-overall-return init-capital)) (/ 252 num-of-tradays)) 1))

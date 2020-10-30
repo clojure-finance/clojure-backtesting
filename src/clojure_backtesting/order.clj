@@ -13,31 +13,31 @@
 (defn add_aprc [dataset]
 	(println "hello world"))
 
-	(defn search_in_order
-		"This function tries to retrieve the matching entry from the dataset"
-		[date tic]
-		;;date e.g. "DD/MM?YYYY"
-		;;tic e.g. "AAPL"
-		;;return [false 0 0] if no match
-		;;return [true price reference] otherwise
-	
-		(loop [count 0 remaining (deref data-set)]
-			(if (empty? remaining)
-				  [false 0 0]
-				(let [first-line (first remaining)
-					next-remaining (rest remaining)]
-					(if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys
-							(= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys
-						)
-						(let [price (get first-line :PRC)]
-							[true price count]
-						)
-						(recur (inc count) next-remaining)
+(defn search_in_order
+	"This function tries to retrieve the matching entry from the dataset"
+	[date tic]
+	;;date e.g. "DD/MM?YYYY"
+	;;tic e.g. "AAPL"
+	;;return [false 0 0] if no match
+	;;return [true price reference] otherwise
+
+	(loop [count 0 remaining (deref data-set)]
+		(if (empty? remaining)
+				[false 0 0]
+			(let [first-line (first remaining)
+				next-remaining (rest remaining)]
+				(if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys
+						(= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys
 					)
+					(let [price (get first-line :PRC)]
+						[true price count]
+					)
+					(recur (inc count) next-remaining)
 				)
 			)
 		)
 	)
+)
 
 ;; Create initial portfolio with cash only (User input thei initial-capital)
 (defn init_portfolio
