@@ -71,9 +71,17 @@
     (row->col (merge-data-row file1 file2))
 )
 
+; main function for reading dataset
+(defn main-read-data
+    [& args]
+    (println args)
+    (reset! data-set (read-csv-row (first args)))
+    (pprint/print-table (deref data-set))
+)
+
 (defn -main
   "Write your code here"
-    [& args]
+    [& args] ; pass ./resources/CRSP-extract.csv as arg
     (println args)
     (reset! data-set (read-csv-row (first args)))
     (order_internal "1980-12-16" "AAPL" 10)

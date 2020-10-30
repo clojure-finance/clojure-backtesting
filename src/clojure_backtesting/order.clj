@@ -8,13 +8,20 @@
 (def total_record (atom{}))
 
 ;; for each security:
-;; cumulative return = log(1+RET) (sum this every day)
-;; adjusted price = stock price on 1st day of given time period * exp(cumulative return)
-(defn add_aprc [dataset]
-	(println "hello world"))
+;; add col 'cum_ret' -> cumulative return = log(1+RET) (sum this every day)
+;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum_ret)
+(defn add_aprc []
+	"This function adds the adjusted price column to the dataset."
+	(loop [count 0 remaining (deref data-set)]
+		(if (empty? remaining)
+				(println "empty")
+			(println "not empty")
+		)
+	)
+)
 
 (defn search_in_order
-	"This function tries to retrieve the matching entry from the dataset"
+	"This function tries to retrieve the matching entry from the dataset."
 	[date tic]
 	;;date e.g. "DD/MM?YYYY"
 	;;tic e.g. "AAPL"
