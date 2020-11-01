@@ -6,18 +6,41 @@
 
 (def order_record (atom []))
 (def total_record (atom {}))
+(def data-set_adj (atom []))
+
+; exponential
+(defn exp [x n]
+  (reduce * (repeat n x)))
 
 ;; for each security:
 ;; add col 'cum_ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum_ret)
 (defn add_aprc []
   "This function adds the adjusted price column to the dataset."
-	(let [first-line (first (deref data-set))
-		next-remaining (rest (deref data-set))]
-		(let [initial_price (get first-line :PRC)
-				ticker (get first-line :TICKER)]
-				[initial_price, ticker])
-	)
+  ; get price on 1st day
+	(let [first-line (first (deref data-set))]
+    (let [initial_price (Double/parseDouble (get first-line :PRC))
+          ret (Double/parseDouble (get first-line :RET))
+          ticker (get first-line :TICKER)]
+        (let [first-line-new (select-keys first-line [:TICKER :PRC :RET])]
+          (def cum_ret (Math/log (+ 1 ret)))
+          (def aprc (* initial_price (exp Math/E cum_ret)))
+          (swap! data-set_adj conj (assoc first-line-new "APRC" aprc "CUM_RET" cum_ret))
+        )
+        ;[initial_price, ticker])
+    )
+  )
+  ; traverse reamining rows
+  (loop [remaining (rest (deref data-set))]
+    (if (empty? remaining)
+        (println "Done")
+        (let [first-remaining (first remaining)
+        next-remaining (rest remaining)]
+        println first-remaining
+        ;(swap! players conj :player1)
+        )
+    )
+  )
 )
 
 ;   (loop [count 0 remaining (deref data-set)]
