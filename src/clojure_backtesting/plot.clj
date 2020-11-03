@@ -18,6 +18,19 @@
 ;;c/xy-chart {"Stock 1" [(X-axis vector1: all dates) (Y-axis vector2: all prices)]
 ;;            "Stock 2" [(X-axis vector1: all dates) (Y-axis vector2: all prices)]}
 
+
+
+(defn plot
+  
+  "this is the function that allows the users to plot charts,"
+ 
+  [data title]
+  (c/view
+       (c/xy-chart data title)
+  )
+)
+
+
 (defn plot-help
 
 "this is to give an example on how the plotting function is being used"
@@ -60,17 +73,5 @@
           ;;:legend {:position :inside-ne}
           })
 )
-
-
-(defn plot
-  
-  "this is the function that allows the users to plot charts,"
- 
-  [data title]
-  (c/view
-       (c/xy-chart data title)
-  )
-)
-
 
 
