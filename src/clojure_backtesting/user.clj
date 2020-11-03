@@ -72,16 +72,36 @@
     (row->col (merge-data-row file1 file2))
 )
 
+; main function for reading dataset
+(defn main-read-data
+    [& args]
+    (println args)
+    (reset! data-set (read-csv-row (first args)))
+    (pprint/print-table (deref data-set))
+)
+
+(defn main-order
+    "Main function for placing orders"
+      [& args] ; pass ./resources/CRSP-extract.csv as arg
+      (println args)
+      (reset! data-set (read-csv-row (first args)))
+      (order_internal "1980-12-16" "AAPL" 10)
+      (order_internal "1980-12-17" "AAPL" 10 true)
+      (order_internal "1980-12-14" "AAPL" 10)
+      (order_internal [["1980-12-19" "AAPL" 10]["1980-12-18" "AAPL" 10 true]])
+      (pprint/print-table (deref order_record))
+)
+
 (defn -main
   "Write your code here"
-    [& args]
-    (print (look_ahead_i_days "2020-3-29" 3)))
-    ; (println args)
-    ; (reset! data-set (read-csv-row (first args)))
-    ; (order_internal "1980-12-16" "AAPL" 10)
-    ; (order_internal "1980-12-17" "AAPL" 10 true)
-    ; (order_internal "1980-12-14" "AAPL" 10)
-    ; (order_internal [["1980-12-19" "AAPL" 10]["1980-12-18" "AAPL" 10 true]])
-    ; (pprint/print-table (deref order_record)))
-;;sample activation command: 
+    [& args] ; pass ./resources/CRSP-extract.csv as arg
+    (println args)
+    (reset! data-set (read-csv-row (first args)))
+    (def data (add_aprc))
+    ;(println data)
+
+    (println "debugging")
+    (println data-set_adj)
+)
+;;sample activation command:
 ;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"

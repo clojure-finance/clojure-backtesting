@@ -1,9 +1,11 @@
 (ns clojure-backtesting.data
   (:require [clojure.data.csv :as csv] ;; Useful for CSV handling
             [clojure.java.io :as io]
-            [clojure.set :as set]      ;;    
-            [clojure.pprint :as pprint])  ;; For input-output handling
-  )
+            [clojure.set :as set]      ;;
+            [clj-time.core :as t]
+            [clj-time.format :as f]
+            [clojure.pprint :as pprint] )  ;; For input-output handling
+     )
 
 ;; This file is to construct the basic data structure for backtesting 
 
