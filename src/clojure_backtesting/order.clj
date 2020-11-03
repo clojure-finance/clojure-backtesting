@@ -1,6 +1,6 @@
 (ns clojure-backtesting.order
   (:require [clojure-backtesting.data :refer :all]) ;; Useful for CSV handling
-  )
+)
 
 ;;This file is for ordering related functions
 
@@ -8,9 +8,9 @@
 (def total_record (atom {}))
 (def data-set_adj (atom []))
 
-; exponential
+; exponential ;unused, could be removed later
 (defn exp [x n]
- (reduce * (repeat n x)))
+(reduce * (repeat n x)))
 
 ;; for each security:
 ;; add col 'cum_ret' -> cumulative return = log(1+RET) (sum this every day)
@@ -38,9 +38,7 @@
               (def log_ret (Math/log (+ 1 ret)))
               (def cum_ret (+ cum_ret log_ret))
               ;(println cum_ret)
-              (def aprc (* initial_price (exp Math/E cum_ret)))
-              ;BUG: exp function returns int, need FLOAT
-              (println (exp Math/E cum_ret))
+              (def aprc (* initial_price (Math/pow Math/E cum_ret)))
               (swap! data-set_adj conj (assoc line-new "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret))
             )
           )
