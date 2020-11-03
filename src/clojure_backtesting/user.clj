@@ -7,6 +7,7 @@
             ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
+            [java-time :as t]
             ))
 
 (defn get-set
@@ -74,7 +75,7 @@
 (defn -main
   "Write your code here"
     [& args]
-    (plot-help))
+    (print (look_ahead_i_days "2020-3-29" 3)))
     ; (println args)
     ; (reset! data-set (read-csv-row (first args)))
     ; (order_internal "1980-12-16" "AAPL" 10)

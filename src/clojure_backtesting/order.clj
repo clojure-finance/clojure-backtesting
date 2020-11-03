@@ -1,6 +1,9 @@
 (ns clojure-backtesting.order
   (:require [clojure-backtesting.data :refer :all]
-			[clojure-backtesting.paremeters :refer :all]) ;; Useful for CSV handling
+			[clojure-backtesting.paremeters :refer :all]
+			[clojure.string :as str]
+			[java-time :as t]) ;; Useful for CSV handling
+
     )
 
 ;;This file is for ordering related functions
@@ -14,8 +17,12 @@
 
 (defn look_ahead_i_days
 	;;return date
+	;;here the format of the input date should be:
+	;;year-month-day
 	[date i]
-	)
+	(let [[year month day] (map parse-int (str/split date #"-"))]
+		(t/format "yyyy-MM-dd" (t/plus (t/local-date year month day) (t/days i)))))
+
 
 ; (defn search_in_
 ; 	[date tic]

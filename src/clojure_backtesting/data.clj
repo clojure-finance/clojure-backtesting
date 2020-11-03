@@ -7,15 +7,7 @@
 
 ;; This file is to construct the basic data structure for backtesting 
 
-<<<<<<< HEAD
 (def data-set (atom [])) ;; main dataset (to be changed by the user)
-=======
-(def data-set (atom [])) ;;this should be the main dataset (to be changed by the user)
-
-(defn test_data
-  []
-  (def f0 1))
->>>>>>> master
 
 (defn csv->map
   "Convert parsed CSV vectors into maps with headers as keys, by row"
@@ -72,13 +64,13 @@
     (zipmap (apply map vector (map vals (rest row-based))))))
 
 ;; filter the data by security and date
-(defn data-filter
-  ([sec data]
-    (->> data
-    (filter #(= (:tic %) sec))))
-  ([sec year month day data]
-   (->> data
-  (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day))true))))))
+; (defn data-filter
+;   ([sec data]
+;     (->> data
+;     (filter #(= (:tic %) sec))))
+;   ([sec year month day data]
+;    (->> data
+;   (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day))true))))))
 
 (defn count-days
   [row-data]
