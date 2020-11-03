@@ -97,7 +97,7 @@
     (println args)
     (reset! data-set (read-csv-row (first args)))
     (def data (add_aprc))
-    (println data)
+    ;(println data)
 
     (println "debugging")
     (println data-set_adj)

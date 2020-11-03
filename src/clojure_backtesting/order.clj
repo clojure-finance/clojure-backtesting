@@ -10,7 +10,7 @@
 
 ; exponential
 (defn exp [x n]
-  (reduce * (repeat n x)))
+ (reduce * (repeat n x)))
 
 ;; for each security:
 ;; add col 'cum_ret' -> cumulative return = log(1+RET) (sum this every day)
@@ -18,42 +18,37 @@
 (defn add_aprc []
   "This function adds the adjusted price column to the dataset."
   ; get price on 1st day
-	(let [first-line (first (deref data-set))]
-    (let [initial_price (Double/parseDouble (get first-line :PRC))
-          ret (Double/parseDouble (get first-line :RET))
-          ticker (get first-line :TICKER)]
-        (let [first-line-new (select-keys first-line [:TICKER :PRC :RET])]
-          (def cum_ret (Math/log (+ 1 ret)))
-          (def aprc (* initial_price (exp Math/E cum_ret)))
-          (swap! data-set_adj conj (assoc first-line-new "APRC" aprc "CUM_RET" cum_ret))
-        )
-        ;[initial_price, ticker])
-    )
-  )
-  ; traverse reamining rows
-  (loop [remaining (rest (deref data-set))]
+  (def initial_price (Double/parseDouble (get (first (deref data-set)) :PRC)))
+  (def cum_ret 0)
+
+ ; traverse row by row, compute log(1+RET)
+ (loop [remaining (deref data-set)]
     (if (empty? remaining)
         (println "Done")
-        (let [first-remaining (first remaining)
-        next-remaining (rest remaining)]
-        println first-remaining
-        ;(swap! players conj :player1)
+        ; first row
+        (let [first-line (first remaining)
+          next-remaining (rest remaining)]
+          ;(println first-remaining)
+          ; row operations
+          (let [price (Double/parseDouble (get first-line :PRC))
+                ret (Double/parseDouble (get first-line :RET))
+                ticker (get first-line :TICKER)]
+            (let [line-new (select-keys first-line [:date :TICKER :PRC :RET])]
+              ;(println "test") 
+              (def log_ret (Math/log (+ 1 ret)))
+              (def cum_ret (+ cum_ret log_ret))
+              ;(println cum_ret)
+              (def aprc (* initial_price (exp Math/E cum_ret)))
+              ;BUG: exp function returns int, need FLOAT
+              (println (exp Math/E cum_ret))
+              (swap! data-set_adj conj (assoc line-new "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret))
+            )
+          )
+          (recur next-remaining)  
         )
     )
   )
 )
-
-;   (loop [count 0 remaining (deref data-set)]
-;     (if (empty? remaining)
-;       (println "Done")
-; 	(let [first-line (first remaining)
-; 		next-remaining (rest remaining)]
-; 		(if (= (count 0))
-; 			(let [initial_price (get first-line :PRC)
-; 				ticker (get first-line :TICKER)])
-; 		(let [ret (get first-line :RET)]
-; 			[ticker initial_price ret]))
-; 			(recur (inc count) next-remaining)))))
 
 
 (defn search_in_order
