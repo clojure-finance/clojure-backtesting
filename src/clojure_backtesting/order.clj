@@ -23,8 +23,6 @@
 	[date i]
 	(let [[year month day] (map parse-int (str/split date #"-"))]
 		(t/format "yyyy-MM-dd" (t/plus (t/local-date year month day) (t/days i)))))
-  (:require [clojure-backtesting.data :refer :all]) ;; Useful for CSV handling
-)
 
 ; exponential ;unused, could be removed later
 (defn exp [x n]
