@@ -12,8 +12,9 @@
 (def total_record (atom {}))
 (def data-set_adj (atom []))
 
+
 ;;testing purpose
-(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
+;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
 ;;(def a (read-csv-row file1))
 
 (defn look_ahead_i_days
@@ -63,29 +64,62 @@
 	)
 )
 
+;;testing purpose, delete afterwards
+;(def testfile1 (read-csv-row "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv"))
 
-(defn search_in_order
+;; Search_date function
+(defn search_date
   "This function tries to retrieve the matching entry from the dataset."
   [date tic]
   ;;date e.g. "DD/MM?YYYY"
   ;;tic e.g. "AAPL"
   ;;return [false 0 0] if no match
   ;;return [true price reference] otherwise
-
-  (loop [count 0 remaining (deref data-set)]
+  
+  (loop [count 0 remaining (deref data-set)] (original line)
+  ;(loop [count 0 remaining testfile1] 				;testing line, change the data-set to CRSP
     (if (empty? remaining)
       [false 0 0]
       (let [first-line (first remaining)
             next-remaining (rest remaining)]
-        (if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys
-                 (= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys
+        (if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys (using the keys in CRSP now)
+                 (= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys(using the keys in CRSP now)
                  )
-          (let [price (get first-line :PRC)]
+          (let [price (get first-line :PRC)] ;;amend later if you want to use the adjusted price instead of the closing price
             [true price count])
           (recur (inc count) next-remaining))))))
 
-;; Create initial portfolio with cash only (User input thei initial-capital)
 
+;; Search in Order function
+(defn search_in_order
+	"This function turns the order processed date"
+[date tic]
+;;date e.g. "DD/MM?YYYY"
+;;tic e.g. "AAPL"
+;;return [false "No match date" 0 0] if no match
+;;return [true T+1_date price reference] otherwise
+
+	(let [[match price reference] (search_date date tic)]
+		;;(let [[match price reference] [true "10" 348]]
+		(if match
+			(loop [i 1]
+				(if (<= i MAXLOOKAHEAD)
+					(let [ t_1_date (look_ahead_i_days date i) 
+						[b p r] (search_date t_1_date tic)]
+						(if b
+							[b t_1_date p r]
+							(recur (inc i))						
+						)
+					)
+					[false "No match T+1 date" 0 0]
+				)				
+			)
+			[false "No match date" 0 0]
+		)
+	)
+)
+
+;; Create initial portfolio with cash only (User input thei initial-capital)
 
 (defn init_portfolio
 
