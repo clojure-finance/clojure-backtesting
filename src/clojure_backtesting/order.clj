@@ -15,37 +15,37 @@
 ;; for each security:
 ;; add col 'cum_ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum_ret)
+;; 
+; new version
 (defn add_aprc []
   "This function adds the adjusted price column to the dataset."
   ; get price on 1st day
   (def initial_price (Double/parseDouble (get (first (deref data-set)) :PRC)))
   (def cum_ret 0)
+  (def curr_ticker (get (first (deref data-set)) :TICKER))
 
+ ; use map instead of loop
  ; traverse row by row, compute log(1+RET)
- (loop [remaining (deref data-set)]
-    (if (empty? remaining)
-        (println "Done")
-        ; first row
-        (let [first-line (first remaining)
-          next-remaining (rest remaining)]
-          ;(println first-remaining)
-          ; row operations
-          (let [price (Double/parseDouble (get first-line :PRC))
-                ret (Double/parseDouble (get first-line :RET))
-                ticker (get first-line :TICKER)]
-            (let [line-new (select-keys first-line [:date :TICKER :PRC :RET])]
-              ;(println "test") 
-              (def log_ret (Math/log (+ 1 ret)))
-              (def cum_ret (+ cum_ret log_ret))
-              ;(println cum_ret)
-              (def aprc (* initial_price (Math/pow Math/E cum_ret)))
-              (swap! data-set_adj conj (assoc line-new "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret))
-            )
+ (map (fn [line]
+      ;(println line)
+        (let [line-new (select-keys line [:date :TICKER :PRC :RET])
+              price (Double/parseDouble (get line :PRC))
+              ret (Double/parseDouble (get line :RET))
+              ticker (get line :TICKER)]
+          (if (not= curr_ticker ticker)
+              (do
+                (def curr_ticker ticker)
+                (def initial_price price)
+                (def cum_ret 0)
+              )
           )
-          (recur next-remaining)  
+          (def log_ret (Math/log (+ 1 ret)))
+          (def cum_ret (+ cum_ret log_ret))
+          (def aprc (* initial_price (Math/pow Math/E cum_ret)))
+          (swap! data-set_adj conj (assoc line-new "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret))
         )
-    )
-  )
+      )
+    (deref data-set))
 )
 
 

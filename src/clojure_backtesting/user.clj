@@ -94,13 +94,15 @@
 (defn -main
   "Write your code here"
     [& args] ; pass ./resources/CRSP-extract.csv as arg
-    (println args)
+    ;(println args)
     (reset! data-set (read-csv-row (first args)))
     (def data (add_aprc))
+    (pr-str data)
     ;(println data)
 
     (println "debugging")
     (println data-set_adj)
+    ;(pr-str data-set_adj)
 )
 ;;sample activation command:
 ;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"
