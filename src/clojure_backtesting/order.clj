@@ -20,9 +20,9 @@
 (defn add_aprc []
   "This function adds the adjusted price column to the dataset."
   ; get price on 1st day
-  (def initial_price (Double/parseDouble (get (first (deref data-set)) :PRC)))
+  (def initial_price 0)
   (def cum_ret 0)
-  (def curr_ticker (get (first (deref data-set)) :TICKER))
+  (def curr_ticker "DEFAULT")
 
  ; use map instead of loop
  ; traverse row by row, compute log(1+RET)
