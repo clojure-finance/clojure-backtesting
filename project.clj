@@ -5,9 +5,10 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [org.clojure/data.csv "1.0.0"]
+                 [com.hypirion/clj-xchart "0.2.0"]
+                 [clojure.java-time "0.3.2"] ;https://github.com/dm3/clojure.java-time
                  [clj-time "0.9.0"]]
   :main ^:skip-aot clojure-backtesting.user
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
-
