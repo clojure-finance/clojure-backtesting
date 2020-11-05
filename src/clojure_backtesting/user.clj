@@ -96,12 +96,12 @@
     [& args] ; pass ./resources/CRSP-extract.csv as arg
     ;(println args)
     (reset! data-set (read-csv-row (first args)))
-    (def data (add_aprc))
-    (pr-str data)
     ;(println data)
+    ;(println (take 5 (add_aprc)))
+    (println (take 10 (add_aprc)))
 
     (println "debugging")
-    (println data-set_adj)
+    (println (take 10 (deref data-set_adj)))
     ;(pr-str data-set_adj)
 )
 ;;sample activation command:

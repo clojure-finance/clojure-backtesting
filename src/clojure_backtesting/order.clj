@@ -23,8 +23,6 @@
   (def initial_price 0)
   (def cum_ret 0)
   (def curr_ticker "DEFAULT")
-
- ; use map instead of loop
  ; traverse row by row, compute log(1+RET)
  (map (fn [line]
       ;(println line)
@@ -43,6 +41,7 @@
           (def cum_ret (+ cum_ret log_ret))
           (def aprc (* initial_price (Math/pow Math/E cum_ret)))
           (swap! data-set_adj conj (assoc line-new "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret))
+          [line-new]
         )
       )
     (deref data-set))
