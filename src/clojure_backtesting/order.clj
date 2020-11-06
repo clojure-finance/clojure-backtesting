@@ -54,9 +54,9 @@
   ;;date e.g. "DD/MM?YYYY"
   ;;tic e.g. "AAPL"
   ;;return [false 0 0] if no match
-  ;;return [true price reference] otherwise
+  ;;return [true price aprc reference] otherwise
 
-  (loop [count 0 remaining (deref data-set)]
+  (loop [count 0 remaining (deref data-set_adj)]
     (if (empty? remaining)
       [false 0 0]
       (let [first-line (first remaining)
@@ -64,8 +64,9 @@
         (if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys
                  (= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys
                  )
-          (let [price (get first-line :PRC)]
-            [true price count])
+          (let [price (get first-line :PRC)
+                aprc (get first-line :APRC)]
+            [true price aprc count])
           (recur (inc count) next-remaining))))))
 
 ;; Create initial portfolio with cash only (User input thei initial-capital)
