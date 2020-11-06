@@ -98,10 +98,10 @@
           (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)}))))
 
   (doseq [[ticker _] portfolio] ;; then update the price & aprc of the securities in the portfolio
-    (let [[match price_ticker _] (search_in_order date ticker)]
+    (let [[match price_ticker aprc_ticker _] (search_in_order date ticker)]
       (if match
         (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
-          (do (swap! portfolio assoc ticker  {:price price_ticker :quantity qty_ticker :tot_val (* price_ticker qty_ticker)}))))))
+          (do (swap! portfolio assoc ticker  {:price price_ticker :aprc aprc_ticker :quantity qty_ticker :tot_val (* aprc_ticker qty_ticker)}))))))
 
   (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last portfolio_value))]] ;; update the portfolio_vector vector which records the daily portfolio value
     (let [ret (Math/log (/ tot_value prev_value))]
