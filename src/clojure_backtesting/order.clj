@@ -85,7 +85,7 @@
 
 (defn update_portfolio
   ;; added aprc
-  [date tic quantity price]
+  [date tic quantity price aprc]
 
   (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
     (let [tot_val (* price quantity)]
@@ -93,10 +93,10 @@
           (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})))
 
     (let [[tot_val qty] [(* price quantity) (get-in (deref portfolio) [tic :quantity])]] ;; if already has it, just update the quantity
-      (do (swap! portfolio assoc tic {:price price :quantity (+ qty quantity) :tot_val (* price (+ qty quantity))})
+      (do (swap! portfolio assoc tic {:price price :aprc aprc :quantity (+ qty quantity) :tot_val (* aprc (+ qty quantity))})
           (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)}))))
 
-  (doseq [[ticker _] portfolio] ;; then update the price of the securities in the portfolio
+  (doseq [[ticker _] portfolio] ;; then update the price & aprc of the securities in the portfolio
     (let [[match price_ticker _] (search_in_order date ticker)]
       (if match
         (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
