@@ -2,11 +2,12 @@
   (:require [clojure.test :refer :all]
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
-            [clojure-backtesting.evaluate :refer :all]
-            ;;[clojure-backtesting.plot :refer :all]
+            ;;[clojure-backtesting.evaluate :refer :all]
+            [clojure-backtesting.plot :refer :all]
             ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
+            [java-time :as t]
             ))
 
 (defn get-set
@@ -52,11 +53,11 @@
 (defn merge-data-row
     "merge 2 csv files "
     [file1 file2]
-
+    
     (def f1 (read-csv-row file1)) ;;file 1 is CRSP
 
     (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
-
+    
     (def f0 (insert-col f1 (into #{} (get-set f2)))) ;;insert datadate to file 1
 
     (left-join f0 f2 {:datadate :datadate :tic :TICKER})

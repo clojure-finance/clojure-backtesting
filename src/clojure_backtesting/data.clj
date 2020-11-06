@@ -7,16 +7,16 @@
             [clojure.pprint :as pprint] )  ;; For input-output handling
      )
 
-;;This file is to construct the basic data structure of the backtesting
+;; This file is to construct the basic data structure for backtesting 
 
-(def data-set (atom [])) ;;this should be the main dataset (to be changed by the user)
+(def data-set (atom [])) ;; main dataset (to be changed by the user)
 
 (defn csv->map
   "Convert parsed CSV vectors into maps with headers as keys, by row"
   [csv-data]
-  (map zipmap ;; make the first row as headers and the following rows as values in a map structure e.g. {:tic AAPL}
+  (map zipmap ;; make the first row as headers and the following rows as values in a map structure e.g. {:tic AAPL} 
        (->> (first csv-data) ;; take the first row of the csv-data
-            (map keyword) ;; make the header be the "key" in the map
+            (map keyword) ;; make the header be the "key" in the map 
             repeat)      ;; repeat the process for all the headers
        (rest csv-data))) ;; use the rest rows as values of the map
 
@@ -29,9 +29,9 @@
    (apply map vector (rest csv-data))))
 
 (defn update-by-keys
-  "Update values in a map (m) by applying function (f) on keys"
-  [m keys f]
-  (reduce (fn [m k] (update m k f)) m keys))
+  "Update values in a map by applying function (f) on keys"
+  [map keys f]
+  (reduce (fn [map k] (update map k f)) map keys))
 
 (defn parse-int
   "Parse integer from string. May return nil."
@@ -39,17 +39,7 @@
   (try (Integer/parseInt str)
        (catch Exception e nil)))
 
-(defn parse-float
-  "Parse float from string. May return nil"
-  [str]
-  (try (Float/parseFloat str)
-       (catch Exception e nil)))
-
-(defn parse-date
-  "Parse datetime object from string"
-  [str]
-    (f/parse (f/formatter "YYYY-MM-dd") str))
-
+; Returns a list of maps, e.g. ({:col1 1, :col2 2} {:col1 3, :col2 4})
 (defn read-csv-row
   "Read CSV data into memory by row"
   [filename]
@@ -76,13 +66,13 @@
     (zipmap (apply map vector (map vals (rest row-based))))))
 
 ;; filter the data by security and date
-(defn data-filter
-  ([sec data]
-    (->> data
-    (filter #(= (:tic %) sec))))
-  ([sec year month day data]
-   (->> data
-  (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day))true))))))
+; (defn data-filter
+;   ([sec data]
+;     (->> data
+;     (filter #(= (:tic %) sec))))
+;   ([sec year month day data]
+;    (->> data
+;   (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day))true))))))
 
 (defn count-days
   [row-data]
@@ -132,3 +122,4 @@
 
   (def c (first (read-csv-row file1)))
   (def d (first (read-csv-row file2))))
+

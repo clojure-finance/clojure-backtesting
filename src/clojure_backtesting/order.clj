@@ -1,12 +1,29 @@
 (ns clojure-backtesting.order
-  (:require [clojure-backtesting.data :refer :all]) ;; Useful for CSV handling
-)
+  (:require [clojure-backtesting.data :refer :all]
+			[clojure-backtesting.paremeters :refer :all]
+			[clojure.string :as str]
+			[java-time :as t]) ;; Useful for CSV handling
+
+    )
 
 ;;This file is for ordering related functions
 
 (def order_record (atom []))
 (def total_record (atom {}))
 (def data-set_adj (atom []))
+
+
+;;testing purpose
+;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
+;;(def a (read-csv-row file1))
+
+(defn look_ahead_i_days
+	;;return date
+	;;here the format of the input date should be:
+	;;year-month-day
+	[date i]
+	(let [[year month day] (map parse-int (str/split date #"-"))]
+		(t/format "yyyy-MM-dd" (t/plus (t/local-date year month day) (t/days i)))))
 
 ; exponential ;unused, could be removed later
 (defn exp [x n]
@@ -17,6 +34,7 @@
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum_ret)
 ;; 
 ; new version
+;;new dataset -> data-set_adj
 (defn add_aprc []
   "This function adds the adjusted price column to the dataset."
   ; get price on 1st day
@@ -47,30 +65,63 @@
     (deref data-set))
 )
 
+;;testing purpose, delete afterwards
+;(def testfile1 (read-csv-row "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv"))
 
-(defn search_in_order
+;; Search_date function
+(defn search_date
   "This function tries to retrieve the matching entry from the dataset."
   [date tic]
   ;;date e.g. "DD/MM?YYYY"
   ;;tic e.g. "AAPL"
   ;;return [false 0 0] if no match
-  ;;return [true price aprc reference] otherwise
-
-  (loop [count 0 remaining (deref data-set_adj)]
+  ;;return [true price reference] otherwise
+  
+  (loop [count 0 remaining (deref data-set_adj)] (original line)
+  ;(loop [count 0 remaining testfile1] 				;testing line, change the data-set to CRSP
     (if (empty? remaining)
       [false 0 0]
       (let [first-line (first remaining)
             next-remaining (rest remaining)]
-        (if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys
-                 (= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys
+        (if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys (using the keys in CRSP now)
+                 (= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys(using the keys in CRSP now)
                  )
           (let [price (get first-line :PRC)
-                aprc (get first-line :APRC)]
-            [true price aprc count])
+                aprc (get first-line :APRC)] ;;amend later if you want to use the adjusted price instead of the closing price
+            [true price count])
           (recur (inc count) next-remaining))))))
 
-;; Create initial portfolio with cash only (User input thei initial-capital)
 
+;; Search in Order function
+(defn search_in_order
+	"This function turns the order processed date"
+[date tic]
+;;date e.g. "DD/MM?YYYY"
+;;tic e.g. "AAPL"
+;;return [false "No match date" 0 0 0] if no match
+;;return [true T+1_date price aprc reference] otherwise
+
+	(let [[match price reference] (search_date date tic)]
+		;;(let [[match price reference] [true "10" 348]]
+		(if match
+			(loop [i 1]
+				(if (<= i MAXLOOKAHEAD)
+					(let [t_1_date (look_ahead_i_days date i) 
+						[b p aprc r] (search_date t_1_date tic)]
+						(if b
+							[b t_1_date p aprc r]
+							(recur (inc i))						
+						)
+					)
+					[false "No match T+1 date" 0 0 0]
+				)				
+			)
+			[false "No match date" 0 0 0]
+		)
+	)
+)
+
+;; Create initial portfolio with cash only (User input thei initial-capital)
 
 (defn init_portfolio
 
@@ -130,35 +181,38 @@
           )))))
 
 (defn order_internal
-  "This is the main order function"
-  ([date tic quantity]
-   ;;@date date-and-time trading date
-   ;;@tic  trading ticker
-   ;;@quantity exact number to buy(+) or sell(-)
-   (let [[match price reference] (search_in_order date tic)]
-     ;;(let [[match price reference] [true "10" 348]]
-     (if match
-       (do
-         (swap! order_record concat [{:date date :tic tic :price price :quantity quantity :total "TBI" :reference reference}]))
-       (println (format "The order request for date: %s, tic: %s, quantity: %d falses" date tic quantity)))));;else
-  ;;atoms [{:date :tic :price :quan :total :reference}{}]
+	"This is the main order function"
+	([date tic quantity]
+	;;@date date-and-time trading date
+	;;@tic  trading ticker
+	;;@quantity exact number to buy(+) or sell(-)
+	(let [[match price reference] (search_in_order date tic)]
+	;;(let [[match price reference] [true "10" 348]]
+	(if match
+		(do 
+			(swap! order_record concat [{:date date :tic tic :price price :quantity quantity :total "TBI" :reference reference}]))
+		(println (format "The order request for date: %s, tic: %s, quantity: %d fails" date tic quantity)))));;else
+	;;atoms [{:date :tic :price :quan :total :reference}{}]
 
-  ([date tic quantity remaining]
-   ;;@date trading date
-   ;;@tic  trading ticker
-   ;;@quantity remaining quantity (either sell or buy to reach such quantity)
-   ;;remaining bool
-   (if (= remaining true)
-     (let [[match price reference] (search_in_order date tic)]
-       ;;(let [[match price reference] [true "10" 348]]
-       (if match
-         (do
-           (swap! order_record concat [{:date date :tic tic :price price :quantity "TBI" :total quantity :reference reference}]))
-         (println (format "The order request for date: %s, tic: %s, quantity: %d falses" date tic quantity))))
-     (order_internal date tic quantity)))
+	([date tic quantity remaining]
+	;;@date trading date
+	;;@tic  trading ticker
+	;;@quantity remaining quantity (either sell or buy to reach such quantity)
+	;;remaining bool
+	(if (= remaining true)
+		(let [[match price reference] (search_in_order date tic)]
+		;;(let [[match price reference] [true "10" 348]]
+		(if match
+			(do 
+				(swap! order_record concat [{:date date :tic tic :price price :quantity "TBI" :total quantity :reference reference}]))
+			(println (format "The order request for date: %s, tic: %s, quantity: %d falses" date tic quantity))))
+	(order_internal date tic quantity)))
 
-  ([args]
-   ;;this is where parallel computing is needed.
-   (swap! order_record concat (pmap order_parl args))
-   (shutdown-agents));;needs more work
-  )
+	([args]
+	;;this is where parallel computing is needed.
+	(swap! order_record concat (pmap order_parl args))
+	(shutdown-agents));;needs more work
+	)
+
+
+
