@@ -3,7 +3,6 @@
 			[clojure-backtesting.paremeters :refer :all]
 			[clojure.string :as str]
 			[java-time :as t]) ;; Useful for CSV handling
-
     )
 
 ;;This file is for ordering related functions
@@ -33,8 +32,8 @@
 ;; add col 'cum_ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum_ret)
 ;; 
-; new version
-;;new dataset -> data-set_adj
+;; new version
+;; new dataset -> data-set_adj
 (defn add_aprc []
   "This function adds the adjusted price column to the dataset."
   ; get price on 1st day
