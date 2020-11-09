@@ -34,7 +34,7 @@
 ;; 
 ;; new version
 ;; new dataset -> data-set_adj
-(defn add_aprc []
+(defn add_aprc [data]
   "This function adds the adjusted price column to the dataset."
   ; get price on 1st day
   (def initial_price 0)
@@ -57,11 +57,13 @@
           (def log_ret (Math/log (+ 1 ret)))
           (def cum_ret (+ cum_ret log_ret))
           (def aprc (* initial_price (Math/pow Math/E cum_ret)))
-          (swap! data-set_adj conj (assoc line-new "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret))
-          [line-new]
+          (assoc line "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret)
+          ; (swap! data-set_adj conj (assoc line-new "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret))
+          ;[line-new]
         )
       )
-    (deref data-set))
+    data
+ )
 )
 
 ;;testing purpose, delete afterwards
@@ -76,7 +78,7 @@
   ;;return [false 0 0] if no match
   ;;return [true price reference] otherwise
   
-  (loop [count 0 remaining (deref data-set_adj)] (original line)
+  (loop [count 0 remaining (deref data-set_adj)] ;(original line)
   ;(loop [count 0 remaining testfile1] 				;testing line, change the data-set to CRSP
     (if (empty? remaining)
       [false 0 0]
