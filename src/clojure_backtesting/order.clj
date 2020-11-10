@@ -9,8 +9,6 @@
 
 (def order_record (atom []))
 (def total_record (atom {}))
-(def data-set_adj (atom []))
-
 
 ;;testing purpose
 ;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
@@ -134,10 +132,10 @@
   (def init-capital init-capital)
   (def num-of-tradays (count (deref data-set)))
   (def portfolio (atom {:cash {:tot_val init-capital}}))
-  (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0}])))
+  (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0}]))
+)
 
 (defn update_portfolio
-  ;; added aprc
   [date tic quantity price aprc]
 
   (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
@@ -147,17 +145,17 @@
 
     (let [[tot_val qty] [(* price quantity) (get-in (deref portfolio) [tic :quantity])]] ;; if already has it, just update the quantity
       (do (swap! portfolio assoc tic {:price price :aprc aprc :quantity (+ qty quantity) :tot_val (* aprc (+ qty quantity))})
-          (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)}))))
+          (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})))
+  )
 
-  (doseq [[ticker _] portfolio] ;; then update the price & aprc of the securities in the portfolio
-    (let [[match price_ticker aprc_ticker _] (search_in_order date ticker)]
-      (if match
-        (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
-          (do (swap! portfolio assoc ticker  {:price price_ticker :aprc aprc_ticker :quantity qty_ticker :tot_val (* aprc_ticker qty_ticker)}))))))
+  (doseq [[ticker _] (deref portfolio)] ;; then update the price & aprc of the securities in the portfolio
+    (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
+      (do (swap! portfolio assoc ticker  {:price price :aprc aprc :quantity quantity :tot_val (* aprc quantity)}))))
 
-  (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last portfolio_value))]] ;; update the portfolio_vector vector which records the daily portfolio value
+  (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last (deref portfolio_value)))]] ;; update the portfolio_vector vector which records the daily portfolio value
     (let [ret (Math/log (/ tot_value prev_value))]
-      (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret})))))))
+      (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret}))))))
+)
 
 (defn total_cal
   "this function returns the remaining total stock of a tic"
