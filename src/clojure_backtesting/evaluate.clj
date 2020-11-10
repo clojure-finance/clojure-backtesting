@@ -1,49 +1,65 @@
-(ns clojure-backtesting.evaluate)
+(ns clojure-backtesting.evaluate
+  (:require [clojure-backtesting.data :refer :all]
+            [clojure-backtesting.order :refer :all]))
 
-(defn get-daily-returns [coll]
-    ;; get daily returns collection
-  )
-
+;; GET PORFTOLIO VALUE
 (defn get-portfolio-values [coll]
-    ;; get portfolio values collection
-  )
+  (last (deref portfolio_value)))
 
-; TESTED
-(defn square [n] 
+;; GET RETURNS
+;; test
+(defn get-return
+  [order-list]
+  (float (/ (->> order-list
+                 (map #(* -1 (:price %) (:quan %)))
+                 (reduce +)) init-capital))) ;;helper function
+
+(defn get-overall-return
+  []
+  (get-return init-capital order_record))
+
+; not optimal to reference variables from other files? hard to trace
+; could create helper function for getting num-of-tradays / init-capital
+; (defn get-annualized-return
+;   [atom-coll]
+;   (- (Math/pow (+ 1 (get-overall-return init-capital)) (/ 252 num-of-tradays)) 1))
+
+;; GET VOLATILITY
+(defn square
+  [n]
   (* n n))
 
-; TESTED
-(defn mean [a] 
-  (/ (reduce + a) (count a)))
+(defn mean
+  [coll]
+  (/ (reduce + coll) (count coll)))
 
-;; Standard deviation
-; parameter: collection
-; output: standard deviation
-; TESTED
-(defn standard-deviation [a] 
-  (Math/sqrt (/ 
-                (reduce + (map square (map - a (repeat (mean a))))) 
-                (- (count a) 1 ))))
+(defn standard-deviation
+  [coll]
+  (Math/sqrt (/ (reduce + (map square (map - coll (repeat (mean coll)))))
+                (- (count coll) 1))))
 
-;; Sharpe ratio 
-;; = (R_p - R-f) / sd_p * sqrt(252)
-;; Annualised:  trading-days = 252
-;;
-;; parameter: portfolio_record, number of trading days
-;; output: sharpe ratio (float)
-; TO-TEST
-(defn sharpe-ratio [coll trading-days]
-  (let [dr (get-daily-returns coll)]
-    (* (Math/sqrt trading-days) ((mean dr) (standard-deviation dr)))
+(defn get-annualized-volatilty
+  [atom-coll]
+  (* (Math/sqrt 252) (standard-deviation (vals (deref atom-coll))))) ;; multiplt square root of 252 to get the annualized vol
 
-;; Maximum drawdown
-;; = (P - L) / P
-;; P = peak value before largest drop, L = lowest value before newest high
-;; 
-;; parameter: portfolio_record
-; TO-TEST
-(defn maxdrawdown [coll]
-  (let [pv (get-portfolio-values coll) 
-        p (get-highest pv)
-        l (get-lowest) pv]
-    (/ ((- (p l)) p))))
+;; GET SHARPE RATIO
+; (defn annualized-sharpe-ratio
+;   [atom-coll]
+;   (/ (get-annualized-return atom-coll) (get-annualized-volatility atom-coll))
+
+;; GET PNL PER TRADE
+(defn get-pnl-per-trade
+  []
+  (/ (- (last (deref portfolio_value)) init-capital)) (count order_record))
+
+;; GET THE MAXIMUM DRAWDOWN
+(defn get-highest ;; get peak value before largest drop
+  []
+  (println "to-do"))
+
+;; get lowest value before new high
+(defn get-lowest
+  [] 
+  (println "to-do"))
+
+;; evaluate report
