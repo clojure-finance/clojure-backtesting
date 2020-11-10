@@ -7,6 +7,7 @@
   (last (deref portfolio_value)))
 
 ;; GET RETURNS
+;; test
 (defn get-return
   [order-list]
   (float (/ (->> order-list
@@ -60,3 +61,5 @@
 (defn get-lowest
   [] 
   (println "to-do"))
+
+;; evaluate report
