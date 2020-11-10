@@ -117,7 +117,6 @@
     ;   (order_internal [["1980-12-19" "AAPL" 10]["1980-12-18" "AAPL" 10 true]])
     ;   (pprint/print-table (deref order_record))
 
-    ; (println "debugging")
     ; (println (take 10 (deref data-set)))
 )
 ;;sample activation command:

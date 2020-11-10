@@ -22,16 +22,9 @@
 	(let [[year month day] (map parse-int (str/split date #"-"))]
 		(t/format "yyyy-MM-dd" (t/plus (t/local-date year month day) (t/days i)))))
 
-; exponential ;unused, could be removed later
-(defn exp [x n]
-(reduce * (repeat n x)))
-
 ;; for each security:
 ;; add col 'cum_ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum_ret)
-;; 
-;; new version
-;; new dataset -> data-set_adj
 (defn add_aprc [data]
   "This function adds the adjusted price column to the dataset."
   ; get price on 1st day
@@ -57,7 +50,6 @@
           (def aprc (* initial_price (Math/pow Math/E cum_ret)))
           (assoc line :APRC aprc :LOG_RET log_ret :CUM_RET cum_ret)
           ; (swap! data-set_adj conj (assoc line-new "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret))
-          ;[line-new]
         )
       )
     data
@@ -125,8 +117,6 @@
 (defn init_portfolio
 
   [date init-capital] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
-  ;; NOTE: example changed for adjusted prices
-  ;; 
   ;; example: portfolio -> {:cash {:tot_val 10000} :"AAPL" {:price 400 :aprc adj_price :quantity 100 :tot_val 40000}}
   ;; example: portfolio_value {:date xxxx :tot_value 50000 :daily_ret 0}
   (def init-capital init-capital)
@@ -149,7 +139,7 @@
   )
 
   (doseq [[ticker _] (deref portfolio)] ;; then update the price & aprc of the securities in the portfolio
-    (if (not= ticker :cash)
+    (if (not= ticker :cash) ;; do not update value if key = cash
       (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
         (do (swap! portfolio assoc ticker {:price price :aprc aprc :quantity quantity :tot_val (* aprc quantity)}))))
   )
