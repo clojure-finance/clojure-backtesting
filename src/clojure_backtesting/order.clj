@@ -151,8 +151,8 @@
   (doseq [[ticker _] (deref portfolio)] ;; then update the price & aprc of the securities in the portfolio
     (if (not= ticker :cash)
       (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
-        (do (swap! portfolio assoc ticker  {:price price :aprc aprc :quantity quantity :tot_val (* aprc quantity)}))))
-    )
+        (do (swap! portfolio assoc ticker {:price price :aprc aprc :quantity quantity :tot_val (* aprc quantity)}))))
+  )
     
   (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last (deref portfolio_value)))]] ;; update the portfolio_vector vector which records the daily portfolio value
     (let [ret (Math/log (/ tot_value prev_value))]
