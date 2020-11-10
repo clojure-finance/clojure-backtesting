@@ -3,7 +3,6 @@
 			[clojure-backtesting.paremeters :refer :all]
 			[clojure.string :as str]
 			[java-time :as t]) ;; Useful for CSV handling
-
     )
 
 ;;This file is for ordering related functions
@@ -32,36 +31,39 @@
 ;; for each security:
 ;; add col 'cum_ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum_ret)
-(defn add_aprc []
-  	"This function adds the adjusted price column to the dataset."
-	; get price on 1st day
-	(def initial_price (Double/parseDouble (get (first (deref data-set)) :PRC)))
-	(def cum_ret 0)
-	; traverse row by row, compute log(1+RET)
-	(loop [remaining (deref data-set)]
-		(if (empty? remaining)
-			(println "Done")
-			; first row
-			(let [first-line (first remaining)
-			next-remaining (rest remaining)]
-			;(println first-remaining)
-			; row operations
-			(let [price (Double/parseDouble (get first-line :PRC))
-					ret (Double/parseDouble (get first-line :RET))
-					ticker (get first-line :TICKER)]
-				(let [line-new (select-keys first-line [:date :TICKER :PRC :RET])]
-				;(println "test") 
-				(def log_ret (Math/log (+ 1 ret)))
-				(def cum_ret (+ cum_ret log_ret))
-				;(println cum_ret)
-				(def aprc (* initial_price (Math/pow Math/E cum_ret)))
-				(swap! data-set_adj conj (assoc line-new "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret))
-				)
-			)
-			(recur next-remaining)  
-			)
-		)
-	)
+;; 
+;; new version
+;; new dataset -> data-set_adj
+(defn add_aprc [data]
+  "This function adds the adjusted price column to the dataset."
+  ; get price on 1st day
+  (def initial_price 0)
+  (def cum_ret 0)
+  (def curr_ticker "DEFAULT")
+ ; traverse row by row, compute log(1+RET)
+ (map (fn [line]
+      ;(println line)
+        (let [line-new (select-keys line [:date :TICKER :PRC :RET])
+              price (Double/parseDouble (get line :PRC))
+              ret (Double/parseDouble (get line :RET))
+              ticker (get line :TICKER)]
+          (if (not= curr_ticker ticker)
+              (do
+                (def curr_ticker ticker)
+                (def initial_price price)
+                (def cum_ret 0)
+              )
+          )
+          (def log_ret (Math/log (+ 1 ret)))
+          (def cum_ret (+ cum_ret log_ret))
+          (def aprc (* initial_price (Math/pow Math/E cum_ret)))
+          (assoc line "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret)
+          ; (swap! data-set_adj conj (assoc line-new "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret))
+          ;[line-new]
+        )
+      )
+    data
+ )
 )
 
 ;;testing purpose, delete afterwards
@@ -76,7 +78,7 @@
   ;;return [false 0 0] if no match
   ;;return [true price reference] otherwise
   
-  (loop [count 0 remaining (deref data-set)] (original line)
+  (loop [count 0 remaining (deref data-set_adj)] ;(original line)
   ;(loop [count 0 remaining testfile1] 				;testing line, change the data-set to CRSP
     (if (empty? remaining)
       [false 0 0]
@@ -85,7 +87,8 @@
         (if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys (using the keys in CRSP now)
                  (= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys(using the keys in CRSP now)
                  )
-          (let [price (get first-line :PRC)] ;;amend later if you want to use the adjusted price instead of the closing price
+          (let [price (get first-line :PRC)
+                aprc (get first-line :APRC)] ;;amend later if you want to use the adjusted price instead of the closing price
             [true price count])
           (recur (inc count) next-remaining))))))
 
@@ -96,25 +99,25 @@
 [date tic]
 ;;date e.g. "DD/MM?YYYY"
 ;;tic e.g. "AAPL"
-;;return [false "No match date" 0 0] if no match
-;;return [true T+1_date price reference] otherwise
+;;return [false "No match date" 0 0 0] if no match
+;;return [true T+1_date price aprc reference] otherwise
 
 	(let [[match price reference] (search_date date tic)]
 		;;(let [[match price reference] [true "10" 348]]
 		(if match
 			(loop [i 1]
 				(if (<= i MAXLOOKAHEAD)
-					(let [ t_1_date (look_ahead_i_days date i) 
-						[b p r] (search_date t_1_date tic)]
+					(let [t_1_date (look_ahead_i_days date i) 
+						[b p aprc r] (search_date t_1_date tic)]
 						(if b
-							[b t_1_date p r]
+							[b t_1_date p aprc r]
 							(recur (inc i))						
 						)
 					)
-					[false "No match T+1 date" 0 0]
+					[false "No match T+1 date" 0 0 0]
 				)				
 			)
-			[false "No match date" 0 0]
+			[false "No match date" 0 0 0]
 		)
 	)
 )
@@ -135,7 +138,7 @@
 
 (defn update_portfolio
   ;; added aprc
-  [date tic quantity price]
+  [date tic quantity price aprc]
 
   (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
     (let [tot_val (* price quantity)]
@@ -143,8 +146,15 @@
           (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})))
 
     (let [[tot_val qty] [(* price quantity) (get-in (deref portfolio) [tic :quantity])]] ;; if already has it, just update the quantity
-      (do (swap! portfolio assoc tic {:price price :quantity (+ qty quantity) :tot_val (* price (+ qty quantity))})
+      (do (swap! portfolio assoc tic {:price price :aprc aprc :quantity (+ qty quantity) :tot_val (* aprc (+ qty quantity))})
           (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)}))))
+
+  (doseq [[ticker _] portfolio] ;; then update the price & aprc of the securities in the portfolio
+    (let [[match price_ticker aprc_ticker _] (search_in_order date ticker)]
+      (if match
+        (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
+          (do (swap! portfolio assoc ticker  {:price price_ticker :aprc aprc_ticker :quantity qty_ticker :tot_val (* aprc_ticker qty_ticker)}))))))
+
   (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last portfolio_value))]] ;; update the portfolio_vector vector which records the daily portfolio value
     (let [ret (Math/log (/ tot_value prev_value))]
       (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret})))))))
