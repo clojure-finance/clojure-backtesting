@@ -85,6 +85,8 @@
       [& args] ; pass ./resources/CRSP-extract.csv as arg
       (println args)
       (reset! data-set (read-csv-row (first args)))
+      (print(search_in_order "1980-12-17" "AAPL"))
+      (print(look_ahead_i_days "1980-12-16" 2))
       (order_internal "1980-12-16" "AAPL" 10)
       (order_internal "1980-12-17" "AAPL" 10 true)
       (order_internal "1980-12-14" "AAPL" 10)
@@ -97,6 +99,12 @@
     [& args] ; pass ./resources/CRSP-extract.csv as arg
     ;(println args)
     (reset! data-set (add_aprc (read-csv-row (first args))))
+    (init_portfolio "1980-12-16" 50)
+    (order_internal "1980-12-16" "AAPL" 10)
+    ;   (order_internal "1980-12-17" "AAPL" 10 true)
+    ;   (order_internal "1980-12-14" "AAPL" 10)
+    ;   (order_internal [["1980-12-19" "AAPL" 10]["1980-12-18" "AAPL" 10 true]])
+    ;   (pprint/print-table (deref order_record))
     ;(reset! data-set (read-csv-row (first args)))
     ;(println data)
     ;(println (take 5 (add_aprc)))
