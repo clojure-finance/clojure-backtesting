@@ -107,9 +107,11 @@
     [& args] ; pass ./resources/CRSP-extract.csv as arg
     ;(println args)
     (reset! data-set (add_aprc (read-csv-row (first args))))
+    (println (take 20 (deref data-set)))
     (init_portfolio "1980-12-16" 500)
     (order_internal "1980-12-16" "AAPL" 10)
-    (order_internal "1980-12-16" "AAPL" -10)
+    ;(order_internal "1980-12-16" "IBM" 10)
+    ;(order_internal "1980-12-17" "IBM" -10)
     (println (deref portfolio))
     ;   (order_internal "1980-12-17" "AAPL" 10 true)
     ;   (order_internal "1980-12-14" "AAPL" 10)
