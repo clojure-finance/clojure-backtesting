@@ -11,11 +11,11 @@
             ))
 
 ;;testing purpose
-(comment 
-(def filex "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
+; (comment 
+; (def filex "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
 
-(def a (read-csv-row filex))
-)        
+; (def a (read-csv-row filex))
+; )        
 
 
 (defn get-set
@@ -65,7 +65,6 @@
     [file1 file2]
     
     (def f1 (read-csv-row file1)) ;;file 1 is CRSP
-
     (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
     
     (def f0 (insert-col f1 (get-set f2))) ;;insert datadate to file 1
@@ -109,8 +108,9 @@
     [& args] ; pass ./resources/CRSP-extract.csv as arg
     ;(println args)
     (reset! data-set (add_aprc (read-csv-row (first args))))
-    (init_portfolio "1980-12-16" 50)
+    (init_portfolio "1980-12-16" 500)
     (order_internal "1980-12-16" "AAPL" 10)
+    (order_internal "1980-12-16" "AAPL" -10)
     (println (deref portfolio))
     ;   (order_internal "1980-12-17" "AAPL" 10 true)
     ;   (order_internal "1980-12-14" "AAPL" 10)

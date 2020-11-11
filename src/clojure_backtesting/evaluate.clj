@@ -2,7 +2,7 @@
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]))
 
-;; GET PORFTOLIO VALUE
+;; Calculate portfolio total value
 (defn get-portfolio-values [coll]
   (last (deref portfolio_value)))
 

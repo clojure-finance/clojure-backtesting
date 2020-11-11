@@ -113,7 +113,6 @@
 )
 
 ;; Create initial portfolio with cash only (User input thei initial-capital)
-
 (defn init_portfolio
 
   [date init-capital] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
@@ -125,23 +124,30 @@
   (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0}]))
 )
 
+;; Update the portfolio when placing an order
 (defn update_portfolio
   [date tic quantity price aprc]
 
   (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
-    (let [tot_val (* price quantity)]
-      (do (swap! portfolio (fn [curr_port] (conj curr_port [tic {:price price :quantity quantity :tot_val tot_val}])))
-          (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})))
+    (let [tot_val (* aprc quantity)]
+      (do 
+        (swap! portfolio (fn [curr_port] (conj curr_port [tic {:price price :quantity quantity :tot_val tot_val}])))
+        (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})
+      )
+    )
 
-    (let [[tot_val qty] [(* price quantity) (get-in (deref portfolio) [tic :quantity])]] ;; if already has it, just update the quantity
-      (do (swap! portfolio assoc tic {:price price :aprc aprc :quantity (+ qty quantity) :tot_val (* aprc (+ qty quantity))})
-          (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})))
+    (let [[tot_val qty] [(* aprc quantity) (get-in (deref portfolio) [tic :quantity])]] ;; if already has it, just update the quantity
+      (do 
+        (swap! portfolio assoc tic {:price price :aprc aprc :quantity (+ qty quantity) :tot_val (* aprc (+ qty quantity))})
+        (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})
+      )
+    )
   )
 
   (doseq [[ticker _] (deref portfolio)] ;; then update the price & aprc of the securities in the portfolio
     (if (not= ticker :cash) ;; do not update value if key = cash
       (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
-        (do (swap! portfolio assoc ticker {:price price :aprc aprc :quantity quantity :tot_val (* aprc quantity)}))))
+        (do (swap! portfolio assoc ticker {:price price :aprc aprc :quantity qty_ticker :tot_val (* aprc qty_ticker)}))))
   )
     
   (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last (deref portfolio_value)))]] ;; update the portfolio_vector vector which records the daily portfolio value
