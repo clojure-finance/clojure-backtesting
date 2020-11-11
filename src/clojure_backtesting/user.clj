@@ -11,30 +11,30 @@
             ))
 
 ;;testing purpose
-(comment 
-(def filex "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
+; (comment 
+; (def filex "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
 
-(def a (read-csv-row filex))
-)        
+; (def a (read-csv-row filex))
+; )        
 
 
-(defn get-set
-    "return a set of maps of tickers and datadate" ;;{:tic "AAPL", :datadate "1981/3/31"}
-    [file2]
-    (loop [remaining file2
-            result-set []]
-        (if (empty? remaining)
-            (into #{} result-set)
-            (let [first-line (first remaining)
-                next-remaining (rest remaining)
-                ;;next-result-set (conj result-set (get first-line :datadate)
-                next-result-set (conj result-set {:tic (get first-line :TICKER) :datadate (get first-line :datadate)})
-                ]
-            (recur next-remaining next-result-set)
-            )
-        )
-    )
-)
+; (defn get-set
+;     "return a set of maps of tickers and datadate" ;;{:tic "AAPL", :datadate "1981/3/31"}
+;     [file2]
+;     (loop [remaining file2
+;             result-set []]
+;         (if (empty? remaining)
+;             (into #{} result-set)
+;             (let [first-line (first remaining)
+;                 next-remaining (rest remaining)
+;                 ;;next-result-set (conj result-set (get first-line :datadate)
+;                 next-result-set (conj result-set {:tic (get first-line :TICKER) :datadate (get first-line :datadate)})
+;                 ]
+;             (recur next-remaining next-result-set)
+;             )
+;         )
+;     )
+; )
 
 
 (defn last-quar
@@ -65,12 +65,10 @@
     [file1 file2]
     
     (def f1 (read-csv-row file1)) ;;file 1 is CRSP
-
     (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
     
-    (def f0 (insert-col f1 (get-set f2)))) ;;insert datadate to file 1
-
-    (left-join f0 f2 {:datadate :datadate :tic :TICKER})
+    ;(def f0 (insert-col f1 (get-set f2)))) ;;insert datadate to file 1
+    ;(left-join f0 f2 {:datadate :datadate :tic :TICKER})
 
     ;;(def file0 (insert-col file1 set))
     ;; need to parse-int later
@@ -110,7 +108,8 @@
     ;(println args)
     (reset! data-set (add_aprc (read-csv-row (first args))))
     (init_portfolio "1980-12-16" 50)
-    (order_internal "1980-12-16" "AAPL" 10)
+    (order_internal "1980-12-15" "AAPL" 10)
+    (order_internal "1980-12-16" "AAPL" -10)
     (println (deref portfolio))
     ;   (order_internal "1980-12-17" "AAPL" 10 true)
     ;   (order_internal "1980-12-14" "AAPL" 10)
