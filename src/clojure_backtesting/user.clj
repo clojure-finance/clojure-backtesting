@@ -18,23 +18,23 @@
 ; )        
 
 
-; (defn get-set
-;     "return a set of maps of tickers and datadate" ;;{:tic "AAPL", :datadate "1981/3/31"}
-;     [file2]
-;     (loop [remaining file2
-;             result-set []]
-;         (if (empty? remaining)
-;             (into #{} result-set)
-;             (let [first-line (first remaining)
-;                 next-remaining (rest remaining)
-;                 ;;next-result-set (conj result-set (get first-line :datadate)
-;                 next-result-set (conj result-set {:tic (get first-line :TICKER) :datadate (get first-line :datadate)})
-;                 ]
-;             (recur next-remaining next-result-set)
-;             )
-;         )
-;     )
-; )
+(defn get-set
+    "return a set of maps of tickers and datadate" ;;{:tic "AAPL", :datadate "1981/3/31"}
+    [file2]
+    (loop [remaining file2
+            result-set []]
+        (if (empty? remaining)
+            (into #{} result-set)
+            (let [first-line (first remaining)
+                next-remaining (rest remaining)
+                ;;next-result-set (conj result-set (get first-line :datadate)
+                next-result-set (conj result-set {:tic (get first-line :TICKER) :datadate (get first-line :datadate)})
+                ]
+            (recur next-remaining next-result-set)
+            )
+        )
+    )
+)
 
 
 (defn last-quar
