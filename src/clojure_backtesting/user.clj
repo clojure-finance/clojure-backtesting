@@ -68,9 +68,9 @@
 
     (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
     
-    (def f0 (insert-col f1 (get-set f2)))) ;;insert datadate to file 1
+    (def f0 (insert-col f1 (get-set f2))) ;;insert datadate to file 1
 
-    (left-join f0 f2 {:datadate :datadate :tic :TICKER})
+    ;(left-join f0 f2 {:datadate :datadate :tic :TICKER})
 
     ;;(def file0 (insert-col file1 set))
     ;; need to parse-int later
