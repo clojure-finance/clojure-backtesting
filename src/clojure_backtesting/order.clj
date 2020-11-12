@@ -127,7 +127,7 @@
 ;; Update the portfolio when placing an order
 (defn update_portfolio
   [date tic quantity price aprc]
-  (println aprc)
+  ;(println aprc)
 
   (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
     (let [tot_val (* aprc quantity)]
