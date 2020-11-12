@@ -89,3 +89,9 @@
 )
 
 ;; Evaluation report
+(defn evaluation-report
+  "This function generates the evaluation report."
+  []
+  ;; TO-DO
+  (pprint/print-table [{:a 1 :b 2 :c 3} {:b 5 :a 7 :c "dog"}])
+)
