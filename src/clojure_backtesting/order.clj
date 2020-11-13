@@ -20,7 +20,7 @@
 	;;year-month-day
 	[date i]
 	(let [[year month day] (map parse-int (str/split date #"-"))]
-		(t/format "yyyy-MM-dd" (t/plus (t/local-date year month day) (t/days i)))))
+    (t/format "yyyy-MM-dd" (t/plus (t/local-date year month day) (t/days i)))))
 
 ;; for each security:
 ;; add col 'cum_ret' -> cumulative return = log(1+RET) (sum this every day)
@@ -48,7 +48,7 @@
           (def log_ret (Math/log (+ 1 ret)))
           (def cum_ret (+ cum_ret log_ret))
           (def aprc (* initial_price (Math/pow Math/E cum_ret)))
-          (assoc line :APRC aprc :LOG_RET log_ret :CUM_RET cum_ret)
+          (assoc line :INIT_PRICE initial_price :APRC aprc :LOG_RET log_ret :CUM_RET cum_ret)
           ; (swap! data-set_adj conj (assoc line-new "APRC" aprc "LOG_RET" log_ret "CUM_RET" cum_ret))
         )
       )
@@ -127,11 +127,12 @@
 ;; Update the portfolio when placing an order
 (defn update_portfolio
   [date tic quantity price aprc]
+  (println aprc)
 
   (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
     (let [tot_val (* aprc quantity)]
       (do 
-        (swap! portfolio (fn [curr_port] (conj curr_port [tic {:price price :quantity quantity :tot_val tot_val}])))
+        (swap! portfolio (fn [curr_port] (conj curr_port [tic {:price price :aprc aprc :quantity quantity :tot_val tot_val}])))
         (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})
       )
     )

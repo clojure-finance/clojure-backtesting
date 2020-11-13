@@ -11,8 +11,8 @@ pom.xml.asc
 /.prepl-port
 .hgignore
 .hg/
-Compustat-extract_test.csv
-CRSP-extract_test.csv
+Compustat-extract_sorted.csv
+CRSP-extract_sorted.csv
 debug.csv
 .DS_Store
 order_legacy.clj
