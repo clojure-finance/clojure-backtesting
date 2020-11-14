@@ -159,8 +159,15 @@
   )
   ;; update the portfolio_value vector which records the daily portfolio value
   (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last (deref portfolio_value)))]] 
-    (let [ret (Math/log (/ tot_value prev_value))]
-      (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret})))))
+    (if (= prev_value 0) ; check division by zero
+      (let [ret (Math/log (/ tot_value prev_value))]
+        (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret}))))
+      )
+      (let [ret 0]
+        (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret}))))
+      )
+    )
+    
   )
 
 )
