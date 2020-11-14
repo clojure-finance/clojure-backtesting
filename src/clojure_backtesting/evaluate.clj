@@ -93,5 +93,9 @@
   "This function generates the evaluation report."
   []
   ;; TO-DO
+  (println (portfolio-total-ret))
+  (println (annualised-return))
+  (println "volatility")
+  (println (annualised-volatility))
   (pprint/print-table [{:a 1 :b 2 :c 3} {:b 5 :a 7 :c "dog"}])
 )

@@ -132,15 +132,9 @@
 ;; Update the portfolio when placing an order
 (defn update_portfolio
   [date tic quantity price aprc]
-<<<<<<< HEAD
-  ;(println aprc)
-
-  (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
-=======
   (println aprc)
   ;; check whether the portfolio already has the security
   (if-not (contains? (deref portfolio) tic) 
->>>>>>> master
     (let [tot_val (* aprc quantity)]
       (do 
         (swap! portfolio (fn [curr_port] (conj curr_port [tic {:price price :aprc aprc :quantity quantity :tot_val tot_val}])))

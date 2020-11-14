@@ -114,17 +114,14 @@
     (order_internal "1980-12-16" "IBM" 10)
     (order_internal "1980-12-17" "IBM" -10)
     (println (deref portfolio))
-    (println (deref order_record))
+    (println (deref portfolio_value))
+    ;(println (deref order_record))
     
     ;(println (search_in_order "1962-07-02" "IBM")) ; 22812
     ;(println (nth (deref data-set) 27440))
     ;(println (nth (deref data-set) 22810))
     ;(println (nth (deref data-set) 22811))
-
-    (println (portfolio-total-ret))
-    (println (annualised-return))
-    (println "volatility")
-    (println (annualised-volatility))
+    (evaluation-report)
 )
 ;;sample activation command:
 ;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"
