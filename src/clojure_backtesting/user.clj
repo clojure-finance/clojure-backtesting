@@ -114,8 +114,10 @@
     ; (order_internal "1980-12-17" "IBM" -10)
     ; (println (deref portfolio))
     
-    ;(println (search_in_order "1980-12-17" "IBM"))
+    ;(println (search_in_order "1962-07-02" "IBM")) ; 22812
     (println (nth (deref data-set) 27440))
+    ;(println (nth (deref data-set) 22810))
+    ;(println (nth (deref data-set) 22811))
 )
 ;;sample activation command:
 ;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"
