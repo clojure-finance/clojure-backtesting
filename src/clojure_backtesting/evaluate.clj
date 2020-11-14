@@ -3,6 +3,8 @@
             [clojure-backtesting.order :refer :all]
             [clojure.pprint :as pprint]))
 
+(def eval_record (atom []))
+
 ;; Get current portfolio total value
 (defn portfolio-total 
   "This function returns the current total value of the portfolio."
@@ -79,23 +81,47 @@
 (defn annualised-sharpe-ratio
   "This function returns the annualised sharpe ratio."
   []
-  (/ (annualised-return) (annualised-volatility))
+  (if (not= (annualised-volatility) 0.0)
+    (/ (annualised-return) (annualised-volatility))
+    0.0
+  )
 )
 
 ;; PnL per trade
 (defn pnl-per-trade
   []
-  (/ (- (last (deref portfolio_value)) init-capital)) (count order_record)
+  (/ (- (portfolio-total) init-capital) (count (deref order_record)))
 )
 
-;; Evaluation report
-(defn evaluation-report
-  "This function generates the evaluation report."
-  []
-  ;; TO-DO
-  (println (portfolio-total-ret))
-  (println (annualised-return))
-  (println "volatility")
-  (println (annualised-volatility))
-  (pprint/print-table [{:a 1 :b 2 :c 3} {:b 5 :a 7 :c "dog"}])
+;; Update evaluation report
+(defn update-eval-report
+  "This function updates the evaluation report."
+  [date]
+  (let [portfolio-total (portfolio-total)
+        portfolio-dailyret (portfolio-daily-ret)
+        portfolio-totalret (portfolio-total-ret)
+        annualised-ret (annualised-return)
+        annualised-vol (annualised-volatility)
+        annualised-sharpe (annualised-sharpe-ratio)
+        pnl-per-trade (pnl-per-trade)
+        ]
+
+    (swap! eval_record concat [{:date date
+                                :portfolio-total-value portfolio-total 
+                                :portfolio-daily-return portfolio-dailyret 
+                                :portfolio-total-return portfolio-totalret 
+                                :annualised-return annualised-ret
+                                :annualised-volatility annualised-vol 
+                                :annualised-sharpe-ratio annualised-sharpe
+                                :pnl-per-trade pnl-per-trade}])
+  )
 )
+
+;; Print evaluation report
+(defn eval-report
+  "This function prints the evaluation report."
+  []
+  (pprint/print-table (deref eval_record))
+)
+
+

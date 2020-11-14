@@ -112,7 +112,9 @@
     (init_portfolio "1980-12-16" 50)
     (order_internal "1980-12-16" "AAPL" 10)
     (order_internal "1980-12-16" "IBM" 10)
+    (update-eval-report "1980-12-16")
     (order_internal "1980-12-17" "IBM" -10)
+    (update-eval-report "1980-12-17")
     (println (deref portfolio))
     (println (deref portfolio_value))
     (println (deref order_record))
@@ -121,7 +123,7 @@
     ;(println (nth (deref data-set) 27440))
     ;(println (nth (deref data-set) 22810))
     ;(println (nth (deref data-set) 22811))
-    (evaluation-report)
+    (eval-report)
 )
 ;;sample activation command:
 ;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"
