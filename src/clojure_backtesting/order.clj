@@ -167,9 +167,7 @@
         (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret}))))
       )
     )
-    
   )
-
 )
 
 (defn total_cal
