@@ -35,9 +35,8 @@
   (def initial_price 0)
   (def cum_ret 0)
   (def curr_ticker "DEFAULT")
- ; traverse row by row, compute log(1+RET)
+ ; traverse row by row in dataset
  (map (fn [line]
-      ;(println line)
         (let [;line-new (select-keys line [:date :TICKER :PRC :RET])
               price (Double/parseDouble (get line :PRC))
               ret (Double/parseDouble (get line :RET))
@@ -85,7 +84,8 @@
           (let [price (get first-line :PRC)
                 aprc (get first-line :APRC)] ;;amend later if you want to use the adjusted price instead of the closing price
             [true price aprc count])
-          (recur (inc count) next-remaining))))))
+          (recur (inc count) next-remaining)))))
+)
 
 
 ;; Search in Order function
@@ -144,16 +144,17 @@
 
     (let [[tot_val qty] [(* aprc quantity) (get-in (deref portfolio) [tic :quantity])]] ;; if already has it, just update the quantity
       (do 
-        (swap! portfolio assoc tic {:price price :aprc aprc :quantity (+ qty quantity) :tot_val (* aprc (+ qty quantity))})
+        (swap! portfolio assoc tic {:quantity (+ qty quantity) :tot_val (* aprc (+ qty quantity))})
         (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})
       )
     )
   )
 
   (doseq [[ticker _] (deref portfolio)] ;; then update the price & aprc of the securities in the portfolio
-    (if (not= ticker :cash) ;; do not update value if key = cash
+    (if (= ticker tic)
       (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
-        (do (swap! portfolio assoc ticker {:price price :aprc aprc :quantity qty_ticker :tot_val (* aprc qty_ticker)}))))
+        (do (swap! portfolio assoc ticker {:price price :aprc aprc :quantity qty_ticker :tot_val (* aprc qty_ticker)})))
+    )
   )
     
   (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last (deref portfolio_value)))]] ;; update the portfolio_vector vector which records the daily portfolio value
