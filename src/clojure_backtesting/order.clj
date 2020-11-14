@@ -133,33 +133,36 @@
 (defn update_portfolio
   [date tic quantity price aprc]
   (println aprc)
-
-  (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
+  ;; check whether the portfolio already has the security
+  (if-not (contains? (deref portfolio) tic) 
     (let [tot_val (* aprc quantity)]
       (do 
         (swap! portfolio (fn [curr_port] (conj curr_port [tic {:price price :aprc aprc :quantity quantity :tot_val tot_val}])))
         (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})
       )
     )
-
-    (let [[tot_val qty] [(* aprc quantity) (get-in (deref portfolio) [tic :quantity])]] ;; if already has it, just update the quantity
+    ;; if already has it, just update the quantity
+    (let [[tot_val qty] [(* aprc quantity) (get-in (deref portfolio) [tic :quantity])]] 
       (do 
         (swap! portfolio assoc tic {:quantity (+ qty quantity) :tot_val (* aprc (+ qty quantity))})
         (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})
       )
     )
   )
-
-  (doseq [[ticker _] (deref portfolio)] ;; then update the price & aprc of the securities in the portfolio
+  
+  ;; then update the price & aprc of the securities in the portfolio
+  (doseq [[ticker _] (deref portfolio)] 
     (if (= ticker tic)
       (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
         (do (swap! portfolio assoc ticker {:price price :aprc aprc :quantity qty_ticker :tot_val (* aprc qty_ticker)})))
     )
   )
-    
-  (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last (deref portfolio_value)))]] ;; update the portfolio_vector vector which records the daily portfolio value
+  ;; update the portfolio_value vector which records the daily portfolio value
+  (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last (deref portfolio_value)))]] 
     (let [ret (Math/log (/ tot_value prev_value))]
-      (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret}))))))
+      (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret})))))
+  )
+
 )
 
 (defn total_cal
