@@ -67,7 +67,8 @@
     (def f1 (read-csv-row file1)) ;;file 1 is CRSP
     (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
     
-    ;(def f0 (insert-col f1 (get-set f2)))) ;;insert datadate to file 1
+    (def f0 (insert-col f1 (get-set f2))) ;;insert datadate to file 1
+
     ;(left-join f0 f2 {:datadate :datadate :tic :TICKER})
 
     ;;(def file0 (insert-col file1 set))
@@ -108,23 +109,22 @@
     ;(println args)
     (reset! data-set (add_aprc (read-csv-row (first args))))
     ; (println (take 20 (deref data-set)))
-    (init_portfolio "1980-12-16" 500)
+    (init_portfolio "1980-12-16" 50)
     (order_internal "1980-12-16" "AAPL" 10)
-    ;(println (deref portfolio))
-    ; (println (deref portfolio_value))
-    ; (println (portfolio-total))
+    (order_internal "1980-12-16" "IBM" 10)
+    (order_internal "1980-12-17" "IBM" -10)
+    (println (deref portfolio))
+    (println (deref order_record))
+    
+    ;(println (search_in_order "1962-07-02" "IBM")) ; 22812
+    ;(println (nth (deref data-set) 27440))
+    ;(println (nth (deref data-set) 22810))
+    ;(println (nth (deref data-set) 22811))
 
     (println (portfolio-total-ret))
     (println (annualised-return))
     (println "volatility")
     (println (annualised-volatility))
-    ; (order_internal "1980-12-16" "AAPL" 10)
-    ; (order_internal "1980-12-16" "IBM" 10)
-    ; (order_internal "1980-12-17" "IBM" -10)
-    ; (println (deref portfolio))
-    
-    ;(println (search_in_order "1980-12-17" "IBM"))
-    ;(println (nth (deref data-set) 27440))
 )
 ;;sample activation command:
 ;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"

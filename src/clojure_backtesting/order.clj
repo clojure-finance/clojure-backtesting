@@ -22,6 +22,10 @@
 	(let [[year month day] (map parse-int (str/split date #"-"))]
     (t/format "yyyy-MM-dd" (t/plus (t/local-date year month day) (t/days i)))))
 
+;; helper function, natural logarithm
+(defn log_10 [n]
+  (/ (Math/log n) (Math/log 10)))
+
 ;; for each security:
 ;; add col 'cum_ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum_ret)
@@ -31,10 +35,9 @@
   (def initial_price 0)
   (def cum_ret 0)
   (def curr_ticker "DEFAULT")
- ; traverse row by row, compute log(1+RET)
+ ; traverse row by row in dataset
  (map (fn [line]
-      ;(println line)
-        (let [line-new (select-keys line [:date :TICKER :PRC :RET])
+        (let [;line-new (select-keys line [:date :TICKER :PRC :RET])
               price (Double/parseDouble (get line :PRC))
               ret (Double/parseDouble (get line :RET))
               ticker (get line :TICKER)]
@@ -45,7 +48,8 @@
                 (def cum_ret 0)
               )
           )
-          (def log_ret (Math/log (+ 1 ret)))
+          ;(def log_ret (Math/log (+ 1 ret))) ; natural log
+          (def log_ret (log_10 (+ 1 ret))) ; log base 10
           (def cum_ret (+ cum_ret log_ret))
           (def aprc (* initial_price (Math/pow Math/E cum_ret)))
           (assoc line :INIT_PRICE initial_price :APRC aprc :LOG_RET log_ret :CUM_RET cum_ret)
@@ -80,7 +84,8 @@
           (let [price (get first-line :PRC)
                 aprc (get first-line :APRC)] ;;amend later if you want to use the adjusted price instead of the closing price
             [true price aprc count])
-          (recur (inc count) next-remaining))))))
+          (recur (inc count) next-remaining)))))
+)
 
 
 ;; Search in Order function
@@ -127,33 +132,43 @@
 ;; Update the portfolio when placing an order
 (defn update_portfolio
   [date tic quantity price aprc]
+<<<<<<< HEAD
   ;(println aprc)
 
   (if-not (contains? (deref portfolio) tic) ;; check whether the portfolio already has the security
+=======
+  (println aprc)
+  ;; check whether the portfolio already has the security
+  (if-not (contains? (deref portfolio) tic) 
+>>>>>>> master
     (let [tot_val (* aprc quantity)]
       (do 
         (swap! portfolio (fn [curr_port] (conj curr_port [tic {:price price :aprc aprc :quantity quantity :tot_val tot_val}])))
         (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})
       )
     )
-
-    (let [[tot_val qty] [(* aprc quantity) (get-in (deref portfolio) [tic :quantity])]] ;; if already has it, just update the quantity
+    ;; if already has it, just update the quantity
+    (let [[tot_val qty] [(* aprc quantity) (get-in (deref portfolio) [tic :quantity])]] 
       (do 
-        (swap! portfolio assoc tic {:price price :aprc aprc :quantity (+ qty quantity) :tot_val (* aprc (+ qty quantity))})
+        (swap! portfolio assoc tic {:quantity (+ qty quantity) :tot_val (* aprc (+ qty quantity))})
         (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})
       )
     )
   )
-
-  (doseq [[ticker _] (deref portfolio)] ;; then update the price & aprc of the securities in the portfolio
-    (if (not= ticker :cash) ;; do not update value if key = cash
+  
+  ;; then update the price & aprc of the securities in the portfolio
+  (doseq [[ticker _] (deref portfolio)] 
+    (if (= ticker tic)
       (let [qty_ticker (get-in (deref portfolio) [ticker :quantity])]
-        (do (swap! portfolio assoc ticker {:price price :aprc aprc :quantity qty_ticker :tot_val (* aprc qty_ticker)}))))
+        (do (swap! portfolio assoc ticker {:price price :aprc aprc :quantity qty_ticker :tot_val (* aprc qty_ticker)})))
+    )
   )
-    
-  (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last (deref portfolio_value)))]] ;; update the portfolio_vector vector which records the daily portfolio value
+  ;; update the portfolio_value vector which records the daily portfolio value
+  (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last (deref portfolio_value)))]] 
     (let [ret (Math/log (/ tot_value prev_value))]
-      (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret}))))))
+      (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret})))))
+  )
+
 )
 
 (defn total_cal
