@@ -115,7 +115,7 @@
     (order_internal "1980-12-17" "IBM" -10)
     (println (deref portfolio))
     (println (deref portfolio_value))
-    ;(println (deref order_record))
+    (println (deref order_record))
     
     ;(println (search_in_order "1962-07-02" "IBM")) ; 22812
     ;(println (nth (deref data-set) 27440))
