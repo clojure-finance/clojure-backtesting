@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
-            ;;[clojure-backtesting.evaluate :refer :all]
+            [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.plot :refer :all]
             ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
@@ -112,7 +112,9 @@
     (init_portfolio "1980-12-16" 50)
     (order_internal "1980-12-16" "AAPL" 10)
     (order_internal "1980-12-16" "IBM" 10)
+    (update-eval-report "1980-12-16")
     (order_internal "1980-12-17" "IBM" -10)
+    (update-eval-report "1980-12-17")
     (println (deref portfolio))
     (println (deref portfolio_value))
     (println (deref order_record))
@@ -121,6 +123,7 @@
     ;(println (nth (deref data-set) 27440))
     ;(println (nth (deref data-set) 22810))
     ;(println (nth (deref data-set) 22811))
+    (eval-report)
 )
 ;;sample activation command:
 ;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"
