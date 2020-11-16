@@ -8,7 +8,8 @@
             [clojure.string :as str]
             [clojure.pprint :as pprint]
             [java-time :as t]
-            ))
+            [clojupyter.kernel.version :as ver]
+            )(:gen-class))
 
 ;;testing purpose
 ; (comment 
@@ -89,41 +90,47 @@
     (pprint/print-table (deref data-set))
 )
 
-(defn main-order
-    "Main function for placing orders"
-      [& args] ; pass ./resources/CRSP-extract.csv as arg
-      (println args)
-      (reset! data-set (read-csv-row (first args)))
-      (print(search_in_order "1980-12-17" "AAPL"))
-      (print(look_ahead_i_days "1980-12-16" 2))
-      (order_internal "1980-12-16" "AAPL" 10)
-      (order_internal "1980-12-17" "AAPL" 10 true)
-      (order_internal "1980-12-14" "AAPL" 10)
-      (order_internal [["1980-12-19" "AAPL" 10]["1980-12-18" "AAPL" 10 true]])
-      (pprint/print-table (deref order_record))
-)
-
 (defn -main
-  "Write your code here"
-    [& args] ; pass ./resources/CRSP-extract.csv as arg
-    ;(println args)
-    (reset! data-set (add_aprc (read-csv-row (first args))))
-    ; (println (take 20 (deref data-set)))
-    (init_portfolio "1980-12-16" 50)
-    (order_internal "1980-12-16" "AAPL" 10)
-    (order_internal "1980-12-16" "IBM" 10)
-    (update-eval-report "1980-12-16")
-    (order_internal "1980-12-17" "IBM" -10)
-    (update-eval-report "1980-12-17")
-    (println (deref portfolio))
-    (println (deref portfolio_value))
-    (println (deref order_record))
+    [& args]
+    (println "test"))
+
+; (defn -main
+;     "Main function for placing orders"
+;       [& args] ; pass ./resources/CRSP-extract.csv as arg
+;       (println args)
+;       (reset! data-set (add_aprc (read-csv-row (first args))))
+;     ; (println (take 20 (deref data-set)))
+;       (init_portfolio "1980-12-16" 5000)
+;       ;(print(search_in_order "1980-12-17" "AAPL"))
+;       ;(print(look_ahead_i_days "1980-12-16" 2))
+;       (order_internal "1980-12-16" "AAPL" 10)
+;       (order_internal "1980-12-17" "AAPL" 10 true)
+;       (order_internal "1980-12-14" "AAPL" 10)
+;       (order_internal [["1981-01-23" "AAPL" 10 true]["1981-01-24" "AAPL" 10]])
+;       (pprint/print-table (deref order_record))
+; )
+
+; (defn -main
+;   "Write your code here"
+;     [& args] ; pass ./resources/CRSP-extract.csv as arg
+;     ;(println args)
+;     (reset! data-set (add_aprc (read-csv-row (first args))))
+;     ; (println (take 20 (deref data-set)))
+;     (init_portfolio "1980-12-16" 50)
+;     (order_internal "1980-12-16" "AAPL" 10)
+;     (order_internal "1980-12-16" "IBM" 10)
+;     (update-eval-report "1980-12-16")
+;     (order_internal "1980-12-17" "IBM" -10)
+;     (update-eval-report "1980-12-17")
+;     (println (deref portfolio))
+;     (println (deref portfolio_value))
+;     (println (deref order_record))
     
-    ;(println (search_in_order "1962-07-02" "IBM")) ; 22812
-    ;(println (nth (deref data-set) 27440))
-    ;(println (nth (deref data-set) 22810))
-    ;(println (nth (deref data-set) 22811))
-    (eval-report)
-)
+;     ;(println (search_in_order "1962-07-02" "IBM")) ; 22812
+;     ;(println (nth (deref data-set) 27440))
+;     ;(println (nth (deref data-set) 22810))
+;     ;(println (nth (deref data-set) 22811))
+;     (eval-report)
+; )
 ;;sample activation command:
 ;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"

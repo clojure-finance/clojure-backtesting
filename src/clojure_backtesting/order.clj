@@ -6,10 +6,6 @@
     )
 
 ;;This file is for ordering related functions
-
-(def order_record (atom []))
-(def total_record (atom {}))
-
 ;;testing purpose
 ;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
 ;;(def a (read-csv-row file1))
@@ -109,10 +105,10 @@
 							(recur (inc i))						
 						)
 					)
-					[false "No match T+1 date" 0 0 0]
+					[false (str "No appropriate order date after looking ahead " MAXLOOKAHEAD " days") 0 0 0]
 				)				
 			)
-			[false "No match date" 0 0 0]
+			[false "No such date or ticker in the dataset" 0 0 0]
 		)
 	)
 )
@@ -123,6 +119,7 @@
   [date init-capital] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
   ;; example: portfolio -> {:cash {:tot_val 10000} :"AAPL" {:price 400 :aprc adj_price :quantity 100 :tot_val 40000}}
   ;; example: portfolio_value {:date xxxx :tot_value 50000 :daily_ret 0}
+  (def order_record (atom []))
   (def init-capital init-capital)
   (def num-of-tradays (count (deref data-set)))
   (def portfolio (atom {:cash {:tot_val init-capital}}))
@@ -135,17 +132,17 @@
   (println aprc)
   ;; check whether the portfolio already has the security
   (if-not (contains? (deref portfolio) tic) 
-    (let [tot_val (* aprc quantity)]
+    (let [tot_val (* aprc quantity) tot_val_real (* price quantity)]
       (do 
         (swap! portfolio (fn [curr_port] (conj curr_port [tic {:price price :aprc aprc :quantity quantity :tot_val tot_val}])))
-        (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})
+        (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val_real)})
       )
     )
     ;; if already has it, just update the quantity
-    (let [[tot_val qty] [(* aprc quantity) (get-in (deref portfolio) [tic :quantity])]] 
+    (let [[tot_val qty] [(* aprc quantity) (get-in (deref portfolio) [tic :quantity])] tot_val_real (* price quantity)] 
       (do 
         (swap! portfolio assoc tic {:quantity (+ qty quantity) :tot_val (* aprc (+ qty quantity))})
-        (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val)})
+        (swap! portfolio assoc :cash {:tot_val (- (get-in (deref portfolio) [:cash :tot_val]) tot_val_real)})
       )
     )
   )
@@ -174,32 +171,79 @@
   "this function returns the remaining total stock of a tic"
   [date tic])
 
+; (defn order_parl
+;   "This is the parellel ordering function"
+;   [arg]
+;   (if (= (count arg) 3)
+;     (let [[date tic quantity] arg]
+;       (let [[match adj_date price adj_price reference] (search_in_order date tic)]
+;         (if match
+;           (do
+;             (update_portfolio adj_date tic quantity price adj_price)
+;             {:date adj_date :tic tic :price price :quantity quantity :total "TBI" :reference reference})
+;           (do
+;             (println (format "The order request on date: %s, tic: %s, quantity: %d falses" date tic quantity))
+;             (println (format "Failure reason: %s" adj_date)));;else
+;         ))))
+;     (if (= (count arg) 4)
+;       (let [[date tic quantity] arg]
+;         (let [[match adj_date price adj_price reference] (search_in_order date tic)]
+;           (if match
+;             (do
+;               (update_portfolio adj_date tic quantity price adj_price)
+;               {:date adj_date :tic tic :price price :quantity "TBI" :total quantity :reference reference})
+;             (do
+;               (println (format "The order request on date: %s, tic: %s, quantity: %d falses" date tic quantity))
+;               (println (format "Failure reason: %s" adj_date));;else
+;           ))))))
+;[b t_1_date p aprc r]
+
 (defn order_parl
   "This is the parellel ordering function"
   [arg]
   (if (= (count arg) 3)
     (let [[date tic quantity] arg]
       (let [[match adj_date price adj_price reference] (search_in_order date tic)]
+        ;;(let [[match price reference] [true "10" 348]]
         (if match
           (do
-            (update_portfolio adj_date tic quantity price adj_price)
-            {:date adj_date :tic tic :price price :quantity quantity :total "TBI" :reference reference})
-          (do
-            (println (format "The order request on date: %s, tic: %s, quantity: %d falses" date tic quantity))
-            (println (format "Failure reason: %s" adj_date)));;else
-        ))))
-    (if (= (count arg) 4)
-      (let [[date tic quantity] arg]
-        (let [[match adj_date price adj_price reference] (search_in_order date tic)]
-          (if match
-            (do
+            (let [total (
+              cond 
+              (= (get (get (deref portfolio) tic) :quantity) nil) 0
+              :else (get (get (deref portfolio) tic) :quantity)) 
+              cash (get (get (deref portfolio) :cash) :tot_val)]
+              (if (and (>= (+ total quantity) 0) (>= cash (* price quantity)))
+              (do
               (update_portfolio adj_date tic quantity price adj_price)
-              {:date adj_date :tic tic :price price :quantity "TBI" :total quantity :reference reference})
+              {:date adj_date :tic tic :price price :quantity quantity :total (+ total quantity) :reference reference})
+              (do 
+                (println (format "The order request at date: %s, tic: %s, quantity: %d fails." date tic quantity))
+                (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell."))))))
+          (do 
+            (println (format "The order request at date: %s, tic: %s, quantity: %d fails." date tic quantity))
+            (println (format "Failure reason: %s." adj_date)))))))
+  (if (= (count arg) 4)
+    (let [[date tic quantity remaining] arg]
+      (if (= remaining true)
+        (let [[match adj_date price adj_price reference] (search_in_order date tic)]
+        ;;(let [[match price reference] [true "10" 348]]
+        (if match
+          (let [total (
+            cond 
+              (= (get (get (deref portfolio) tic) :quantity) nil) 0
+              :else (get (get (deref portfolio) tic) :quantity)) 
+            cash (get (get (deref portfolio) :cash) :tot_val)]
+            (if (and (>= (+ total quantity) 0) (>= cash (* price quantity)))
             (do
-              (println (format "The order request on date: %s, tic: %s, quantity: %d falses" date tic quantity))
-              (println (format "Failure reason: %s" adj_date));;else
-          ))))))
-;[b t_1_date p aprc r]
+            (update_portfolio adj_date tic (- quantity total) price adj_price)
+            {:date adj_date :tic tic :price price :quantity (- quantity total) :total quantity :reference reference})
+            (do 
+              (println (format "The order request at date: %s, tic: %s, quantity: %d fails." date tic quantity))
+              (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell.")))))
+          (do
+            (println (format "The order request at date: %s, tic: %s, quantity: %d fails." date tic quantity))
+            (println (format "Failure reason: %s." adj_date)))))
+        (order_parl [date tic quantity])))))
 
 (defn order_internal
 	"This is the main order function"
@@ -211,11 +255,21 @@
 	;;(let [[match price reference] [true "10" 348]]
 	(if match
     (do
-      (update_portfolio adj_date tic quantity price adj_price) 
-			(swap! order_record concat [{:date adj_date :tic tic :price price :quantity quantity :total "TBI" :reference reference}]))
+      (let [total (
+        cond 
+        (= (get (get (deref portfolio) tic) :quantity) nil) 0
+        :else (get (get (deref portfolio) tic) :quantity)) 
+        cash (get (get (deref portfolio) :cash) :tot_val)]
+        (if (and (>= (+ total quantity) 0) (>= cash (* price quantity)))
+        (do
+        (update_portfolio adj_date tic quantity price adj_price)
+        (swap! order_record concat [{:date adj_date :tic tic :price price :quantity quantity :total (+ total quantity) :reference reference}]))
+        (do 
+          (println (format "The order request at date: %s, tic: %s, quantity: %d fails." date tic quantity))
+          (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell."))))))
     (do 
-      (println (format "The order request at date: %s, tic: %s, quantity: %d fails" date tic quantity))
-      (println (format "Failure reason: %s" adj_date))))));;else
+      (println (format "The order request at date: %s, tic: %s, quantity: %d fails." date tic quantity))
+      (println (format "Failure reason: %s." adj_date))))));;else
 	;;atoms [{:date :tic :price :quan :total :reference}{}]
 
 	([date tic quantity remaining]
@@ -227,17 +281,26 @@
 		(let [[match adj_date price adj_price reference] (search_in_order date tic)]
 		;;(let [[match price reference] [true "10" 348]]
 		(if match
+      (let [total (
+        cond 
+          (= (get (get (deref portfolio) tic) :quantity) nil) 0
+          :else (get (get (deref portfolio) tic) :quantity)) 
+        cash (get (get (deref portfolio) :cash) :tot_val)]
+        (if (and (>= (+ total quantity) 0) (>= cash (* price quantity)))
+        (do
+        (update_portfolio adj_date tic (- quantity total) price adj_price)
+        (swap! order_record concat [{:date adj_date :tic tic :price price :quantity (- quantity total) :total quantity :reference reference}]))
+        (do 
+          (println (format "The order request at date: %s, tic: %s, quantity: %d fails." date tic quantity))
+          (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell.")))))
       (do
-        (update_portfolio adj_date tic quantity price adj_price) 
-				(swap! order_record concat [{:date adj_date :tic tic :price price :quantity "TBI" :total quantity :reference reference}]))
-      (do
-        (println (format "The order request for date: %s, tic: %s, quantity: %d falses" date tic quantity))
-        (println (format "Failure reason: %s" adj_date)))))
-	(order_internal date tic quantity)))
+        (println (format "The order request at date: %s, tic: %s, quantity: %d fails." date tic quantity))
+        (println (format "Failure reason: %s." adj_date)))))
+	  (order_internal date tic quantity)))
 
 	([args]
 	;;this is where parallel computing is needed.
-	(swap! order_record concat (pmap order_parl args))
+	(swap! order_record concat (doall (pmap order_parl args)))
 	(shutdown-agents));;needs more work
 	)
 
