@@ -11,7 +11,8 @@
                  [clojupyter/clojupyter "0.3.2"]
                  ]
   :aliases			{"clojupyter"			["run" "-m" "clojupyter.cmdline"]}
-  :main ^:skip-aot clojure-backtesting.user
+  :main clojure-backtesting.user
+  :aot [clojure-backtesting.user]
   :plugins [[lein-jupyter "0.1.16"]]
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
