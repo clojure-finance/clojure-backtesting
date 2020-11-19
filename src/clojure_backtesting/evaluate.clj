@@ -70,6 +70,23 @@
   dailyret_record
 )
 
+;; Volatility
+(defn volatility
+  "This function returns the volatility of the portfolio."
+  []
+  (standard-deviation (deref (get-daily-returns)))
+) 
+
+;; Sharpe ratio
+(defn sharpe-ratio
+  "This function returns the sharpe ratio."
+  []
+  (if (not= (volatility) 0.0)
+    (/ (portfolio-total-ret) (volatility))
+    0.0
+  )
+)
+
 ;; Annualised volatility
 (defn annualised-volatility
   "This function returns the annualised volatility of the portfolio."
@@ -77,7 +94,7 @@
   (* (Math/sqrt 252) (standard-deviation (deref (get-daily-returns))))
 ) 
 
-;; Sharpe ratio
+;; Annualised sharpe ratio
 (defn annualised-sharpe-ratio
   "This function returns the annualised sharpe ratio."
   []
@@ -97,9 +114,11 @@
 (defn update-eval-report
   "This function updates the evaluation report."
   [date]
-  (let [portfolio-total (portfolio-total)
-        portfolio-dailyret (portfolio-daily-ret)
-        portfolio-totalret (portfolio-total-ret)
+  (let [total-val (portfolio-total)
+        daily-ret (portfolio-daily-ret)
+        total-ret (portfolio-total-ret)
+        volatility (volatility)
+        sharpe-ratio (sharpe-ratio)
         annualised-ret (annualised-return)
         annualised-vol (annualised-volatility)
         annualised-sharpe (annualised-sharpe-ratio)
@@ -107,13 +126,16 @@
         ]
 
     (swap! eval_record concat [{:date date
-                                :portfolio-total-value portfolio-total 
-                                :portfolio-daily-return portfolio-dailyret 
-                                :portfolio-total-return portfolio-totalret 
-                                :annualised-return annualised-ret
-                                :annualised-volatility annualised-vol 
-                                :annualised-sharpe-ratio annualised-sharpe
-                                :pnl-per-trade pnl-per-trade}])
+                                :total-val (Double/parseDouble (format "%.2f" total-val))
+                                :daily-ret (Double/parseDouble (format "%.3f" daily-ret))
+                                :total-ret (Double/parseDouble (format "%.3f" total-ret))
+                                :volatility (Double/parseDouble (format "%.3f" volatility))
+                                :sharpe (Double/parseDouble (format "%.3f" sharpe-ratio))
+                                :annualised-ret (Double/parseDouble (format "%.3f" annualised-ret))
+                                :annualised-vol (Double/parseDouble (format "%.3f" annualised-vol))
+                                :annualised-sharpe (Double/parseDouble (format "%.3f" annualised-sharpe))
+                                :pnl-per-trade (Double/parseDouble (format "%.2f" pnl-per-trade)) 
+                              }])
   )
 )
 

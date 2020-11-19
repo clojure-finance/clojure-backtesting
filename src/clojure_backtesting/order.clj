@@ -122,7 +122,7 @@
 
   [date init-capital] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
   ;; example: portfolio -> {:cash {:tot_val 10000} :"AAPL" {:price 400 :aprc adj_price :quantity 100 :tot_val 40000}}
-  ;; example: portfolio_value {:date xxxx :tot_value 50000 :daily_ret 0}
+  ;; example: portfolio_value {:date 1980-12-16 :tot_value 50000 :daily_ret 0}
   (def init-capital init-capital)
   (def num-of-tradays (count (deref data-set)))
   (def portfolio (atom {:cash {:tot_val init-capital}}))
@@ -159,11 +159,11 @@
   )
   ;; update the portfolio_value vector which records the daily portfolio value
   (let [[tot_value prev_value] [(reduce + (map :tot_val (vals (deref portfolio)))) (:tot_value (last (deref portfolio_value)))]] 
-    (if (= prev_value 0) ; check division by zero
+    (if (not= prev_value 0.0) ; check division by zero
       (let [ret (Math/log (/ tot_value prev_value))]
         (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret}))))
       )
-      (let [ret 0]
+      (let [ret 0.0]
         (do (swap! portfolio_value (fn [curr_port_val] (conj curr_port_val {:date date :tot_value tot_value :daily_ret ret}))))
       )
     )
