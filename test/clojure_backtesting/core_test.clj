@@ -18,7 +18,9 @@
   (testing 
     (is (= 3 (mean [1 2 3 4 5])))
     (is (= 7/2 (mean [1 2 3 4 5 6])))
+    (is (= 4 (square 2)))
+    (is (= 6.25 (square 2.5)))
     (is (= 1.0 (standard-deviation [1 2 3])))
-    ;(is (= 1.581 (standard-deviation [1 2 3 4 5])))
+    (is (= 1.581 (Double/parseDouble (format "%.3f" (standard-deviation [1 2 3 4 5])))))
   )
 )
