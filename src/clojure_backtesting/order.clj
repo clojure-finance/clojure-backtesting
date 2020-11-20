@@ -88,7 +88,7 @@
 (defn search_in_order
 	"This function turns the order processed date"
 [date tic]
-;;date e.g. "DD/MM?YYYY"
+;;date e.g. "DD/MM/YYYY"
 ;;tic e.g. "AAPL"
 ;;return [false "No match date" 0 0 0] if no match
 ;;return [true T+1_date price aprc reference] otherwise

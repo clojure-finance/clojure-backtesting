@@ -46,11 +46,17 @@
   (* n n))
 
 ;; Helper function
+;
+; input: a collection
+; output: integer / fraction (if rational)
 (defn mean
   [coll]
   (/ (reduce + coll) (count coll)))
 
 ;; Helper function
+;
+; input: a collection
+; output: sample standard deviation, float
 (defn standard-deviation
   [coll]
   (Math/sqrt (/ (reduce + (map square (map - coll (repeat (mean coll)))))
