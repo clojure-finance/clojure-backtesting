@@ -20,4 +20,11 @@ To run the default `:main` set in `project.clj`:
 lein run
 ```
 
+## Run tests
+
+To run all tests written in the test namespace:
+```
+lein test
+```
+
 
