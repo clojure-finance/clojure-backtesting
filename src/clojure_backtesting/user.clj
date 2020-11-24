@@ -4,6 +4,7 @@
             [clojure-backtesting.order :refer :all]
             [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.plot :refer :all]
+            [clojure-backtesting.counter :refer :all]
             ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
@@ -94,19 +95,24 @@
   "Write your code here"
     [& args] ; pass ./resources/CRSP-extract.csv as arg
     ;(println args)
-    (reset! data-set (add_aprc (read-csv-row (first args))))
+    ; (reset! data-set (add_aprc (read-csv-row (first args))))
+    ; ; (println (take 20 (deref data-set)))
+    ; (init_portfolio "1980-12-16" 5000)
+    ; (order_internal "1980-12-16" "AAPL" 30)
+    ; (order_internal "1980-12-16" "IBM" 20)
+    ; (update-eval-report "1980-12-16")
+    ; (order_internal "1980-12-17" "IBM" -10)
+    ; (update-eval-report "1980-12-17")
+    ; (order_internal "1981-12-10" "IBM" 20)
+    ; (update-eval-report "1985-12-18")
+    ; (println (deref portfolio))
+    ; (println (deref portfolio_value))
+    ; (println (deref order_record))
+    (reset! data-set (add_aprc (read-csv-row "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv")))
     ; (println (take 20 (deref data-set)))
     (init_portfolio "1980-12-16" 5000)
-    (order_internal "1980-12-16" "AAPL" 30)
-    (order_internal "1980-12-16" "IBM" 20)
-    (update-eval-report "1980-12-16")
-    (order_internal "1980-12-17" "IBM" -10)
-    (update-eval-report "1980-12-17")
-    (order_internal "1981-12-10" "IBM" 20)
-    (update-eval-report "1985-12-18")
-    (println (deref portfolio))
-    (println (deref portfolio_value))
-    (println (deref order_record))
+    (println (get_date))
+    (println (next_date))
  )
 
 ;;sample activation command:

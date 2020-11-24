@@ -1,8 +1,9 @@
 (ns clojure-backtesting.order
   (:require [clojure-backtesting.data :refer :all]
 			[clojure-backtesting.parameters :refer :all]
-			[clojure.string :as str]
-			[java-time :as t]) ;; Useful for CSV handling
+      [clojure-backtesting.counter :refer :all]
+      [clojure.string :as str]
+			[java-time :as t])
     )
 
 ;;This file is for ordering related functions
@@ -10,13 +11,6 @@
 ;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
 ;;(def a (read-csv-row file1))
 
-(defn look_ahead_i_days
-	;;return date
-	;;here the format of the input date should be:
-	;;year-month-day
-	[date i]
-	(let [[year month day] (map parse-int (str/split date #"-"))]
-    (t/format "yyyy-MM-dd" (t/plus (t/local-date year month day) (t/days i)))))
 
 ;; helper function, natural logarithm
 (defn log_10 [n]
@@ -119,6 +113,7 @@
   [date init-capital] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
   ;; example: portfolio -> {:cash {:tot_val 10000} :"AAPL" {:price 400 :aprc adj_price :quantity 100 :tot_val 40000}}
   ;; example: portfolio_value {:date 1980-12-16 :tot_value 50000 :daily_ret 0}
+  (init_date date)
   (def order_record (atom []))
   (def init-capital init-capital)
   (def num-of-tradays (count (deref data-set)))
