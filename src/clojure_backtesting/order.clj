@@ -297,7 +297,20 @@
 	;;this is where parallel computing is needed.
 	(swap! order_record concat (doall (pmap order_parl args)))
 	(shutdown-agents));;needs more work
-	)
+  )
+
+(defn order
+  (
+    [tic quantity]
+    (order_internal (get_date) tic quantity)
+  )
+  (
+    [tic quantity remaining]
+    (order_internal (get_date) tic quantity remaining)
+  )
+  (
+    [arg]
+  ))
 
 
 
