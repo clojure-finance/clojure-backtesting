@@ -16,3 +16,4 @@ CRSP-extract_sorted.csv
 debug.csv
 .DS_Store
 order_legacy.clj
+specs.clj

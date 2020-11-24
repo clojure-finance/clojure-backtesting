@@ -121,7 +121,7 @@
   ;; example: portfolio_value {:date 1980-12-16 :tot_value 50000 :daily_ret 0}
   (def order_record (atom []))
   (def init-capital init-capital)
-  (def num-of-tradays (count (deref data-set)))
+  ;(def num-of-tradays (count (deref data-set))) ;; wrong, to-be-deleted
   (def portfolio (atom {:cash {:tot_val init-capital}}))
   (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0}]))
 )

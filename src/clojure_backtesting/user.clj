@@ -4,10 +4,13 @@
             [clojure-backtesting.order :refer :all]
             [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.plot :refer :all]
-            ;;[clojure-backtesting.parameters :refer :all]
+            [clojure-backtesting.specs :refer :all]
+            ;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
+            [clj-time.core :as clj-t]
             [java-time :as t]
+            ;[clojure.spec.alpha :as s]
             [clojupyter.kernel.version :as ver]
             )(:gen-class))
 
@@ -107,6 +110,16 @@
     (println (deref portfolio))
     (println (deref portfolio_value))
     (println (deref order_record))
+    (println (get (first (deref order_record)) :date))
+
+    ; for checking sequence
+    ; (println (s/conform s [42 11 13 15 {:a 1 :b 2 :c 3} 1 2 3 42 43 44 11]))
+    ; (println (s/conform portfolio (deref portfolio)))
+    ; (s/explain portfolio-test (deref portfolio))
+
+    (let [tot (:tot_value (last (deref portfolio_value)))]
+        (println (type tot))
+    )
  )
 
 ;;sample activation command:

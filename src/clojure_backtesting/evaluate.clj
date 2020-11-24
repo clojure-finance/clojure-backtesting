@@ -1,6 +1,7 @@
 (ns clojure-backtesting.evaluate
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
+            [clj-time.core :as clj-t]
             [clojure.pprint :as pprint]))
 
 (def eval_record (atom []))
@@ -33,11 +34,33 @@
   total-ret
 )
 
+;; Calculate number of days between first and last dates in order record
+(defn num-of-tradays
+  "This function calculates the annualised return of the portfolio." 
+  []
+  (let [first-date (get (first (deref order_record)) :date)
+          last-date (get (last (deref order_record)) :date)]
+
+    (def first-year (Integer/parseInt (subs first-date 0 4)))
+    (def first-month (Integer/parseInt (subs first-date 5 7)))
+    (def first-day (Integer/parseInt (subs first-date 8 10)))
+    (def last-year (Integer/parseInt (subs last-date 0 4)))
+    (def last-month (Integer/parseInt (subs last-date 5 7)))
+    (def last-day (Integer/parseInt (subs last-date 8 10)))
+
+    (def interval-min (clj-t/in-minutes (clj-t/interval (clj-t/date-time first-year first-month first-day) (clj-t/date-time last-year last-month last-day))))
+    (/ (/ interval-min 60) 24)
+  )
+)
+
 ;; Annualised return
 (defn annualised-return
   "This function calculates the annualised return of the portfolio." 
   []
-  (- (Math/pow (+ 1 (portfolio-total-ret)) (/ 252 num-of-tradays)) 1)
+  (def tradays (num-of-tradays))
+  (if (= tradays 0) (def tradays 1))
+  (print tradays)
+  (- (Math/pow (+ 1 (portfolio-total-ret)) (/ 252 tradays)) 1)
 )
 
 ;; Helper function
