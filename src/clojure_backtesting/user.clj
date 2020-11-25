@@ -108,7 +108,7 @@
     ; (println (deref portfolio))
     ; (println (deref portfolio_value))
     ; (println (deref order_record)); (println (take 20 (deref data-set)))
-    (reset! data-set (add_aprc (read-csv-row "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv")))
+    (reset! data-set (add_aprc (read-csv-row "./resources/CRSP-extract.csv")))
     (init_portfolio "1980-12-16" 5000)
     (order "AAPL" -10)
     (next_date)
