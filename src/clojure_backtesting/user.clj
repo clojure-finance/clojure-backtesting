@@ -134,6 +134,8 @@
     
 
     (pprint/print-table (deref order_record))
+
+    (view_portfolio_record)
     (eval-report)  
  )
 

@@ -3,6 +3,7 @@
 			[clojure-backtesting.parameters :refer :all]
       [clojure-backtesting.counter :refer :all]
       [clojure.string :as str]
+      [clojure.pprint :as pprint]
 			[java-time :as t])
     )
 
@@ -118,7 +119,7 @@
   (def init-capital init-capital)
   (def num-of-tradays (count (deref data-set)))
   (def portfolio (atom {:cash {:tot_val init-capital}}))
-  (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0}]))
+  (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0.0}]))
 )
 
 ;; Update the portfolio when placing an order
@@ -162,8 +163,33 @@
   )
 )
 
+;; utility function
+(defn view_portfolio_record
+  "This function prints the portfolio value vector in a table format, with units added."
+  []
+  (def portfolio_record (atom [])) ; temporarily stores record for view
+
+  (doseq [row (deref portfolio_value)] 
+    (do
+      (let [date (get row :date)
+            tot_val (str "$" (int (get row :tot_value)))
+            daily_ret (str (format "%.2f" (get row :daily_ret)) "%")
+           ]
+      
+        (swap! portfolio_record concat [
+          {:date date
+           :tot_value tot_val
+           :daily_ret daily_ret
+          }]) 
+      )
+    )
+  )
+  
+  (pprint/print-table (deref portfolio_record))
+)
+
 (defn total_cal
-  "this function returns the remaining total stock of a tic"
+  "This function returns the remaining total stock of a tic"
   [date tic])
 
 ; (defn order_parl
