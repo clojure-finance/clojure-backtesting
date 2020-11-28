@@ -109,16 +109,32 @@
     ; (println (deref portfolio_value))
     ; (println (deref order_record)); (println (take 20 (deref data-set)))
     (reset! data-set (add_aprc (read-csv-row "./resources/CRSP-extract.csv")))
-    (init_portfolio "1980-12-16" 5000)
-    (order "AAPL" -10)
-    (next_date)
-    (order "AAPL" 10)
-    (order "IBM" 50)
-    (next_date)
-    (order "AAPL" 30)
-    (order "IBM" -20)
-    ; (println (get_date))
-    ; (println (next_date))
+    (init_portfolio "1980-12-16" 10000);
+
+    (def num-of-days (atom 10))                              
+    (while (pos? @num-of-days)
+        (do 
+            (if (= 10 @num-of-days)
+                (do
+                    (order "AAPL" 50) ; buy 50 stocks
+                    (println ((fn [date] (str "Buy 50 stocks of AAPL on " date)) (get_date)))
+                )
+            )
+            (if (odd? @num-of-days)
+                (do
+                    (order "AAPL" -10) ; sell 10 stocks
+                    (println ((fn [date] (str "Sell 10 stocks of AAPL on " date)) (get_date)))
+                )
+            )
+            (update-eval-report (get_date))
+            (next_date)
+            (swap! num-of-days dec)
+        )
+    )
+    
+
+    (pprint/print-table (deref order_record))
+    (eval-report)  
  )
 
 ;;sample activation command:
