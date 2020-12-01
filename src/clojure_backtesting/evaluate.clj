@@ -13,16 +13,16 @@
   (get-in (last (deref portfolio_value)) [:tot_value])
 )
 
-;; Get current portfolio daily return
+;; Get current portfolio daily return (in %)
 (defn portfolio-daily-ret 
-  "This function returns the current daily return of the portfolio."
+  "This function returns the current daily return of the portfolio in %."
   []
-  (get-in (last (deref portfolio_value)) [:daily_ret])
+  (* (get-in (last (deref portfolio_value)) [:daily_ret]) 100)
 )
 
 ;; Calculate portfolio total returns
 (defn portfolio-total-ret
-  "This function returns the current daily return of the portfolio."
+  "This function returns the current daily return of the portfolio in %."
   []
   (def total-ret 0)
   (doseq [daily-record (deref portfolio_value)] ;; then update the price & aprc of the securities in the portfolio
@@ -53,9 +53,10 @@
   )
 )
 
-;; Annualised return
-(defn annualised-return
-  "This function calculates the annualised return of the portfolio." 
+;; Return calculated with rolling fixed window of 1 year (in %)
+(defn rolling-return
+  "This function calculates the return of the portfolio, with a rolling 
+  fixed window of 1 year." 
   []
   (def tradays (num-of-tradays))
   (if (= tradays 0) (def tradays 1))
@@ -99,42 +100,45 @@
   dailyret_record
 )
 
-;; Volatility
+;; Volatility (in %)
 (defn volatility
-  "This function returns the volatility of the portfolio."
+  "This function returns the volatility of the portfolio in %."
   []
-  (standard-deviation (deref (get-daily-returns)))
+  (* (standard-deviation (deref (get-daily-returns))) 100)
 ) 
 
-;; Sharpe ratio
+;; Sharpe ratio (in %)
 (defn sharpe-ratio
-  "This function returns the sharpe ratio."
+  "This function returns the sharpe ratio of the portfolio in %."
   []
   (if (not= (volatility) 0.0)
-    (/ (portfolio-total-ret) (volatility))
+    (* (/ (portfolio-total-ret) (volatility)) 100)
     0.0
   )
 )
 
-;; Annualised volatility
-(defn annualised-volatility
-  "This function returns the annualised volatility of the portfolio."
+;; Volatility, rolling window (in %)
+(defn rolling-volatility
+  "This function returns the volatility of the portfolio in %, calculated with a
+  rolling fixed window of 1 year.."
   []
-  (* (Math/sqrt 252) (standard-deviation (deref (get-daily-returns))))
+  (* (* (Math/sqrt 252) (standard-deviation (deref (get-daily-returns)))) 100)
 ) 
 
-;; Annualised sharpe ratio
-(defn annualised-sharpe-ratio
-  "This function returns the annualised sharpe ratio."
+;; Sharpe ratio, rolling window (in %)
+(defn rolling-sharpe-ratio
+  "This function returns the sharpe ratio in %, calculated with a
+  rolling fixed window of 1 year."
   []
-  (if (not= (annualised-volatility) 0.0)
-    (/ (annualised-return) (annualised-volatility))
+  (if (not= (rolling-volatility) 0.0)
+    (* (/ (rolling-return) (rolling-volatility)) 100)
     0.0
   )
 )
 
-;; PnL per trade
+;; PnL per trade (in $)
 (defn pnl-per-trade
+  "This function returns the profit/loss per trade in dollars."
   []
   (/ (- (portfolio-total) init-capital) (count (deref order_record)))
 )
@@ -143,28 +147,28 @@
 (defn update-eval-report
   "This function updates the evaluation report."
   [date]
-  (let [total-val (portfolio-total)
-        daily-ret (portfolio-daily-ret)
-        total-ret (portfolio-total-ret)
-        volatility (volatility)
-        sharpe-ratio (sharpe-ratio)
-        annualised-ret (annualised-return)
-        annualised-vol (annualised-volatility)
-        annualised-sharpe (annualised-sharpe-ratio)
-        pnl-per-trade (pnl-per-trade)
+  (let [total-val (str "$" (int (portfolio-total)))
+        daily-ret (str (format "%.2f" (portfolio-daily-ret)) "%")
+        total-ret (str (format "%.2f" (portfolio-total-ret)) "%")
+        volatility (str (format "%.2f" (volatility)) "%")
+        sharpe-ratio (str (format "%.2f" (sharpe-ratio)) "%")
+        rolling-ret (str (format "%.2f" (rolling-return)) "%")
+        rolling-vol (str (format "%.2f" (rolling-volatility)) "%")
+        rolling-sharpe (str (format "%.2f" (rolling-sharpe-ratio)) "%")
+        pnl-per-trade (str "$" (format "%.2f" (pnl-per-trade)))
         ]
 
-    (swap! eval_record concat [{:date date
-                                :total-val (Double/parseDouble (format "%.2f" total-val))
-                                :daily-ret (Double/parseDouble (format "%.3f" daily-ret))
-                                :total-ret (Double/parseDouble (format "%.3f" total-ret))
-                                :volatility (Double/parseDouble (format "%.3f" volatility))
-                                :sharpe (Double/parseDouble (format "%.3f" sharpe-ratio))
-                                :annualised-ret (Double/parseDouble (format "%.3f" annualised-ret))
-                                :annualised-vol (Double/parseDouble (format "%.3f" annualised-vol))
-                                :annualised-sharpe (Double/parseDouble (format "%.3f" annualised-sharpe))
-                                :pnl-per-trade (Double/parseDouble (format "%.2f" pnl-per-trade)) 
-                              }])
+    (swap! eval_record concat [(into (sorted-map) {:date date
+                                :tot-val total-val
+                                :ret-daily daily-ret
+                                :ret-total total-ret
+                                :vol-exp volatility
+                                :sharpe-exp sharpe-ratio
+                                :ret-roll rolling-ret
+                                :vol-roll rolling-vol
+                                :sharpe-roll rolling-sharpe
+                                :pnl-per-t pnl-per-trade 
+                              })])
   )
 )
 

@@ -5,7 +5,8 @@
             [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.plot :refer :all]
             [clojure-backtesting.specs :refer :all]
-            ;[clojure-backtesting.parameters :refer :all]
+            [clojure-backtesting.counter :refer :all]
+            ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
             [clj-time.core :as clj-t]
@@ -97,29 +98,51 @@
   "Write your code here"
     [& args] ; pass ./resources/CRSP-extract.csv as arg
     ;(println args)
-    (reset! data-set (add_aprc (read-csv-row (first args))))
-    ; (println (take 20 (deref data-set)))
-    (init_portfolio "1980-12-16" 5000)
-    (order_internal "1980-12-16" "AAPL" 30)
-    (order_internal "1980-12-16" "IBM" 20)
-    (update-eval-report "1980-12-16")
-    (order_internal "1980-12-17" "IBM" -10)
-    (update-eval-report "1980-12-17")
-    (order_internal "1981-12-10" "IBM" 20)
-    (update-eval-report "1985-12-18")
-    (println (deref portfolio))
-    (println (deref portfolio_value))
-    (println (deref order_record))
-    (println (get (first (deref order_record)) :date))
+    ; (reset! data-set (add_aprc (read-csv-row (first args))))
+    ; ; (println (take 20 (deref data-set)))
+    ; (init_portfolio "1980-12-16" 5000)
+    ; (order_internal "1980-12-16" "AAPL" 30)
+    ; (order_internal "1980-12-16" "IBM" 20)
+    ; (update-eval-report "1980-12-16")
+    ; (order_internal "1980-12-17" "IBM" -10)
+    ; (update-eval-report "1980-12-17")
+    ; (order_internal "1981-12-10" "IBM" 20)
+    ; (update-eval-report "1985-12-18")
+    ; (println (deref portfolio))
+    ; (println (deref portfolio_value))
+    ; (println (deref order_record)); (println (take 20 (deref data-set)))
 
-    ; for checking sequence
-    ; (println (s/conform s [42 11 13 15 {:a 1 :b 2 :c 3} 1 2 3 42 43 44 11]))
-    ; (println (s/conform portfolio (deref portfolio)))
-    ; (s/explain portfolio-test (deref portfolio))
+    (reset! data-set (add_aprc (read-csv-row "./resources/CRSP-extract.csv")))
+    (init_portfolio "1980-12-16" 10000);
 
-    (let [tot (:tot_value (last (deref portfolio_value)))]
-        (println (type tot))
+    (def num-of-days (atom 10))                              
+    (while (pos? @num-of-days)
+        (do 
+            (if (= 10 @num-of-days)
+                (do
+                    (order "AAPL" 50) ; buy 50 stocks
+                    (println ((fn [date] (str "Buy 50 stocks of AAPL on " date)) (get_date)))
+                )
+            )
+            (if (odd? @num-of-days)
+                (do
+                    (order "AAPL" -10) ; sell 10 stocks
+                    (println ((fn [date] (str "Sell 10 stocks of AAPL on " date)) (get_date)))
+                )
+            )
+            (update-eval-report (get_date))
+            (next_date)
+            (swap! num-of-days dec)
+        )
     )
+    
+    ; (println (deref portfolio)) 
+    (view_portfolio) ;; display it in a table 
+    
+    (pprint/print-table (deref order_record))
+    
+    (view_portfolio_record)
+    (eval-report)  
  )
 
 ;;sample activation command:

@@ -1,8 +1,10 @@
 (ns clojure-backtesting.order
   (:require [clojure-backtesting.data :refer :all]
 			[clojure-backtesting.parameters :refer :all]
-			[clojure.string :as str]
-			[java-time :as t]) ;; Useful for CSV handling
+      [clojure-backtesting.counter :refer :all]
+      [clojure.string :as str]
+      [clojure.pprint :as pprint]
+			[java-time :as t])
     )
 
 ;;This file is for ordering related functions
@@ -10,13 +12,6 @@
 ;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
 ;;(def a (read-csv-row file1))
 
-(defn look_ahead_i_days
-	;;return date
-	;;here the format of the input date should be:
-	;;year-month-day
-	[date i]
-	(let [[year month day] (map parse-int (str/split date #"-"))]
-    (t/format "yyyy-MM-dd" (t/plus (t/local-date year month day) (t/days i)))))
 
 ;; helper function, natural logarithm
 (defn log_10 [n]
@@ -119,11 +114,12 @@
   [date init-capital] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
   ;; example: portfolio -> {:cash {:tot_val 10000} :"AAPL" {:price 400 :aprc adj_price :quantity 100 :tot_val 40000}}
   ;; example: portfolio_value {:date 1980-12-16 :tot_value 50000 :daily_ret 0}
+  (init_date date)
   (def order_record (atom []))
   (def init-capital init-capital)
   ;(def num-of-tradays (count (deref data-set))) ;; wrong, to-be-deleted
   (def portfolio (atom {:cash {:tot_val init-capital}}))
-  (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0}]))
+  (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0.0}]))
 )
 
 ;; Update the portfolio when placing an order
@@ -167,8 +163,77 @@
   )
 )
 
+;; utility function
+(defn view_portfolio_record
+  "This function prints the portfolio value vector in a table format, with units added."
+  []
+  (def portfolio_record (atom [])) ; temporarily stores record for view
+
+  (doseq [row (deref portfolio_value)] 
+    (do
+      (let [date (get row :date)
+            tot_val (str "$" (int (get row :tot_value)))
+            daily_ret (str (format "%.2f" (get row :daily_ret)) "%")
+           ]
+      
+        (swap! portfolio_record concat [
+          {:date date
+           :tot_value tot_val
+           :daily_ret daily_ret
+          }]) 
+      )
+    )
+  )
+  
+  (pprint/print-table (deref portfolio_record))
+)
+
+;; utility function
+(defn view_portfolio
+  "This function prints portfolio map in a table format."
+  []
+  (def portfolio_table (atom [])) ; temporarily stores record for view
+
+    (doseq [[ticker row] (deref portfolio)] 
+      (do
+        ; (println ticker)
+        ; (println row)
+        (if (= ticker :cash)
+          (do
+            (let [tot_val (int (get row :tot_val))]
+            (swap! portfolio_table concat [
+              {:asset "cash"
+              :price "N/A"
+              :aprc "N/A"
+              :quantity "N/A"
+              :tot_val tot_val
+              }]) 
+            )
+          )
+          (do
+            (let [price (get row :price)
+              aprc (format "%.2f" (get row :aprc))
+              quantity (get row :quantity)
+              tot_val (int (get row :tot_val))
+             ]
+            (swap! portfolio_table concat [
+              {:asset ticker
+              :price price
+              :aprc aprc
+              :quantity quantity
+              :tot_val tot_val
+              }]) 
+            )
+          )
+        )
+      )
+    )
+  
+  (pprint/print-table (deref portfolio_table))
+)
+
 (defn total_cal
-  "this function returns the remaining total stock of a tic"
+  "This function returns the remaining total stock of a tic"
   [date tic])
 
 ; (defn order_parl
@@ -302,7 +367,20 @@
 	;;this is where parallel computing is needed.
 	(swap! order_record concat (doall (pmap order_parl args)))
 	(shutdown-agents));;needs more work
-	)
+  )
+
+(defn order
+  (
+    [tic quantity]
+    (order_internal (get_date) tic quantity)
+  )
+  (
+    [tic quantity remaining]
+    (order_internal (get_date) tic quantity remaining)
+  )
+  (
+    [arg]
+  ))
 
 
 
