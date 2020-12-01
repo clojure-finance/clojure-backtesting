@@ -188,6 +188,50 @@
   (pprint/print-table (deref portfolio_record))
 )
 
+;; utility function
+(defn view_portfolio
+  "This function prints portfolio map in a table format."
+  []
+  (def portfolio_table (atom [])) ; temporarily stores record for view
+
+    (doseq [[ticker row] (deref portfolio)] 
+      (do
+        ; (println ticker)
+        ; (println row)
+        (if (= ticker :cash)
+          (do
+            (let [tot_val (int (get row :tot_val))]
+            (swap! portfolio_table concat [
+              {:asset "cash"
+              :price "N/A"
+              :aprc "N/A"
+              :quantity "N/A"
+              :tot_val tot_val
+              }]) 
+            )
+          )
+          (do
+            (let [price (get row :price)
+              aprc (format "%.2f" (get row :aprc))
+              quantity (get row :quantity)
+              tot_val (int (get row :tot_val))
+             ]
+            (swap! portfolio_table concat [
+              {:asset ticker
+              :price price
+              :aprc aprc
+              :quantity quantity
+              :tot_val tot_val
+              }]) 
+            )
+          )
+        )
+      )
+    )
+  
+  (pprint/print-table (deref portfolio_table))
+)
+
 (defn total_cal
   "This function returns the remaining total stock of a tic"
   [date tic])
