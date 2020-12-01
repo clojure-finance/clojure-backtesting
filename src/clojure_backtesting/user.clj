@@ -137,8 +137,8 @@
     
     (pprint/print-table (deref order_record))
     
-    ;(view_portfolio_record)
-    ;(eval-report)  
+    (view_portfolio_record)
+    (eval-report)  
  )
 
 ;;sample activation command:
