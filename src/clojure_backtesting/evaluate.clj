@@ -4,20 +4,20 @@
             [clj-time.core :as clj-t]
             [clojure.pprint :as pprint]))
 
-(def eval_record (atom []))
+(def eval-record (atom []))
 
 ;; Get current portfolio total value
 (defn portfolio-total 
   "This function returns the current total value of the portfolio."
   []
-  (get-in (last (deref portfolio_value)) [:tot_value])
+  (get-in (last (deref portfolio-value)) [:tot-value])
 )
 
 ;; Get current portfolio daily return (in %)
 (defn portfolio-daily-ret 
   "This function returns the current daily return of the portfolio in %."
   []
-  (* (get-in (last (deref portfolio_value)) [:daily_ret]) 100)
+  (* (get-in (last (deref portfolio-value)) [:daily-ret]) 100)
 )
 
 ;; Calculate portfolio total returns
@@ -25,8 +25,8 @@
   "This function returns the current daily return of the portfolio in %."
   []
   (def total-ret 0.0)
-  (doseq [daily-record (deref portfolio_value)]
-    (let [daily-ret (daily-record :daily_ret)]
+  (doseq [daily-record (deref portfolio-value)]
+    (let [daily-ret (daily-record :daily-ret)]
       ;(println daily-ret)
       (def total-ret (+ total-ret daily-ret))
     )
@@ -38,8 +38,8 @@
 (defn num-of-tradays
   "This function calculates the annualised return of the portfolio." 
   []
-  (let [first-date (get (first (deref order_record)) :date)
-          last-date (get (last (deref order_record)) :date)]
+  (let [first-date (get (first (deref order-record)) :date)
+          last-date (get (last (deref order-record)) :date)]
 
     (def first-year (Integer/parseInt (subs first-date 0 4)))
     (def first-month (Integer/parseInt (subs first-date 5 7)))
@@ -90,14 +90,14 @@
 (defn get-daily-returns
   "This function returns a collection of daily returns from 'portfolio-value'."
   []
-  (def dailyret_record (atom []))
-  (doseq [daily-record (deref portfolio_value)] ;; then update the price & aprc of the securities in the portfolio
-    (let [daily-ret (daily-record :daily_ret)]
+  (def dailyret-record (atom []))
+  (doseq [daily-record (deref portfolio-value)] ;; then update the price & aprc of the securities in the portfolio
+    (let [daily-ret (daily-record :daily-ret)]
       ;(println daily-ret)
-      (swap! dailyret_record concat [daily-ret])
+      (swap! dailyret-record concat [daily-ret])
     )
   )
-  dailyret_record
+  dailyret-record
 )
 
 ;; Volatility (in %)
@@ -140,7 +140,7 @@
 (defn pnl-per-trade
   "This function returns the profit/loss per trade in dollars."
   []
-  (/ (- (portfolio-total) init-capital) (count (deref order_record)))
+  (/ (- (portfolio-total) init-capital) (count (deref order-record)))
 )
 
 ;; Update evaluation report
@@ -158,7 +158,7 @@
         pnl-per-trade (str "$" (format "%.2f" (pnl-per-trade)))
         ]
 
-    (swap! eval_record concat [(into (sorted-map) {:date date
+    (swap! eval-record concat [(into (sorted-map) {:date date
                                 :tot-val total-val
                                 :ret-da daily-ret
                                 :ret-tot total-ret
@@ -176,7 +176,7 @@
 (defn eval-report
   "This function prints the evaluation report."
   []
-  (pprint/print-table (deref eval_record))
+  (pprint/print-table (deref eval-record))
 )
 
 

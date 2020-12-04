@@ -20,7 +20,7 @@
             repeat)      ;; repeat the process for all the headers
        (rest csv-data))) ;; use the rest rows as values of the map
 
-(defn csv->map_col
+(defn csv->map-col
   "Convert parsed CSV vectors into maps with headers as keys, by column"
   [csv-data]
   (zipmap
@@ -54,7 +54,7 @@
   [filename]
   (with-open [reader (io/reader filename)]
     (->> (csv/read-csv reader)
-         csv->map_col
+         csv->map-col
          doall)))
 
 ;; Here, I want to define a function that can convert between the column based

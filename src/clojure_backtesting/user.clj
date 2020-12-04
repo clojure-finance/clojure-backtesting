@@ -99,22 +99,22 @@
   "Write your code here"
     [& args] ; pass ./resources/CRSP-extract.csv as arg
     ;(println args)
-    ; (reset! data-set (add_aprc (read-csv-row (first args))))
+    ; (reset! data-set (add-aprc (read-csv-row (first args))))
     ; ; (println (take 20 (deref data-set)))
-    ; (init_portfolio "1980-12-16" 5000)
-    ; (order_internal "1980-12-16" "AAPL" 30)
-    ; (order_internal "1980-12-16" "IBM" 20)
+    ; (init-portfolio "1980-12-16" 5000)
+    ; (order-internal "1980-12-16" "AAPL" 30)
+    ; (order-internal "1980-12-16" "IBM" 20)
     ; (update-eval-report "1980-12-16")
-    ; (order_internal "1980-12-17" "IBM" -10)
+    ; (order-internal "1980-12-17" "IBM" -10)
     ; (update-eval-report "1980-12-17")
-    ; (order_internal "1981-12-10" "IBM" 20)
+    ; (order-internal "1981-12-10" "IBM" 20)
     ; (update-eval-report "1985-12-18")
     ; (println (deref portfolio))
-    ; (println (deref portfolio_value))
-    ; (println (deref order_record)); (println (take 20 (deref data-set)))
+    ; (println (deref portfolio-value))
+    ; (println (deref order-record)); (println (take 20 (deref data-set)))
 
-    (reset! data-set (add_aprc (read-csv-row "./resources/CRSP-extract.csv")))
-    (init_portfolio "1980-12-16" 10000);
+    (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
+    (init-portfolio "1980-12-16" 10000);
 
     (def num-of-days (atom 10))                              
     (while (pos? @num-of-days)
@@ -122,27 +122,27 @@
             (if (= 10 @num-of-days)
                 (do
                     (order "AAPL" 50) ; buy 50 stocks
-                    (println ((fn [date] (str "Buy 50 stocks of AAPL on " date)) (get_date)))
+                    (println ((fn [date] (str "Buy 50 stocks of AAPL on " date)) (get-date)))
                 )
             )
             (if (odd? @num-of-days)
                 (do
                     (order "AAPL" -10) ; sell 10 stocks
-                    (println ((fn [date] (str "Sell 10 stocks of AAPL on " date)) (get_date)))
+                    (println ((fn [date] (str "Sell 10 stocks of AAPL on " date)) (get-date)))
                 )
             )
-            (update-eval-report (get_date))
-            (next_date)
+            (update-eval-report (get-date))
+            (next-date)
             (swap! num-of-days dec)
         )
     )
     
     ; (println (deref portfolio)) 
-    (view_portfolio) ;; display it in a table 
+    (view-portfolio) ;; display it in a table 
     
-    (pprint/print-table (deref order_record))
+    (pprint/print-table (deref order-record))
     
-    (view_portfolio_record)
+    (view-portfolio-record)
     (eval-report)  
  )
 

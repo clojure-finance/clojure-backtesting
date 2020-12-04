@@ -16,7 +16,7 @@
 ;; more customization can be found here: https://vega.github.io/vega-lite/docs/line.html
 
 ; Require the following data type for input
-; vector of maps [{:x-axis title value, :series_name "ABC", :y-axis title value}{......}]
+; vector of maps [{:x-axis title value, :series-name "ABC", :y-axis title value}{......}]
 
   ; e.g.
   ; [
@@ -30,7 +30,7 @@
   ; .....
   ; ]
 
-  ; portfolio_value data type {:date xxxx :tot_value 50000 :daily_ret 0}
+  ; portfolio-value data type {:date xxxx :tot-value 50000 :daily-ret 0}
 
 
 ;testing data
@@ -55,7 +55,7 @@
     }
   ))
   
-  ([dataset series x y1 y2] ;y1 & y2 should be key for values to be plotted, e.g. :tot_value or :daily_ret
+  ([dataset series x y1 y2] ;y1 & y2 should be key for values to be plotted, e.g. :tot-value or :daily-ret
 
   (oz/view!
     { :width 500 :height 500 ;adjust the graph size

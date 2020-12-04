@@ -38,8 +38,8 @@
     :ex (s/alt :odd ::odd? :even ::even?))
 )
 
-; (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0}])
+; (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0}])
 (def portfolio-test
-    (s/cat :cash {:tot_val not-empty}
-        :tic (s/* (s/cat :price not-empty :aprc not-empty :quantity not-empty :tot_val not-empty)))
+    (s/cat :cash {:tot-val not-empty}
+        :tic (s/* (s/cat :price not-empty :aprc not-empty :quantity not-empty :tot-val not-empty)))
 )
