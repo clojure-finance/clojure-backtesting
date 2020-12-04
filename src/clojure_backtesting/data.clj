@@ -92,7 +92,7 @@
 (defn left-join
   "When passed 2 rels, returns the rel corresponding to the natural
   left-join. When passed an additional keymap, joins on the corresponding
-  keys."
+  keys. (Deprecated: should use join instead)"
   ([xrel yrel]
    (if (and (seq xrel) (seq yrel))
      (let [ks (set/intersection (set (keys (first xrel)))
