@@ -24,14 +24,14 @@
 (defn portfolio-total-ret
   "This function returns the current daily return of the portfolio in %."
   []
-  (def total-ret 0)
-  (doseq [daily-record (deref portfolio_value)] ;; then update the price & aprc of the securities in the portfolio
+  (def total-ret 0.0)
+  (doseq [daily-record (deref portfolio_value)]
     (let [daily-ret (daily-record :daily_ret)]
       ;(println daily-ret)
       (def total-ret (+ total-ret daily-ret))
     )
   )
-  total-ret
+  (* total-ret 100)
 )
 
 ;; Calculate number of days between first and last dates in order record
@@ -61,7 +61,7 @@
   (def tradays (num-of-tradays))
   (if (= tradays 0) (def tradays 1))
   (print tradays)
-  (- (Math/pow (+ 1 (portfolio-total-ret)) (/ 252 tradays)) 1)
+  (- (Math/pow (+ 1 (/ (portfolio-total-ret) 100)) (/ 252 tradays)) 1)
 )
 
 ;; Helper function
