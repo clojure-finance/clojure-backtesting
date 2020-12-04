@@ -4,7 +4,8 @@
       [clojure-backtesting.counter :refer :all]
       [clojure.string :as str]
       [clojure.pprint :as pprint]
-			[java-time :as t])
+			[java-time :as t]
+      [clojure.math.numeric-tower :as math])
     )
 
 ;;This file is for ordering related functions
@@ -20,14 +21,15 @@
 ;; for each security:
 ;; add col 'cum_ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum_ret)
-(defn add_aprc [data]
+(defn add_aprc 
   "This function adds the adjusted price column to the dataset."
+  [data]
   ; get price on 1st day
   (def initial_price 0)
   (def cum_ret 0)
   (def curr_ticker "DEFAULT")
  ; traverse row by row in dataset
- (map (fn [line]
+  (map (fn [line]
         (let [;line-new (select-keys line [:date :TICKER :PRC :RET])
               price (Double/parseDouble (get line :PRC))
               ret (Double/parseDouble (get line :RET))
@@ -48,7 +50,7 @@
         )
       )
     data
- )
+  )
 )
 
 ;;testing purpose, delete afterwards
@@ -188,9 +190,12 @@
   (pprint/print-table (deref portfolio_record))
 )
 
-(defn total_cal
-  "This function returns the remaining total stock of a tic"
-  [date tic])
+(defn total_value
+  "This function returns the remaining total value including the cash and stock value"
+  []
+  (if (= (last (deref portfolio_value)) nil)
+    (get (deref portfolio) :cash)
+    (get (last (deref portfolio_value)) :tot_value)))
 
 ; (defn order_parl
 ;   "This is the parellel ordering function"
@@ -281,13 +286,18 @@
         (= (get (get (deref portfolio) tic) :quantity) nil) 0
         :else (get (get (deref portfolio) tic) :quantity)) 
         cash (get (get (deref portfolio) :cash) :tot_val)]
-        (if (and (>= (+ total quantity) 0) (>= cash (* price quantity)))
+        (if (and (and (>= (+ total quantity) 0) (>= cash (* price quantity))))
         (do
         (update_portfolio adj_date tic quantity price adj_price)
         (swap! order_record concat [{:date adj_date :tic tic :price price :quantity quantity :total (+ total quantity) :reference reference}]))
-        (do 
-          (println (format "The order request at date: %s, tic: %s, quantity: %d fails." date tic quantity))
-          (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell."))))))
+        (do
+          (if (and LEVERAGE (>= (total_value) (math/abs (* price quantity))))
+            (do
+              (update_portfolio adj_date tic quantity price adj_price)
+              (swap! order_record concat [{:date adj_date :tic tic :price price :quantity quantity :total (+ total quantity) :reference reference}]))
+          (do
+            (println (format "The order request at date: %s, tic: %s, quantity: %d fails." date tic quantity))
+            (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell."))))))))
     (do 
       (println (format "The order request at date: %s, tic: %s, quantity: %d fails." date tic quantity))
       (println (format "Failure reason: %s." adj_date))))));;else
@@ -322,7 +332,7 @@
 	([args]
 	;;this is where parallel computing is needed.
 	(swap! order_record concat (doall (pmap order_parl args)))
-	(shutdown-agents));;needs more work
+	);;needs more work
   )
 
 (defn order

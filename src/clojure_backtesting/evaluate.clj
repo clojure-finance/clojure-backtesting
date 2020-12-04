@@ -1,7 +1,8 @@
 (ns clojure-backtesting.evaluate
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
-            [clojure.pprint :as pprint]))
+            [clojure.pprint :as pprint]
+            ))
 
 (def eval_record (atom []))
 

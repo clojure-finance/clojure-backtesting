@@ -8,7 +8,9 @@
                  [com.hypirion/clj-xchart "0.2.0"]
                  [clojure.java-time "0.3.2"] ;https://github.com/dm3/clojure.java-time
                  [clj-time "0.9.0"]
+                 [table "0.5.0"]
                  [clojupyter/clojupyter "0.3.2"]
+                 [org.clojure/math.numeric-tower "0.0.4"]
                  ]
   :aliases			{"clojupyter"			["run" "-m" "clojupyter.cmdline"]}
   :main clojure-backtesting.user
