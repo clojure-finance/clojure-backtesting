@@ -160,14 +160,14 @@
 
     (swap! eval_record concat [(into (sorted-map) {:date date
                                 :tot-val total-val
-                                :ret-daily daily-ret
-                                :ret-total total-ret
-                                :vol-exp volatility
-                                :sharpe-exp sharpe-ratio
-                                :ret-roll rolling-ret
-                                :vol-roll rolling-vol
-                                :sharpe-roll rolling-sharpe
-                                :pnl-per-t pnl-per-trade 
+                                :ret-da daily-ret
+                                :ret-tot total-ret
+                                :vol-e volatility
+                                :sharpe-e sharpe-ratio
+                                :ret-r rolling-ret
+                                :vol-r rolling-vol
+                                :sharpe-r rolling-sharpe
+                                :pnl-pt pnl-per-trade 
                               })])
   )
 )
