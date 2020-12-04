@@ -4,11 +4,14 @@
             [clojure-backtesting.order :refer :all]
             [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.plot :refer :all]
+            [clojure-backtesting.specs :refer :all]
             [clojure-backtesting.counter :refer :all]
             ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
+            [clj-time.core :as clj-t]
             [java-time :as t]
+            ;[clojure.spec.alpha :as s]
             [clojupyter.kernel.version :as ver]
             )(:gen-class))
 
@@ -108,6 +111,7 @@
     ; (println (deref portfolio))
     ; (println (deref portfolio_value))
     ; (println (deref order_record)); (println (take 20 (deref data-set)))
+
     (reset! data-set (add_aprc (read-csv-row "./resources/CRSP-extract.csv")))
     (init_portfolio "1980-12-16" 10000);
 
@@ -132,9 +136,11 @@
         )
     )
     
-
+    ; (println (deref portfolio)) 
+    (view_portfolio) ;; display it in a table 
+    
     (pprint/print-table (deref order_record))
-
+    
     (view_portfolio_record)
     (eval-report)  
  )

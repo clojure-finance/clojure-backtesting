@@ -85,7 +85,7 @@
 (defn search_in_order
 	"This function turns the order processed date"
 [date tic]
-;;date e.g. "DD/MM?YYYY"
+;;date e.g. "DD/MM/YYYY"
 ;;tic e.g. "AAPL"
 ;;return [false "No match date" 0 0 0] if no match
 ;;return [true T+1_date price aprc reference] otherwise
@@ -119,7 +119,7 @@
   (init_date date)
   (def order_record (atom []))
   (def init-capital init-capital)
-  (def num-of-tradays (count (deref data-set)))
+  ;(def num-of-tradays (count (deref data-set))) ;; wrong, to-be-deleted
   (def portfolio (atom {:cash {:tot_val init-capital}}))
   (def portfolio_value (atom [{:date date :tot_value init-capital :daily_ret 0.0}]))
 )
@@ -196,6 +196,53 @@
   (if (= (last (deref portfolio_value)) nil)
     (get (deref portfolio) :cash)
     (get (last (deref portfolio_value)) :tot_value)))
+;; utility function
+(defn view_portfolio
+  "This function prints portfolio map in a table format."
+  []
+  (def portfolio_table (atom [])) ; temporarily stores record for view
+
+    (doseq [[ticker row] (deref portfolio)] 
+      (do
+        ; (println ticker)
+        ; (println row)
+        (if (= ticker :cash)
+          (do
+            (let [tot_val (int (get row :tot_val))]
+            (swap! portfolio_table concat [
+              {:asset "cash"
+              :price "N/A"
+              :aprc "N/A"
+              :quantity "N/A"
+              :tot_val tot_val
+              }]) 
+            )
+          )
+          (do
+            (let [price (get row :price)
+              aprc (format "%.2f" (get row :aprc))
+              quantity (get row :quantity)
+              tot_val (int (get row :tot_val))
+             ]
+            (swap! portfolio_table concat [
+              {:asset ticker
+              :price price
+              :aprc aprc
+              :quantity quantity
+              :tot_val tot_val
+              }]) 
+            )
+          )
+        )
+      )
+    )
+  
+  (pprint/print-table (deref portfolio_table))
+)
+
+(defn total_cal
+  "This function returns the remaining total stock of a tic"
+  [date tic])
 
 ; (defn order_parl
 ;   "This is the parellel ordering function"

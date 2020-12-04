@@ -16,5 +16,4 @@ CRSP-extract_sorted.csv
 debug.csv
 .DS_Store
 order_legacy.clj
-.calva/output-window/.clj-kondo/config.edn
-.calva/output-window/output.calva-repl
+specs.clj

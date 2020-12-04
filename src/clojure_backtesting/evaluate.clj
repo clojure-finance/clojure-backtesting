@@ -1,8 +1,8 @@
 (ns clojure-backtesting.evaluate
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
-            [clojure.pprint :as pprint]
-            ))
+            [clj-time.core :as clj-t]
+            [clojure.pprint :as pprint]))
 
 (def eval_record (atom []))
 
@@ -24,14 +24,33 @@
 (defn portfolio-total-ret
   "This function returns the current daily return of the portfolio in %."
   []
-  (def total-ret 0)
-  (doseq [daily-record (deref portfolio_value)] ;; then update the price & aprc of the securities in the portfolio
+  (def total-ret 0.0)
+  (doseq [daily-record (deref portfolio_value)]
     (let [daily-ret (daily-record :daily_ret)]
       ;(println daily-ret)
       (def total-ret (+ total-ret daily-ret))
     )
   )
-  total-ret
+  (* total-ret 100)
+)
+
+;; Calculate number of days between first and last dates in order record
+(defn num-of-tradays
+  "This function calculates the annualised return of the portfolio." 
+  []
+  (let [first-date (get (first (deref order_record)) :date)
+          last-date (get (last (deref order_record)) :date)]
+
+    (def first-year (Integer/parseInt (subs first-date 0 4)))
+    (def first-month (Integer/parseInt (subs first-date 5 7)))
+    (def first-day (Integer/parseInt (subs first-date 8 10)))
+    (def last-year (Integer/parseInt (subs last-date 0 4)))
+    (def last-month (Integer/parseInt (subs last-date 5 7)))
+    (def last-day (Integer/parseInt (subs last-date 8 10)))
+
+    (def interval-min (clj-t/in-minutes (clj-t/interval (clj-t/date-time first-year first-month first-day) (clj-t/date-time last-year last-month last-day))))
+    (/ (/ interval-min 60) 24)
+  )
 )
 
 ;; Return calculated with rolling fixed window of 1 year (in %)
@@ -39,7 +58,10 @@
   "This function calculates the return of the portfolio, with a rolling 
   fixed window of 1 year." 
   []
-  (- (Math/pow (+ 1 (portfolio-total-ret)) (/ 252 num-of-tradays)) 1)
+  (def tradays (num-of-tradays))
+  (if (= tradays 0) (def tradays 1))
+  (print tradays)
+  (- (Math/pow (+ 1 (/ (portfolio-total-ret) 100)) (/ 252 tradays)) 1)
 )
 
 ;; Helper function
@@ -48,11 +70,17 @@
   (* n n))
 
 ;; Helper function
+;
+; input: a collection
+; output: integer / fraction (if rational)
 (defn mean
   [coll]
   (/ (reduce + coll) (count coll)))
 
 ;; Helper function
+;
+; input: a collection
+; output: sample standard deviation, float
 (defn standard-deviation
   [coll]
   (Math/sqrt (/ (reduce + (map square (map - coll (repeat (mean coll)))))
@@ -132,14 +160,14 @@
 
     (swap! eval_record concat [(into (sorted-map) {:date date
                                 :tot-val total-val
-                                :ret-daily daily-ret
-                                :ret-total total-ret
-                                :vol-exp volatility
-                                :sharpe-exp sharpe-ratio
-                                :ret-roll rolling-ret
-                                :vol-roll rolling-vol
-                                :sharpe-roll rolling-sharpe
-                                :pnl-per-t pnl-per-trade 
+                                :ret-da daily-ret
+                                :ret-tot total-ret
+                                :vol-e volatility
+                                :sharpe-e sharpe-ratio
+                                :ret-r rolling-ret
+                                :vol-r rolling-vol
+                                :sharpe-r rolling-sharpe
+                                :pnl-pt pnl-per-trade 
                               })])
   )
 )
