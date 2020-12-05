@@ -35,9 +35,9 @@
 
 ;testing data
 
-(def singlestock (read-csv-row "/home/kony/Documents/GitHub/clojure-backtesting/resources/plotting-testing-data-singlestock.csv")
+(def singlestock (read-csv-row "/home/kony/Documents/GitHub/clojure-backtesting/resources/plotting-testing-data-singlestock.csv"))
 
-(def multistocks (read-csv-row "/home/kony/Documents/GitHub/clojure-backtesting/resources/plotting-testing-data.csv")
+(def multistocks (read-csv-row "/home/kony/Documents/GitHub/clojure-backtesting/resources/plotting-testing-data.csv"))
 
 ;;examples in jupyter notebook
 
