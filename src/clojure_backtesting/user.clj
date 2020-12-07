@@ -116,33 +116,36 @@
     (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
     (init-portfolio "1980-12-16" 10000);
 
-    (def num-of-days (atom 10))                              
-    (while (pos? @num-of-days)
-        (do 
-            (if (= 10 @num-of-days)
-                (do
-                    (order "AAPL" 50) ; buy 50 stocks
-                    (println ((fn [date] (str "Buy 50 stocks of AAPL on " date)) (get-date)))
-                )
-            )
-            (if (odd? @num-of-days)
-                (do
-                    (order "AAPL" -10) ; sell 10 stocks
-                    (println ((fn [date] (str "Sell 10 stocks of AAPL on " date)) (get-date)))
-                )
-            )
-            (update-eval-report (get-date))
-            (next-date)
-            (swap! num-of-days dec)
-        )
-    )
+    ; (def num-of-days (atom 10))                              
+    ; (while (pos? @num-of-days)
+    ;     (do 
+    ;         (if (= 10 @num-of-days)
+    ;             (do
+    ;                 (order "AAPL" 50) ; buy 50 stocks
+    ;                 (println ((fn [date] (str "Buy 50 stocks of AAPL on " date)) (get-date)))
+    ;             )
+    ;         )
+    ;         (if (odd? @num-of-days)
+    ;             (do
+    ;                 (order "AAPL" -10) ; sell 10 stocks
+    ;                 (println ((fn [date] (str "Sell 10 stocks of AAPL on " date)) (get-date)))
+    ;             )
+    ;         )
+    ;         (update-eval-report (get-date))
+    ;         (next-date)
+    ;         (swap! num-of-days dec)
+    ;     )
+    ; )
+    (order-internal "1980-12-16" "AAPL" 30)
+    (order-internal "1980-12-16" "IBM" 20)
+    (update-eval-report "1980-12-16")
     
     ; (println (deref portfolio)) 
     (view-portfolio) ;; display it in a table 
     
     (pprint/print-table (deref order-record))
     
-    (view-portfolio-record)
+    (view-portfolio-record) ;; display portfolio value vector in table
     (eval-report)  
  )
 

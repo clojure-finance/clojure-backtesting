@@ -31,7 +31,7 @@
       (def total-ret (+ total-ret daily-ret))
     )
   )
-  (* total-ret 100)
+  total-ret
 )
 
 ;; Calculate number of days between first and last dates in order record
@@ -60,7 +60,7 @@
   []
   (def tradays (num-of-tradays))
   (if (= tradays 0) (def tradays 1))
-  (print tradays)
+  ;(println tradays)
   (- (Math/pow (+ 1 (/ (portfolio-total-ret) 100)) (/ 252 tradays)) 1)
 )
 
@@ -112,7 +112,7 @@
   "This function returns the sharpe ratio of the portfolio in %."
   []
   (if (not= (volatility) 0.0)
-    (* (/ (portfolio-total-ret) (volatility)) 100)
+    (/ (* (portfolio-total-ret) 100) (volatility))
     0.0
   )
 )
@@ -122,7 +122,7 @@
   "This function returns the volatility of the portfolio in %, calculated with a
   rolling fixed window of 1 year.."
   []
-  (* (* (Math/sqrt 252) (standard-deviation (deref (get-daily-returns)))) 100)
+  (* (Math/sqrt 252) (standard-deviation (deref (get-daily-returns))))
 ) 
 
 ;; Sharpe ratio, rolling window (in %)
@@ -131,7 +131,7 @@
   rolling fixed window of 1 year."
   []
   (if (not= (rolling-volatility) 0.0)
-    (* (/ (rolling-return) (rolling-volatility)) 100)
+    (/ (rolling-return) (rolling-volatility))
     0.0
   )
 )
@@ -149,7 +149,7 @@
   [date]
   (let [total-val (str "$" (int (portfolio-total)))
         daily-ret (str (format "%.2f" (portfolio-daily-ret)) "%")
-        total-ret (str (format "%.2f" (portfolio-total-ret)) "%")
+        total-ret (str (format "%.2f" (* (portfolio-total-ret) 100)) "%")
         volatility (str (format "%.2f" (volatility)) "%")
         sharpe-ratio (str (format "%.2f" (sharpe-ratio)) "%")
         rolling-ret (str (format "%.2f" (rolling-return)) "%")
