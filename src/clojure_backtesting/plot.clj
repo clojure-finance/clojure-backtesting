@@ -1,75 +1,49 @@
-
 (ns clojure-backtesting.plot
   (:require [clojure-backtesting.data :refer :all]
-            [com.hypirion.clj-xchart :as c]
+            [clojupyter.misc.helper :as helper]
+            [oz.notebook.clojupyter :as oz]
   ) ;; require all libriaries from core
-
-  (:use clojure.pprint)
 )
 
-;;This file is for plotting related functions
-
-;;clj-xchart: line charts, scatter charts, area charts, bar charts, pie charts, donut charts
-	;; https://github.com/hypirion/clj-xchart
-	;; https://hypirion.github.io/clj-xchart/
-
-
-;;"Simple X-Y Chart. Require a map for input
-;;c/xy-chart {"Stock 1" [(X-axis vector1: all dates) (Y-axis vector2: all prices)]
-;;            "Stock 2" [(X-axis vector1: all dates) (Y-axis vector2: all prices)]}
+;; Oz library for Clojure: https://github.com/metasoarous/oz
 
 (defn plot
-  
   "this is the function that allows the users to plot charts,"
- 
-  [data title]
-  (c/view
-       (c/xy-chart data title)
-  )
-)
+  ([dataset series x y ]
+  (oz/view!
+    { :width 500 :height 500 ;adjust the graph size
+      :data      {:values dataset}
+      :encoding  {:x {:field x :type "temporal"};"field" means the x-axis name, "type" asking what's the data type of x-axis values; choosing from "quantity"/"nominal"/"temporal"  
+                  :y {:field y :type "quantitative"}
+                  :color {:field series :type "nominal"} ;if it's only 1 line, no need this
+                 } 
+      :mark "line"
+    }
+  ))
+  
+  ([dataset series x y1 y2] ;y1 & y2 should be key for values to be plotted, e.g. :tot-value or :daily-ret
 
-(defn plot-help
-
-"this is to give an example on how the plotting function is being used"
-[]
-
-(println "Please use the following format for the plot function. An example has been done for you. If successfully executed, a pop-up window with the graph will be shown.")
-
-(println "")
-
-
-(println 
-
- "(plot {\"Expected rate\" {:x (range 10) :y (range 10) :style {:line-color :red}}
-         \"Actual rate\"   {:x (range 10) :y (map #(+ % (rand-int 5) -2) (range 10)) :style {:line-color :blue}}}
-         {:title \"This is the title of the chart\"
-          :y-axis {:title \"This is the title for y axis\"}
-          :x-axis {:title \"This is the title for x axis\"}
-          :legend {:position :inside-ne}
-          })"
-)
-
-(plot {"Expected rate" {:x (range 10) :y (range 10) :style {:line-color :red}}
-         "Actual rate"   {:x (range 10) :y (map #(+ % (rand-int 5) -2) (range 10)) :style {:line-color :blue}}}
-         {:title "This is the title of the chart"
-          :y-axis {:title "This is the title for y axis"}
-          :x-axis {:title "This is the title for x axis"}
-          :legend {:position :inside-ne}
-          })
- 
+  (oz/view!
+    { :width 500 :height 500 ;adjust the graph size
+      :data      {:values dataset}
+      :encoding  {:x {:field x :type "temporal"} ;"field" means the x-axis name, "type" asking what's the data type of x-axis values; choosing from "quantity"/"nominal"/"temporal"  
+                  :color {:field series :type "nominal"} ;if it's only 1 line, no need this
+                 } 
+      :layer     [
+                 {:mark {:type "line"}
+                  :encoding {:y {:field y1 :type "quantitative"}
+                            :color {:field series :type "nominal"}}
+                 } 
+                 {:mark {:type "line"}
+                 :encoding {:y {:field y2 :type "quantitative"}
+                            :color {:field series :type "nominal"}}
+                }]
+      :resolve   {:scale {:y "independent"}}
+    }
+  ))
 )
 
 
-(comment
-  ;for documentation purpose only, a comprehensive function"
-  (plot {"Line A" {:x (range 10) :y (range 10) :style {:line-color :red}}
-         "Line B" {:x (range 10) :y (map #(+ % (rand-int 5) -2) (range 10)) :style {:line-color :blue}}}
-         {:title "This is the title of the chart"
-          :y-axis {:title "This is the title for y axis"}
-          :x-axis {:title "This is the title for x axis"}
-          ;;:legend {:position :inside-ne}
-          })
-)
 
 
 

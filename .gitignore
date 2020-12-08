@@ -17,3 +17,4 @@ debug.csv
 .DS_Store
 order_legacy.clj
 specs.clj
+deprecated/
