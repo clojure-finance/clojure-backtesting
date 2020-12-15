@@ -11,7 +11,7 @@
 
 (def data-set (atom [])) ;; main dataset (to be changed by the user)
 
-(defn csv->map
+(defn- csv->map
   "Convert parsed CSV vectors into maps with headers as keys, by row"
   [csv-data]
   (map zipmap ;; make the first row as headers and the following rows as values in a map structure e.g. {:tic AAPL} 
@@ -20,7 +20,7 @@
             repeat)      ;; repeat the process for all the headers
        (rest csv-data))) ;; use the rest rows as values of the map
 
-(defn csv->map-col
+(defn- csv->map-col
   "Convert parsed CSV vectors into maps with headers as keys, by column"
   [csv-data]
   (zipmap
@@ -60,8 +60,8 @@
 ;; Here, I want to define a function that can convert between the column based
 ;; dataset and the row based dataset
 (defn row->col
-  [row-based]
   "This function can parse the seq like ({}{}{}) to {: [] : []}"
+  [row-based]
     (-> (keys (first row-based))
     (zipmap (apply map vector (map vals (rest row-based))))))
 
@@ -74,7 +74,7 @@
 ;    (->> data
 ;   (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day))true))))))
 
-(defn count-days
+(defn- count-days
   [row-data]
   (count row-data))
 

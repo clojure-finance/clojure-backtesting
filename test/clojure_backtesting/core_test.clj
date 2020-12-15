@@ -4,6 +4,7 @@
             [clojure-backtesting.order :refer :all]
             [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.plot :refer :all]
+            [clojure-backtesting.counter :refer :all]
             ;;[clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
@@ -30,10 +31,10 @@
 ;   )
 ; )
 
-(deftest init-portfolio
+(deftest init_portfolio
   "Check the init-portfolio function."
   (testing 
-    (init_portfolio "1980-12-16" 5000)
+    (init-portfolio "1980-12-16" 5000)
     (is (= 5000 init-capital))
     (let [tot_val (get-in (deref portfolio) [:cash :tot_val])]
       (is (= 5000 tot_val))
@@ -45,11 +46,11 @@
   "Initial capital = 5000.
   Buy 10 AAPL on 1980-12-16, sell 5 on 1980-12-17."
   (testing 
-    (reset! data-set (add_aprc (read-csv-row "./resources/CRSP-extract.csv")))
-    (init_portfolio "1980-12-16" 5000)
-    (order_internal "1980-12-16" "AAPL" 10)
+    (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
+    (init-portfolio "1980-12-16" 5000)
+    (order "1980-12-16" "AAPL" 10)
     (update-eval-report "1980-12-16")
-    (order_internal "1980-12-17" "IBM" -5)
+    (order "1980-12-17" "IBM" -5)
     (update-eval-report "1980-12-17")
     ;; check order record
 
@@ -73,15 +74,12 @@
   )
 )
 
-
-            [java-time :as t]))
-
 (deftest a-test
   (testing "FIXME, I fail."
-    (reset! data-set (add_aprc (read-csv-row "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv")))
+    (reset! data-set (add-aprc (read-csv-row "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv")))
     ; (println (take 20 (deref data-set)))
-    (init_portfolio "1980-12-16" 5000)
-    (println get_date)
-    (is (= "1980-12-16" (get_date)))
-    (is (= "1980-12-17" (next_date)))
+    (init-portfolio "1980-12-16" 5000)
+    (println get-date)
+    (is (= "1980-12-16" (get-date)))
+    (is (= "1980-12-17" (next-date)))
 ))

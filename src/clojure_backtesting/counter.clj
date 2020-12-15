@@ -27,7 +27,7 @@
     []
     (t/format "yyyy-MM-dd" (deref date)))
 
-(defn search-next-date
+(defn- search-next-date
 "This function tells us whether some date is in the dataset"
     [date]
     (loop [count 0 remaining (deref data-set)]
