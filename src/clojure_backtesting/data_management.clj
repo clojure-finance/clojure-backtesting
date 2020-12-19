@@ -3,14 +3,13 @@
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.specs :refer :all]
             [clojure-backtesting.parameters :refer :all]
+            [clojure-backtesting.counter :refer :all]
             [clojure.string :as str]
-            [clojure.pprint :as pprint]
             [clj-time.core :as clj-t]
             [java-time :as t]
-            ;[clojure.spec.alpha :as s]
             ))
 
-(defn get-set
+(defn- get-set
     "return a set of maps of tickers and datadate" ;;{:tic "AAPL", :datadate "1981/3/31"}
     [file2]
     (loop [remaining file2
@@ -28,8 +27,7 @@
     )
 )
 
-
-(defn last-quar
+(defn- last-quar
     "return the last quarter date of a given row"
     [row]
     (let [date (get row :date) tic (get row :TICKER)]
@@ -73,3 +71,60 @@
     [file1 file2]
     (row->col (merge-data-row file1 file2))
 )
+
+(defn look-n-days-ago
+  "This function is the opposite of look-ahead-n-days"
+  [date n]
+  (let [[year month day] (map parse-int (str/split date #"-"))]
+    (t/format "yyyy-MM-dd" (t/minus (t/local-date year month day) (t/days n)))))
+
+(defn get-with-date-key-tic
+  "This function returns the content"
+  [date key tic]
+  ;The code below is mostly copying from search-date
+  (loop [count 0 remaining (deref data-set)] ;(original line)
+  ;(loop [count 0 remaining testfile1] 				;testing line, change the data-set to CRSP
+    (if (empty? remaining)
+      NOMATCH
+      (let [first-line (first remaining)
+            next-remaining (rest remaining)]
+        (if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys (using the keys in CRSP now)
+                 (= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys(using the keys in CRSP now)
+                 )
+          (get first-line key)
+          (recur (inc count) next-remaining)))))
+  )
+
+(defn get-pre-date-and-content
+  "This function should return the previous date and content for the specific date and tic"
+  [key date tic]
+  ;1. Find the previous date
+  (loop [i 1]
+    (if (<= i MAXLOOKAHEAD)
+            ;(println (look-ahead-i-days (get-date) i))
+      (let [prev-date (look-n-days-ago date i)]
+        (let [content (get-with-date-key-tic prev-date key tic)]
+          (if (= content NOMATCH)
+            (recur (inc i))
+            [prev-date content])))
+      [NOMATCH NOMATCH])))
+
+(defn get-prev-n-days
+  "This function returns a vector that contains data of a given key for the previous n days"
+  ;key of keyword type
+  ;n   number of counting ahead
+  ;tic name of the stock
+  [key n tic]
+  (let [date (atom (look-ahead-i-days (get-date) 1))]
+    (loop [count 0 result []]
+      (let [[prev-date content] (get-pre-date-and-content key (deref date) tic)]
+        (if (and (not (= prev-date NOMATCH)) (< count n)) ; has date, has content
+          (do
+            (reset! date prev-date)
+            (recur (+ count 1) (conj result [prev-date content])))
+          result))))
+  )
+
+;; (defn moving-average
+;;   [key days]
+;;   ())
