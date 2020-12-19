@@ -121,7 +121,7 @@
         (if (and (not (= prev-date NOMATCH)) (< count n)) ; has date, has content
           (do
             (reset! date prev-date)
-            (recur (+ count 1) (conj result [prev-date content])))
+            (recur (+ count 1) (conj result {:date prev-date key content})))
           result))))
   )
 
