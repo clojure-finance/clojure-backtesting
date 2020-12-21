@@ -158,6 +158,7 @@
             last-index (- (count (deref portfolio-value)) 1)]
           )
           ; to-write
+          (println "testing")
         )
         (do ; no leverage, update return with log formula: daily_ret = log(tot_val/prev_val)
           (let [ret (Math/log (/ tot-value prev-value))
@@ -264,7 +265,7 @@
 (defn- place-order
   "This private function do the basic routine for an ordering, which are update portfolio and return record"
   [date tic quantity price adj-price loan reference]
-  (update-portfolio date tic quantity price adj-price loan)
+  ;(update-portfolio date tic quantity price adj-price loan)
   (println (format "Order: %s | %s | %d." date tic quantity))
   [{:date date :tic tic :price price :quantity quantity :reference reference}])
 
