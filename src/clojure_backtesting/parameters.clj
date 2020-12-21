@@ -10,8 +10,6 @@
 ; 
 (def MAXLOOKAHEAD 5)
 
-(def LEVERAGE 1)
-
-; This parameter is used in:
-; next-date
+(def LEVERAGE true)
 (def MAXDISCONTINUITY 10)
+

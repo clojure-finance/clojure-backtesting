@@ -73,8 +73,8 @@
     ;         (swap! num-of-days dec)
     ;     )
     ; )
-    (order-internal "1980-12-16" "AAPL" 30)
-    (order-internal "1980-12-16" "IBM" 20)
+    (order "1980-12-16" "AAPL" 30)
+    (order "1980-12-16" "IBM" 20)
     (update-eval-report "1980-12-16")
     
     ; (println (deref portfolio)) 
