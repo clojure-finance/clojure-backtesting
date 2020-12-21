@@ -85,10 +85,10 @@
 (defn search-in-order
   "This function turns the order processed date"
   [date tic]
-;;date e.g. "DD/MM/YYYY"
-;;tic e.g. "AAPL"
-;;return [false "No match date" 0 0 0] if no match
-;;return [true T+1-date price aprc reference] otherwise
+;; date e.g. "DD/MM/YYYY"
+;; tic e.g. "AAPL"
+;; return [false "No match date" 0 0 0] if no match
+;; return [true T+1-date price aprc reference] otherwise
 
   (let [[match price aprc reference] (search-date date tic)]
 		;;(let [[match price reference] [true "10" 348]]
@@ -108,13 +108,13 @@
   "This is the function that initialize or restart the backtesting process"
   [date init-capital] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
   ;; example: portfolio -> {:cash {:tot-val 10000} :"AAPL" {:price 400 :aprc adj-price :quantity 100 :tot-val 40000}}
-  ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0}
+  ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
   (init-date date)
   (def order-record (atom []))
   (def init-capital init-capital)
   ;(def num-of-tradays (count (deref data-set))) ;; wrong, to-be-deleted
   (def portfolio (atom {:cash {:tot-val init-capital}}))
-  (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0.0}])))
+  (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0.0 :loan 0.0 :leverage 0.0}])))
 
 ;; Update the portfolio when placing an order
 (defn update-portfolio
@@ -144,24 +144,40 @@
         (do (swap! portfolio assoc ticker {:price price :aprc aprc :quantity qty-ticker :tot-val (* aprc qty-ticker)})))
     )
   )
+
   ;; update the portfolio-value vector which records the daily portfolio value
   (let [[tot-value prev-value] [(reduce + (map :tot-val (vals (deref portfolio)))) (:tot-value (last (deref portfolio-value)))]] 
     (if (not= prev-value 0.0) ; check division by zero
-      (let [ret (Math/log (/ tot-value prev-value))
+      ; if loan != 0 or previous leverage ratio != 0
+      (if (or (not= loan 0.0) (not= (:leverage (last (deref portfolio-value))) 0.0))
+        (do ; exist leverage
+          (let [new-loan (+ loan (get (last (deref portfolio-value)) :loan)) ; update total loan
+            new-leverage (/ new-loan (- tot-value new-loan)) ; update leverage ratio = total debt / total equity
+            ret (* (Math/log (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
             last-date (get (last (deref portfolio-value)) :date)
             last-index (- (count (deref portfolio-value)) 1)]
-        (do 
-          (if (= last-date date) ; check if date already exists
+          )
+          ; to-write
+        )
+        (do ; no leverage, update return with log formula: daily_ret = log(tot_val/prev_val)
+          (let [ret (Math/log (/ tot-value prev-value))
+            last-date (get (last (deref portfolio-value)) :date)
+            last-index (- (count (deref portfolio-value)) 1)]
             (do 
-              ;(println "last-date")
-              ;(println last-index)
-              (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
-              (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret})))
+              (if (= last-date date) ; check if date already exists
+                (do 
+                  ;(println "last-date")
+                  ;(println last-index)
+                  (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
+                  (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret})))
+                )
+                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret})))
+              )
             )
-            (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret})))
           )
         )
       )
+      ; if prev_value == 0, let ret = 0.0
       (let [ret 0.0]
         (do (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret}))))
       )
