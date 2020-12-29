@@ -112,6 +112,7 @@
   (init-date date)
   (def order-record (atom []))
   (def init-capital init-capital)
+  (def loan-exist false) ; swtich for storing whether loan exists
   ;(def num-of-tradays (count (deref data-set))) ;; wrong, to-be-deleted
   (def portfolio (atom {:cash {:tot-val init-capital}}))
   (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0.0 :loan 0.0 :leverage 0.0}])))
@@ -149,7 +150,9 @@
   (let [[tot-value prev-value] [(reduce + (map :tot-val (vals (deref portfolio)))) (:tot-value (last (deref portfolio-value)))]] 
     (if (not= prev-value 0.0) ; check division by zero
       ; if loan != 0 or previous leverage ratio != 0
-      (if (or (not= loan 0.0) (not= (:leverage (last (deref portfolio-value))) 0.0))
+      (if (or (not= loan 0) (= loan-exist true))
+        ;(or (not= loan 0) (not= (:leverage (last (deref portfolio-value))) 0.0))
+      
         (do ; exist leverage
           (let [new-loan (+ loan (get (last (deref portfolio-value)) :loan)) ; update total loan
             new-leverage (/ new-loan (- tot-value new-loan)) ; update leverage ratio = total debt / total equity
@@ -157,9 +160,13 @@
             last-date (get (last (deref portfolio-value)) :date)
             last-index (- (count (deref portfolio-value)) 1)]
           )
+          (if (= loan-exist false) ; check switch
+            (def loan-exist true)
+          )
           ; to-write
           (println "testing")
         )
+
         (do ; no leverage, update return with log formula: daily_ret = log(tot_val/prev_val)
           (let [ret (Math/log (/ tot-value prev-value))
             last-date (get (last (deref portfolio-value)) :date)
@@ -265,7 +272,7 @@
 (defn- place-order
   "This private function do the basic routine for an ordering, which are update portfolio and return record"
   [date tic quantity price adj-price loan reference]
-  ;(update-portfolio date tic quantity price adj-price loan)
+  (update-portfolio date tic quantity price adj-price loan)
   (println (format "Order: %s | %s | %d." date tic quantity))
   [{:date date :tic tic :price price :quantity quantity :reference reference}])
 

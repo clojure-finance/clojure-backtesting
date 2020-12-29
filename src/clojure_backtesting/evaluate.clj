@@ -83,8 +83,13 @@
 ; output: sample standard deviation, float
 (defn standard-deviation
   [coll]
-  (Math/sqrt (/ (reduce + (map square (map - coll (repeat (mean coll)))))
-                (- (count coll) 1))))
+  (if (= (compare (- (count coll) 1) 1) -1) ; check division by zero
+    0.0
+    (Math/sqrt (/ (reduce + (map square (map - coll (repeat (mean coll)))))
+      (- (count coll) 1)))
+  )
+)
+  
 
 ;; Get list of daily returns
 (defn get-daily-returns
@@ -155,7 +160,7 @@
         rolling-ret (str (format "%.2f" (rolling-return)) "%")
         rolling-vol (str (format "%.2f" (rolling-volatility)) "%")
         rolling-sharpe (str (format "%.2f" (rolling-sharpe-ratio)) "%")
-        pnl-per-trade (str "$" (format "%.2f" (pnl-per-trade)))
+        pnl-per-trade (str "$" (int (pnl-per-trade)))
         ]
 
     (swap! eval-record concat [(into (sorted-map) {:date date
