@@ -305,7 +305,7 @@
                       :else (- cash (* quantity price)))]
                   (place-order date tic quantity price adj-price loan reference))) ;This is the buy on margin case
               (do
-                (println (format "Order request %s | %s | %d fails." date tic quantity))
+                (println (format "Order request %s | %s | %d fails." order-date tic quantity))
                 (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell. Try to solve by enabling leverage."))))))))
     (do 
       (println (format "The order request %s | %s | %d fails." order-date tic quan))
