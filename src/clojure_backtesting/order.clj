@@ -159,12 +159,23 @@
             ret (* (Math/log (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
             last-date (get (last (deref portfolio-value)) :date)
             last-index (- (count (deref portfolio-value)) 1)]
+            (do
+              (if (= loan-exist false) ; check switch
+                (def loan-exist true)
+              )
+              ; to-write
+              ;(println "testing")
+              (if (= last-date date) ; check if date already exists
+                (do 
+                  ;(println "last-date")
+                  ;(println last-index)
+                  (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
+                  (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :leverage new-leverage :loan new-loan})))
+                )
+                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :leverage new-leverage :loan new-loan})))
+              ) 
+            )
           )
-          (if (= loan-exist false) ; check switch
-            (def loan-exist true)
-          )
-          ; to-write
-          (println "testing")
         )
 
         (do ; no leverage, update return with log formula: daily_ret = log(tot_val/prev_val)
@@ -204,12 +215,16 @@
       (let [date (get row :date)
             tot-val (str "$" (int (get row :tot-value)))
             daily-ret (str (format "%.2f" (get row :daily-ret)) "%")
+            loan (str "$" (format "%.2f" (get row :loan)))
+            leverage (str (format "%.2f" (get row :leverage)) "%")
            ]
       
         (swap! portfolio-record concat [
           {:date date
            :tot-value tot-val
            :daily-ret daily-ret
+           :loan loan
+           :leverage leverage
           }]) 
       )
     )
