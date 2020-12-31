@@ -4,7 +4,6 @@
             [clj-time.core :as clj-t]
             [clojure.pprint :as pprint]))
 
-(def eval-record (atom []))
 
 ;; Get current portfolio total value
 (defn portfolio-total 
@@ -152,28 +151,43 @@
 (defn update-eval-report
   "This function updates the evaluation report."
   [date]
-  (let [total-val (str "$" (int (portfolio-total)))
-        daily-ret (str (format "%.2f" (portfolio-daily-ret)) "%")
-        total-ret (str (format "%.2f" (* (portfolio-total-ret) 100)) "%")
-        volatility (str (format "%.2f" (volatility)) "%")
-        sharpe-ratio (str (format "%.2f" (sharpe-ratio)) "%")
-        rolling-ret (str (format "%.2f" (rolling-return)) "%")
-        rolling-vol (str (format "%.2f" (rolling-volatility)) "%")
-        rolling-sharpe (str (format "%.2f" (rolling-sharpe-ratio)) "%")
-        pnl-per-trade (str "$" (int (pnl-per-trade)))
+  (let [total-val-data (portfolio-total)
+        daily-ret-data (portfolio-daily-ret)
+        total-ret-data (portfolio-total-ret)
+        volatility-data (volatility)
+        sharpe-ratio-data (sharpe-ratio)
+        rolling-ret-data (rolling-return)
+        rolling-vol-data (rolling-volatility)
+        rolling-sharpe-data (rolling-sharpe-ratio)
+        pnl-per-trade-data (pnl-per-trade)
         ]
-
-    (swap! eval-record concat [(into (sorted-map) {:date date
-                                :tot-val total-val
-                                :ret-da daily-ret
-                                :ret-tot total-ret
-                                :vol-e volatility
-                                :sharpe-e sharpe-ratio
-                                :ret-r rolling-ret
-                                :vol-r rolling-vol
-                                :sharpe-r rolling-sharpe
-                                :pnl-pt pnl-per-trade 
-                              })])
+    (do
+      ; numerical values
+      (swap! eval-record concat [(into (sorted-map) {:date date
+        :tot-val total-val-data
+        :ret-da daily-ret-data 
+        :ret-tot total-ret-data
+        :vol-e volatility-data
+        :sharpe-e sharpe-ratio-data
+        :ret-r rolling-ret-data
+        :vol-r rolling-vol-data
+        :sharpe-r rolling-sharpe-data
+        :pnl-pt pnl-per-trade-data
+      })])
+      
+      ; string formatting
+      (swap! eval-report-data concat [(into (sorted-map) {:date date
+              :tot-val (str "$" (int total-val-data))
+              :ret-da (str (format "%.2f" daily-ret-data) "%")
+              :ret-tot (str (format "%.2f" (* total-ret-data 100)) "%")
+              :vol-e (str (format "%.2f" volatility-data) "%")
+              :sharpe-e (str (format "%.2f" sharpe-ratio-data) "%")
+              :ret-r (str (format "%.2f" rolling-ret-data) "%")
+              :vol-r (str (format "%.2f" rolling-vol-data) "%")
+              :sharpe-r (str (format "%.2f" rolling-sharpe-data) "%")
+              :pnl-pt (str "$" (int pnl-per-trade-data))
+      })])
+    )
   )
 )
 
@@ -181,7 +195,7 @@
 (defn eval-report
   "This function prints the evaluation report."
   []
-  (pprint/print-table (deref eval-record))
+  (pprint/print-table (deref eval-report-data))
 )
 
 
