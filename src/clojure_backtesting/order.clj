@@ -150,7 +150,7 @@
 
   ;; update the portfolio-value vector which records the daily portfolio value
   (let [[tot-value prev-value] [(reduce + (map :tot-val (vals (deref portfolio)))) (:tot-value (last (deref portfolio-value)))]] 
-    (if (not= prev-value 0.0) ; check division by zero
+    (if ((not= pre-value 0)(not= prev-value 0.0)) ; check division by zero
       ; if loan != 0 or previous leverage ratio != 0
       (if (or (not= loan 0) (= loan-exist true))
         ;(or (not= loan 0) (not= (:leverage (last (deref portfolio-value))) 0.0))
