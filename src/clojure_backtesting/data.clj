@@ -83,11 +83,11 @@
   [vec]
   (/ (reduce + vec) (count vec)))
 
-(defn moving-average
- "This function returns the moving average of len(window) days. 
- The first len(window) days are recorded as 0."
-  [window vec]
-  (concat (repeat (- window 1) 0) (map average (partition window 1 vec))))
+;; (defn- moving-average
+;;  "This function returns the moving average of len(window) days. 
+;;  The first len(window) days are recorded as 0."
+;;   [window vec]
+;;   (concat (repeat (- window 1) 0) (map average (partition window 1 vec))))
 
 (defn left-join
   "When passed 2 rels, returns the rel corresponding to the natural

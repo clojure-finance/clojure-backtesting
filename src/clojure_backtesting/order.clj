@@ -59,13 +59,13 @@
 ;; Search-date function
 (defn search-date
   "This function tries to retrieve the matching entry from the dataset."
-  [date tic]
+  [date tic dataset]
   ;;date e.g. "DD/MM?YYYY"
   ;;tic e.g. "AAPL"
   ;;return [false 0 0] if no match
   ;;return [true price reference] otherwise
   
-  (loop [count 0 remaining (deref data-set)] ;(original line)
+  (loop [count 0 remaining dataset] ;(original line)
   ;(loop [count 0 remaining testfile1] 				;testing line, change the data-set to CRSP
     (if (empty? remaining)
       [false 0 0]
@@ -84,19 +84,19 @@
 ;; Search in Order function
 (defn search-in-order
   "This function turns the order processed date"
-  [date tic]
+  [date tic dataset]
 ;; date e.g. "DD/MM/YYYY"
 ;; tic e.g. "AAPL"
 ;; return [false "No match date" 0 0 0] if no match
 ;; return [true T+1-date price aprc reference] otherwise
 
-  (let [[match price aprc reference] (search-date date tic)]
+  (let [[match price aprc reference] (search-date date tic dataset)]
 		;;(let [[match price reference] [true "10" 348]]
     (if match
       (loop [i 1]
         (if (<= i MAXLOOKAHEAD)
           (let [t-1-date (look-ahead-i-days date i)
-                [b p aprc r] (search-date t-1-date tic)]
+                [b p aprc r] (search-date t-1-date tic dataset)]
             (if b
               [b t-1-date (Double/parseDouble p) aprc r]
               (recur (inc i))))
@@ -122,7 +122,7 @@
 ;; Update the portfolio when placing an order
 (defn update-portfolio
   [date tic quantity price aprc loan]
-  (println aprc)
+  ;(println aprc)
   ;; check whether the portfolio already has the security
   (if-not (contains? (deref portfolio) tic) 
     (let [tot-val (* aprc quantity) tot-val-real (* price quantity)]
@@ -150,7 +150,7 @@
 
   ;; update the portfolio-value vector which records the daily portfolio value
   (let [[tot-value prev-value] [(reduce + (map :tot-val (vals (deref portfolio)))) (:tot-value (last (deref portfolio-value)))]] 
-    (if ((not= pre-value 0)(not= prev-value 0.0)) ; check division by zero
+    (if (and (not= prev-value 0)(not= prev-value 0.0)) ; check division by zero
       ; if loan != 0 or previous leverage ratio != 0
       (if (or (not= loan 0) (= loan-exist true))
         ;(or (not= loan 0) (not= (:leverage (last (deref portfolio-value))) 0.0))
@@ -290,16 +290,16 @@
   "This private function do the basic routine for an ordering, which are update portfolio and return record"
   [date tic quantity price adj-price loan reference]
   (update-portfolio date tic quantity price adj-price loan)
-  (println (format "Order: %s | %s | %d." date tic quantity))
+  ;(println (format "Order: %s | %s | %d." date tic quantity))
   [{:date date :tic tic :price price :quantity quantity :reference reference}])
 
 (defn- order-internal
 	"This is the main order function"
-	([order-date tic quan remaining leverage]
+	([order-date tic quan remaining leverage dataset]
 	;;@date date-and-time trading date
 	;;@tic  trading ticker
 	;;@quantity exact number to buy(+) or sell(-)
-	(let [[match date price adj-price reference] (search-in-order order-date tic)] 
+	(let [[match date price adj-price reference] (search-in-order order-date tic dataset)] 
    ; Note that the date here may contain error information
 	(if match
     (do
@@ -310,28 +310,29 @@
             quantity (cond 
                        remaining (- quan total)
                        :else quan)]
-        (if (and (and (>= (+ total quantity) 0) (or (<= quantity 0) (>= cash (* price quantity)))))
-          (place-order date tic quantity price adj-price 0 reference) ;loan is 0 here
-          (do
-            (if leverage
-              (if (< (+ total quantity) 0)
-                (place-order date tic quantity price adj-price 0 reference) ;This is the sell on margin case
-                (let [loan 
-                      (cond (<= cash 0)
-                      (* quantity price)
-                      :else (- cash (* quantity price)))]
-                  (place-order date tic quantity price adj-price loan reference))) ;This is the buy on margin case
-              (do
-                (println (format "Order request %s | %s | %d fails." order-date tic quantity))
-                (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell. Try to solve by enabling leverage."))))))))
+        (if (and (not= quantity 0) (not= quantity 0.0)) ;; ignore the empty order case
+          (if (and (and (>= (+ total quantity) 0) (or (<= quantity 0) (>= cash (* price quantity)))))
+            (place-order date tic quantity price adj-price 0 reference) ;loan is 0 here
+            (do
+              (if leverage
+                (if (< (+ total quantity) 0)
+                  (place-order date tic quantity price adj-price 0 reference) ;This is the sell on margin case
+                  (let [loan
+                        (cond (<= cash 0)
+                              (* quantity price)
+                              :else (- cash (* quantity price)))]
+                    (place-order date tic quantity price adj-price loan reference))) ;This is the buy on margin case
+                (do
+                  (println (format "Order request %s | %s | %d fails." order-date tic quantity))
+                  (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell. Try to solve by enabling leverage.")))))))))
     (do 
       (println (format "The order request %s | %s | %d fails." order-date tic quan))
       (println (format "Failure reason: %s." date))))))
   )
 
 (defn order
-  ([tic quantity & {:keys [remaining leverage] :or {remaining false leverage LEVERAGE}}]
-   (let [record (order-internal (get-date) tic quantity remaining leverage)]
+  ([tic quantity & {:keys [remaining leverage dataset] :or {remaining false leverage LEVERAGE dataset (deref data-set)}}]
+   (let [record (order-internal (get-date) tic quantity remaining leverage dataset)]
      (if record
      (swap! order-record concat record)
        );else
