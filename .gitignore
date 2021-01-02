@@ -18,4 +18,6 @@ debug.csv
 order_legacy.clj
 specs.clj
 deprecated/
-.calva/output-window/output.calva-repl
+.calva/
+.clj-kondo/
+.lsp/

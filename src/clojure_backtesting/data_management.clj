@@ -80,9 +80,9 @@
 
 (defn get-with-date-key-tic
   "This function returns the content"
-  [date key tic]
+  [date key tic data-set]
   ;The code below is mostly copying from search-date
-  (loop [count 0 remaining (deref data-set)] ;(original line)
+  (loop [count 0 remaining data-set] ;(original line)
   ;(loop [count 0 remaining testfile1] 				;testing line, change the data-set to CRSP
     (if (empty? remaining)
       NOMATCH
@@ -97,13 +97,13 @@
 
 (defn get-pre-date-and-content
   "This function should return the previous date and content for the specific date and tic"
-  [key date tic]
+  [key date tic data-set]
   ;1. Find the previous date
   (loop [i 1]
     (if (<= i MAXLOOKAHEAD)
             ;(println (look-ahead-i-days (get-date) i))
       (let [prev-date (look-n-days-ago date i)]
-        (let [content (get-with-date-key-tic prev-date key tic)]
+        (let [content (get-with-date-key-tic prev-date key tic data-set)]
           (if (= content NOMATCH)
             (recur (inc i))
             [prev-date content])))
@@ -114,16 +114,45 @@
   ;key of keyword type
   ;n   number of counting ahead
   ;tic name of the stock
-  [key n tic]
-  (let [date (atom (look-ahead-i-days (get-date) 1))]
-    (loop [count 0 result []]
-      (let [[prev-date content] (get-pre-date-and-content key (deref date) tic)]
+  [key n tic & [pre reference]]
+  (let [date (atom (look-ahead-i-days (get-date) 1)) [count-tmp result-tmp] (if pre
+                                                                              (if (<= (count pre) n)
+                                                                                (if (< (count pre) n)
+                                                                                  [(- n 2) pre]
+                                                                                  [(- n 2) (rest pre)])
+                                                                                [0 []])
+                                                                              [0 []])]
+    (loop [count count-tmp result result-tmp]
+      (let [[prev-date content] (get-pre-date-and-content key (deref date) tic (or reference (deref data-set)))]
         (if (and (not (= prev-date NOMATCH)) (< count n)) ; has date, has content
           (do
             (reset! date prev-date)
             (recur (+ count 1) (conj result {:date prev-date key content})))
           result))))
   )
+
+(defn available-tics
+  "This function returns the available tickers and also the optimizor on a date"
+  [date]
+  ;;date e.g. "DD/MM?YYYY"
+  ;;tic e.g. "AAPL"
+  ;;return [false 0 0] if no match
+  ;;return [true price reference] otherwise
+  
+  (loop [remaining (deref data-set) result []] ;(original line)
+  ;(loop [count 0 remaining testfile1] 				;testing line, change the data-set to CRSP
+    (if (empty? remaining)
+      result
+      (let [first-line (first remaining)
+            next-remaining (rest remaining)]
+        (if  (= (get first-line :date) date) ;;amend later if the merge data-set has different keys (using the keys in CRSP now)
+          (recur next-remaining (conj result [(get first-line :TICKER) remaining]))
+          (recur next-remaining result)))))
+)
+
+(defn moving-average
+  [key list]
+   (average (map (fn [_] (Double/parseDouble (get _ key))) list)))
 
 ;; (defn moving-average
 ;;   [key days]

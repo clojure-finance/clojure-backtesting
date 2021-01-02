@@ -21,6 +21,7 @@
     [_date]
     (let [[year month day](map parse-int (str/split _date #"-"))]
         (reset! date (t/local-date year month day)))
+    (def cur-reference (atom [0 (deref data-set)]))
     )
 
 (defn get-date
@@ -29,14 +30,27 @@
 
 (defn- search-next-date
 "This function tells us whether some date is in the dataset"
-    [date]
-    (loop [count 0 remaining (deref data-set)]
+    [date dataset]
+    (loop [count (nth dataset 0) remaining (nth dataset 1)]
     (if (empty? remaining)
-      false
+      (if (not= 0 (nth dataset 0))
+        (loop [count 0 remaining (take (nth dataset 0) (deref data-set))]
+          (if (empty? remaining)
+            false
+            (let [first-line (first remaining)
+                  next-remaining (rest remaining)]
+              (if (= (get first-line :date) date)
+                (do
+                  (reset! cur-reference [count next-remaining])
+                  true)
+                (recur (inc count) next-remaining)))))
+        false)
       (let [first-line (first remaining)
             next-remaining (rest remaining)]
         (if (= (get first-line :date) date)
-          true
+          (do
+            (reset! cur-reference [count next-remaining])
+            true)
           (recur (inc count) next-remaining))))))
 
 (defn next-date
@@ -47,7 +61,7 @@
     (loop [i 1]
         (if (<= i MAXDISCONTINUITY)
             ;(println (look-ahead-i-days (get-date) i))
-            (if (search-next-date (look-ahead-i-days (get-date) i))
+            (if (search-next-date (look-ahead-i-days (get-date) i) (deref cur-reference))
                 (do
                     (swap! date t/plus (t/days i))
                     (get-date))
