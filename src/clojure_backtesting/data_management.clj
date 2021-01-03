@@ -27,6 +27,13 @@
     )
 )
 
+(defn get-tickers 
+  "return a set of tickers"
+  [file]
+  (let [tickers-map (get-set file)]
+  )
+)
+
 (defn- last-quar
     "return the last quarter date of a given row"
     [row]
