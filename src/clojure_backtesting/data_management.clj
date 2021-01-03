@@ -125,17 +125,19 @@
   (let [date (atom (look-ahead-i-days (get-date) 1)) [count-tmp result-tmp] (if pre
                                                                               (if (<= (count pre) n)
                                                                                 (if (< (count pre) n)
-                                                                                  [(- n 2) pre]
-                                                                                  [(- n 2) (rest pre)])
+                                                                                  [(- n 1) pre]
+                                                                                  [(- n 1) (into [] (rest pre))])
                                                                                 [0 []])
                                                                               [0 []])]
     (loop [count count-tmp result result-tmp]
-      (let [[prev-date content] (get-pre-date-and-content key (deref date) tic (or reference (deref data-set)))]
-        (if (and (not (= prev-date NOMATCH)) (< count n)) ; has date, has content
-          (do
-            (reset! date prev-date)
-            (recur (+ count 1) (conj result {:date prev-date key content})))
-          result))))
+      (if (< count n)
+        (let [[prev-date content] (get-pre-date-and-content key (deref date) tic (or reference (deref data-set)))]
+          (if (not (= prev-date NOMATCH)) ; has date, has content
+            (do
+              (reset! date prev-date)
+              (recur (+ count 1) (conj result {:date prev-date key content})))
+            result))
+        result)))
   )
 
 (defn available-tics
