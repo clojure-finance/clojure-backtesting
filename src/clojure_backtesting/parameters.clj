@@ -8,7 +8,7 @@
 ; This parameter is used in:
 ; get-pre-date-and-content
 ; 
-(def MAXLOOKAHEAD 5)
+(def MAXLOOKAHEAD 10)
 
 (def LEVERAGE true)
 (def MAXDISCONTINUITY 10)
