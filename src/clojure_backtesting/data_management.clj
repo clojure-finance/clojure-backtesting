@@ -19,7 +19,7 @@
             (let [first-line (first remaining)
                 next-remaining (rest remaining)
                 ;;next-result-set (conj result-set (get first-line :datadate)
-                next-result-set (conj result-set {:tic (get first-line :TICKER) :datadate (get first-line :datadate)})
+                next-result-set (conj result-set {:tic (get first-line :TICKER) :datadate (get first-line :date)})
                 ]
             (recur next-remaining next-result-set)
             )
@@ -31,6 +31,7 @@
   "return a set of tickers"
   [file]
   (let [tickers-map (get-set file)]
+    tickers-map
   )
 )
 
