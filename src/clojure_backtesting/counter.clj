@@ -11,10 +11,16 @@
 	;;return date
 	;;here the format of the input date should be:
 	;;year-month-day
+ 	"This function will return the date i days after the given date."
 	[date i]
 	(let [[year month day] (map parse-int (str/split date #"-"))]
     (t/format "yyyy-MM-dd" (t/plus (t/local-date year month day) (t/days i)))))
 
+(defn look-n-days-ago
+  "This function is the opposite of look-ahead-n-days."
+  [date n]
+  (let [[year month day] (map parse-int (str/split date #"-"))]
+    (t/format "yyyy-MM-dd" (t/minus (t/local-date year month day) (t/days n)))))
 
 (defn init-date
     "This function init the counter by a string"

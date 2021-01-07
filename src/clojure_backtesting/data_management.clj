@@ -80,13 +80,7 @@
     (row->col (merge-data-row file1 file2))
 )
 
-(defn look-n-days-ago
-  "This function is the opposite of look-ahead-n-days"
-  [date n]
-  (let [[year month day] (map parse-int (str/split date #"-"))]
-    (t/format "yyyy-MM-dd" (t/minus (t/local-date year month day) (t/days n)))))
-
-(defn get-with-date-key-tic
+(defn- get-with-date-key-tic
   "This function returns the content"
   [date key tic data-set]
   ;The code below is mostly copying from search-date
@@ -103,7 +97,7 @@
           (recur (inc count) next-remaining)))))
   )
 
-(defn get-pre-date-and-content
+(defn- get-pre-date-and-content
   "This function should return the previous date and content for the specific date and tic"
   [key date tic data-set]
   ;1. Find the previous date
@@ -126,10 +120,10 @@
   (let [date (atom (look-ahead-i-days (get-date) 1)) [count-tmp result-tmp] (if pre
                                                                               (if (<= (count pre) n)
                                                                                 (if (< (count pre) n)
-                                                                                  [(- n 1) pre]
+                                                                                  [(- n 1) (into [] pre)]
                                                                                   [(- n 1) (into [] (rest pre))])
-                                                                                [0 []])
-                                                                              [0 []])]
+                                                                                [0 '()])
+                                                                              [0 '()])]
     (loop [count count-tmp result result-tmp]
       (if (< count n)
         (let [[prev-date content] (get-pre-date-and-content key (deref date) tic (or reference (deref data-set)))]

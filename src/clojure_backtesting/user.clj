@@ -53,7 +53,7 @@
                     (if (> MA50 MA200)
                       (order "AAPL" 1 :reference (get (get tics "AAPL") :reference) :print true) ;1ms
                       (order "AAPL" 0 :remaining true :reference (get (get tics "AAPL") :reference) :print true))) ;1ms
-                  (update-eval-report (get-date))
+                  ;(update-eval-report (get-date))
                   (next-date)))))
  )
 

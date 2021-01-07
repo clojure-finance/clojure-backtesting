@@ -22,3 +22,5 @@ deprecated/
 .clj-kondo/
 .lsp/
 .DS_Store
+.DS_Store
+.lsp/sqlite.5.db
