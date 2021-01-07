@@ -40,7 +40,7 @@
     (init-portfolio "1980-12-15" 10000)
     (time (do (def MA50-vec [])
               (def MA200-vec [])
-              (while (not= (get-date) "2000-02-10")
+              (while (not= (get-date) "1981-03-10")
                 (do
         ;; write your trading strategy here
                   (def tics (deref available-tics-)) ;20 ms
@@ -55,6 +55,7 @@
                       (order "AAPL" 0 :remaining true :reference (get (get tics "AAPL") :reference) :print true))) ;1ms
                   ;(update-eval-report (get-date))
                   (next-date)))))
+    (.close wrtr)
  )
 
 ;;sample activation command:

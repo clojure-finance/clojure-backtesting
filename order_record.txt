@@ -1,0 +1,8 @@
+Order: 1981-02-27 | AAPL | 1.
+Order: 1981-03-02 | AAPL | 1.
+Order: 1981-03-03 | AAPL | 1.
+Order: 1981-03-04 | AAPL | 1.
+Order: 1981-03-05 | AAPL | 1.
+Order: 1981-03-06 | AAPL | 1.
+Order: 1981-03-09 | AAPL | 1.
+Order: 1981-03-10 | AAPL | 1.

@@ -5,6 +5,7 @@
       [clojure.string :as str]
       [clojure.pprint :as pprint]
 			[java-time :as t]
+      [clojure.java.io :as io]
       [clojure.math.numeric-tower :as math])
     )
 
@@ -117,6 +118,8 @@
   ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
   (init-date date)
   (maintain-tics true)
+  (io/delete-file "./order_record.txt") ;First delete the file (act as emptying)
+  (def wrtr (io/writer "./order_record.txt" :append true))
   (def order-record (atom []))
   (def init-capital init-capital)
   (def loan-exist false) ; global swtich for storing whether loan exists
@@ -295,15 +298,17 @@
 
 (defn- place-order
   "This private function do the basic routine for an ordering, which are update portfolio and return record"
-  [date tic quantity price adj-price loan reference print]
+  [date tic quantity price adj-price loan reference print direct]
   (update-portfolio date tic quantity price adj-price loan)
   (if print
     (println (format "Order: %s | %s | %d." date tic quantity)))
-  [{:date date :tic tic :price price :quantity quantity :reference reference}])
+  (if direct
+    (.write wrtr (format "Order: %s | %s | %d.\n" date tic quantity)))
+  {:date date :tic tic :price price :quantity quantity :reference reference})
 
 (defn- order-internal
 	"This is the main order function"
-	([order-date tic quan remaining leverage dataset print]
+	([order-date tic quan remaining leverage dataset print direct]
 	;;@date date-and-time trading date
 	;;@tic  trading ticker
 	;;@quantity exact number to buy(+) or sell(-)
@@ -320,16 +325,16 @@
                        :else quan)]
         (if (and (not= quantity 0) (not= quantity 0.0)) ;; ignore the empty order case
           (if (and (and (>= (+ total quantity) 0) (or (<= quantity 0) (>= cash (* price quantity)))))
-            (place-order date tic quantity price adj-price 0 reference print) ;loan is 0 here
+            (place-order date tic quantity price adj-price 0 reference print direct) ;loan is 0 here
             (do
               (if leverage
                 (if (< (+ total quantity) 0)
-                  (place-order date tic quantity price adj-price 0 reference print) ;This is the sell on margin case
+                  (place-order date tic quantity price adj-price 0 reference print direct) ;This is the sell on margin case
                   (let [loan
                         (cond (<= cash 0)
                               (* quantity price)
                               :else (- cash (* quantity price)))]
-                    (place-order date tic quantity price adj-price loan reference print))) ;This is the buy on margin case
+                    (place-order date tic quantity price adj-price loan reference print direct))) ;This is the buy on margin case
                 (do
                   (println (format "Order request %s | %s | %d fails." order-date tic quantity))
                   (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell. Try to solve by enabling leverage.")))))))))
@@ -339,14 +344,14 @@
   )
 
 (defn order
-  ([tic quantity & {:keys [remaining leverage dataset print] :or {remaining false leverage LEVERAGE dataset (deref data-set) print false}}]
-   (let [record (order-internal (get-date) tic quantity remaining leverage dataset print)]
+  ([tic quantity & {:keys [remaining leverage dataset print direct] :or {remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
+   (let [record (order-internal (get-date) tic quantity remaining leverage dataset print direct)]
      (if record
-     (swap! order-record concat record)
+     (swap! order-record conj record)
        );else
      ))
   ([arg] ;This function still needs to be developed in order for parallelisium
-   (swap! order-record concat (doall (pmap order-internal arg))))
+   (swap! order-record conj (doall (pmap order-internal arg))))
   )
 
 
