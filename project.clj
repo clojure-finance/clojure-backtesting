@@ -12,11 +12,14 @@
                  [clojupyter/clojupyter "0.3.2"]
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [metasoarous/oz "1.6.0-alpha31"]
+                 [criterium "0.4.4"] ;profiler
+                 [com.taoensso/tufte "2.2.0"] ;profiler
                  ]
   :aliases			{"clojupyter"			["run" "-m" "clojupyter.cmdline"]}
   :main clojure-backtesting.user
   :aot [clojure-backtesting.user]
-  :plugins [[lein-jupyter "0.1.16"]]
+  :plugins [[lein-jupyter "0.1.16"]
+           ]
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
                        :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
