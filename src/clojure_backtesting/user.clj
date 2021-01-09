@@ -34,9 +34,20 @@
   "Write your code here"
     [& args] ; pass ./resources/CRSP-extract.csv as arg
 
+    (defonce my-sacc (tufte/add-accumulating-handler! "*"))
+    (defonce my-sacc-drainer
+      ;; Will drain and print formatted stats every minute
+      (future
+        (while true
+          (when-let [m (not-empty @my-sacc)]
+            (println (tufte/format-grouped-pstats m)))
+          (Thread/sleep 6000)
+        )
+      ))
+
     ; request to send `profile` stats to `println`
-    (tufte/add-basic-println-handler! ;; tufte profiler
-      {:format-pstats-opts {:columns [:n-calls :max :mean :mad :clock :total]}})
+    ; (def my-printer (tufte/add-basic-println-handler! ;; tufte profiler
+    ;   {:format-pstats-opts {:columns [:n-calls :max :mean :mad :clock :total]}}))
     
     (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
 
@@ -49,6 +60,7 @@
         (p :eval-report (eval-report))
       )
     ))
+  
     ;; Criterium example
     ;(criterium/quick-bench (eval-report))
  )
