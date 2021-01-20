@@ -12,26 +12,21 @@
   (get-in (last (deref portfolio-value)) [:tot-value])
 )
 
-;; Get current portfolio daily return (in %)
-(defn portfolio-daily-ret 
-  "This function returns the current daily return of the portfolio in %."
-  []
-  (* (get-in (last (deref portfolio-value)) [:daily-ret]) 100)
-)
-
 ;; Calculate portfolio total returns
 (defn portfolio-total-ret
   "This function returns the current daily return of the portfolio in %."
   []
-  (def total-ret 0.0)
-  (doseq [daily-record (deref portfolio-value)]
-    (let [daily-ret (daily-record :daily-ret)]
-      ;(println daily-ret)
-      (def total-ret (+ total-ret daily-ret))
-    )
-  )
-  total-ret
-;(get (last (deref portfolio-value)) :date)
+  ; (def total-ret 0.0)
+  ; (doseq [daily-record (deref portfolio-value)]
+  ;   (let [daily-ret (daily-record :daily-ret)]
+  ;     ;(println daily-ret)
+  ;     (def total-ret (+ total-ret daily-ret))
+  ;   )
+  ; )
+  ; total-ret
+  
+  ; new version
+  (get (last (deref portfolio-value)) :tot-ret)
 )
 
 ;; Calculate number of days between first and last dates in order record
@@ -154,11 +149,11 @@
   [date]
   (if (not= (count (deref order-record)) 0) ; check that order record is not empty
     (let [total-val-data (portfolio-total)
-        daily-ret-data (portfolio-daily-ret)
-        total-ret-data (portfolio-total-ret)
+        ;daily-ret-data (portfolio-daily-ret)
+        ;total-ret-data (portfolio-total-ret)
         volatility-data (volatility)
         sharpe-ratio-data (sharpe-ratio)
-        rolling-ret-data (rolling-return)
+        ;rolling-ret-data (rolling-return)
         rolling-vol-data (rolling-volatility)
         rolling-sharpe-data (rolling-sharpe-ratio)
         pnl-per-trade-data (pnl-per-trade)
@@ -167,11 +162,11 @@
         ; numerical values
         (swap! eval-record concat [(into (sorted-map) {:date date
           :tot-val total-val-data
-          :ret-da daily-ret-data 
-          :ret-tot total-ret-data
+          ;:ret-da daily-ret-data 
+          ;:ret-tot total-ret-data
           :vol-e volatility-data
           :sharpe-e sharpe-ratio-data
-          :ret-r rolling-ret-data
+          ;:ret-r rolling-ret-data
           :vol-r rolling-vol-data
           :sharpe-r rolling-sharpe-data
           :pnl-pt pnl-per-trade-data
@@ -180,11 +175,11 @@
         ; string formatting
         (swap! eval-report-data concat [(into (sorted-map) {:date date
                 :tot-val (str "$" (int total-val-data))
-                :ret-da (str (format "%.2f" daily-ret-data) "%")
-                :ret-tot (str (format "%.2f" (* total-ret-data 100)) "%")
+                ;:ret-da (str (format "%.2f" daily-ret-data) "%")
+                ;:ret-tot (str (format "%.2f" (* total-ret-data 100)) "%")
                 :vol-e (str (format "%.2f" volatility-data) "%")
                 :sharpe-e (str (format "%.2f" sharpe-ratio-data) "%")
-                :ret-r (str (format "%.2f" rolling-ret-data) "%")
+                ;:ret-r (str (format "%.2f" rolling-ret-data) "%")
                 :vol-r (str (format "%.2f" rolling-vol-data) "%")
                 :sharpe-r (str (format "%.2f" rolling-sharpe-data) "%")
                 :pnl-pt (str "$" (int pnl-per-trade-data))
