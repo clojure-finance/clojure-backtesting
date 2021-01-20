@@ -31,6 +31,7 @@
     )
   )
   total-ret
+;(get (last (deref portfolio-value)) :date)
 )
 
 ;; Calculate number of days between first and last dates in order record

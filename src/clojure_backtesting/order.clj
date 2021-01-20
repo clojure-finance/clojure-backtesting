@@ -125,9 +125,9 @@
   (def loan-exist false) ; global swtich for storing whether loan exists
   ;(def num-of-tradays (count (deref data-set))) ;; wrong, to-be-deleted
   (def eval-report-data (atom [])) ; to store evaluation report (in string format, for printing)
-  (def eval-record (atom [])) ; to evaluation report (in number format)
+  (def eval-record (atom [])) ; to store evaluation report (in number format)
   (def portfolio (atom {:cash {:tot-val init-capital}}))
-  (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0.0 :loan 0.0 :leverage 0.0}])))
+  (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0}])))
 
 ;; Update the portfolio when placing an order
 (defn update-portfolio
@@ -169,6 +169,7 @@
           (let [new-loan (+ loan (get (last (deref portfolio-value)) :loan)) ; update total loan
             new-leverage (/ new-loan (- tot-value new-loan)) ; update leverage ratio = total debt / total equity
             ret (* (Math/log (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
+            tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
             last-date (get (last (deref portfolio-value)) :date)
             last-index (- (count (deref portfolio-value)) 1)]
             (do
@@ -182,9 +183,9 @@
                   ;(println "last-date")
                   ;(println last-index)
                   (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
-                  (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :leverage new-leverage :loan new-loan})))
+                  (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan})))
                 )
-                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :leverage new-leverage :loan new-loan})))
+                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan})))
               ) 
             )
           )
@@ -192,6 +193,7 @@
 
         (do ; no leverage, update return with log formula: daily_ret = log(tot_val/prev_val)
           (let [ret (Math/log (/ tot-value prev-value))
+            tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
             last-date (get (last (deref portfolio-value)) :date)
             last-index (- (count (deref portfolio-value)) 1)]
             (do 
@@ -200,17 +202,18 @@
                   ;(println "last-date")
                   ;(println last-index)
                   (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
-                  (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :loan 0.0 :leverage 0.0})))
+                  (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0})))
                 )
-                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :loan 0.0 :leverage 0.0})))
+                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0})))
               )
             )
           )
         )
       )
       ; if prev_value == 0, let ret = 0.0
-      (let [ret 0.0]
-        (do (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret}))))
+      (let [ret 0.0
+            tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)]
+        (do (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret}))))
       )
     )
   )
@@ -226,15 +229,17 @@
     (do
       (let [date (get row :date)
             tot-val (str "$" (int (get row :tot-value)))
-            daily-ret (str (format "%.2f" (get row :daily-ret)) "%")
+            daily-ret (str (format "%.2f" (* (get row :daily-ret) 100)) "%")
+            tot-ret (str (format "%.2f" (* (get row :tot-ret) 100)) "%")
             loan (str "$" (format "%.2f" (get row :loan)))
-            leverage (str (format "%.2f" (get row :leverage)) "%")
+            leverage (str (format "%.2f" (* (get row :leverage) 100)) "%")
            ]
       
         (swap! portfolio-record concat [
           {:date date
            :tot-value tot-val
            :daily-ret daily-ret
+           :tot-ret tot-ret
            :loan loan
            :leverage leverage
           }]) 
