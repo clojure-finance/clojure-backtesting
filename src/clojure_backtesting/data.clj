@@ -11,7 +11,7 @@
 
 (def data-set (atom [])) ;; main dataset (to be changed by the user)
 
-(defn- csv->map
+(defn csv->map
   "Convert parsed CSV vectors into maps with headers as keys, by row"
   [csv-data]
   (map zipmap ;; make the first row as headers and the following rows as values in a map structure e.g. {:tic AAPL} 
@@ -123,3 +123,43 @@
   (def c (first (read-csv-row file1)))
   (def d (first (read-csv-row file2))))
 
+;; helper function, natural logarithm
+(defn log-10 [n]
+  (/ (Math/log n) (Math/log 10)))
+
+;; for each security:
+;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
+;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
+(defn add-aprc 
+  "This function adds the adjusted price column to the dataset."
+  [data]
+  ; get price on 1st day
+  (def initial-price 0)
+  (def cum-ret 0)
+  (def curr-ticker "DEFAULT")
+ ; traverse row by row in dataset
+  (map (fn [line]
+        (let [;line-new (select-keys line [:date :TICKER :PRC :RET])
+              price (Double/parseDouble (get line :PRC))
+              ret (Double/parseDouble (get line :RET))
+              ticker (get line :TICKER)]
+          (if (not= curr-ticker ticker)
+              (do
+                (println ticker)
+                (def curr-ticker ticker)
+                (def initial-price price)
+                (def cum-ret 0)
+              )
+          )
+          ;(def log-ret (Math/log (+ 1 ret))) ; natural log
+          (def log-ret (log-10 (+ 1 ret))) ; log base 10
+          (def cum-ret (+ cum-ret log-ret))
+          (def aprc (* initial-price (Math/pow Math/E cum-ret)))
+          (assoc line :INIT-PRICE initial-price :APRC aprc :LOG-RET log-ret :CUM-RET cum-ret)
+           ;testing
+          ; (swap! data-set-adj conj (assoc line-new "APRC" aprc "LOG-RET" log-ret "CUM-RET" cum-ret))
+        )
+      )
+    data
+  )
+)

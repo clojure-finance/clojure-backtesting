@@ -2,6 +2,8 @@
     (:require   [java-time :as t]
                 [clojure.string :as str]
                 [clojure-backtesting.parameters :refer :all]
+                [clojure-backtesting.data :refer :all]
+                [clj-memory-meter.core :as mm]
                 [clojure-backtesting.data :refer :all]))
 
 ;This namespace defines the program counter aka date of the program. 
@@ -59,24 +61,31 @@
             true)
           (recur (inc count) next-remaining))))))
 
+
 (defn maintain-tics
   "This function should be called either in init-portfolio or next-date"
   ([initial]
   ;traverse the whole dataset
    (def tics-info (atom {}))
    (def available-tics- (atom {}))
+   ;(def tmp-data nil)
+   ;(println "-----")
    (loop [count 0 remaining (deref data-set) cur-tic nil start-date nil end-date nil num 0 reference nil]
      (if (empty? remaining)
        (do
          (if (not= cur-tic nil)
-           (swap! tics-info assoc cur-tic {:start-date start-date :end-date end-date :pointer (atom {:num num :reference reference})}))
-         (deref tics-info))
+           (swap! tics-info assoc cur-tic {:start-date start-date :end-date end-date :pointer (atom {:num num :reference nil})}))
+         nil)
        (let [first-line (first remaining)
              next-remaining (rest remaining)]
          (if (not= cur-tic (get first-line :TICKER))
            (do
+             ;(reset! data-set remaining)
+             ;(println "-----")
              (if (not= cur-tic nil)
-               (swap! tics-info assoc cur-tic {:start-date start-date :end-date end-date :pointer (atom {:num num :reference reference})}))
+               (do
+                 (reset! data-set remaining)
+                 (swap! tics-info assoc cur-tic {:start-date start-date :end-date end-date :pointer (atom {:num num :reference nil})})))
              (let [cur-tic (get first-line :TICKER) start-date (get first-line :date) end-date (get first-line :date) num count reference remaining]
                (recur (inc count) next-remaining cur-tic start-date end-date num reference)))
            (if (= (get (first remaining) :date) (get-date))
@@ -98,7 +107,8 @@
              (swap! available-tics- assoc cur-tic (deref cur-pointer))
              )))
        (recur remaining))))))
-     
+
+    
 
 (defn next-date
   "This function increment the date counter to the next available date"
