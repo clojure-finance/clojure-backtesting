@@ -12,6 +12,7 @@
                  [clojupyter/clojupyter "0.3.2"]
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [metasoarous/oz "1.6.0-alpha31"]
+                 [com.clojure-goes-fast/clj-memory-meter "0.1.3"]
                  ]
   :aliases			{"clojupyter"			["run" "-m" "clojupyter.cmdline"]}
   :main clojure-backtesting.user
@@ -19,4 +20,4 @@
   :plugins [[lein-jupyter "0.1.16"]]
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
-                       :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}})
+                       :jvm-opts ["-Djdk.attach.allowAttachSelf" "-Dclojure.compiler.direct-linking=true"]}})
