@@ -1,58 +1,20 @@
 (ns clojure-backtesting.order
   (:require [clojure-backtesting.data :refer :all]
-			[clojure-backtesting.parameters :refer :all]
-      [clojure-backtesting.counter :refer :all]
-      [clojure.string :as str]
-      [clojure.pprint :as pprint]
-			[java-time :as t]
-      [clojure.java.io :as io]
-      [clojure.math.numeric-tower :as math])
+            [clojure-backtesting.parameters :refer :all]
+            [clojure-backtesting.counter :refer :all]
+            [clojure.string :as str]
+            [clojure.pprint :as pprint]
+            [java-time :as t]
+            [clojure.java.io :as io]
+            [clojure.math.numeric-tower :as math])
     )
 
 ;;This file is for ordering related functions
 ;;testing purpose
 ;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
 ;;(def a (read-csv-row file1))
+(def lazy-mode (atom false))
 
-
-;; helper function, natural logarithm
-(defn log-10 [n]
-  (/ (Math/log n) (Math/log 10)))
-
-;; for each security:
-;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
-;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
-(defn add-aprc 
-  "This function adds the adjusted price column to the dataset."
-  [data]
-  ; get price on 1st day
-  (def initial-price 0)
-  (def cum-ret 0)
-  (def curr-ticker "DEFAULT")
- ; traverse row by row in dataset
-  (map (fn [line]
-        (let [;line-new (select-keys line [:date :TICKER :PRC :RET])
-              price (Double/parseDouble (get line :PRC))
-              ret (Double/parseDouble (get line :RET))
-              ticker (get line :TICKER)]
-          (if (not= curr-ticker ticker)
-              (do
-                (def curr-ticker ticker)
-                (def initial-price price)
-                (def cum-ret 0)
-              )
-          )
-          ;(def log-ret (Math/log (+ 1 ret))) ; natural log
-          (def log-ret (log-10 (+ 1 ret))) ; log base 10
-          (def cum-ret (+ cum-ret log-ret))
-          (def aprc (* initial-price (Math/pow Math/E cum-ret)))
-          (assoc line :INIT-PRICE initial-price :APRC aprc :LOG-RET log-ret :CUM-RET cum-ret)
-          ; (swap! data-set-adj conj (assoc line-new "APRC" aprc "LOG-RET" log-ret "CUM-RET" cum-ret))
-        )
-      )
-    data
-  )
-)
 
 ;;testing purpose, delete afterwards
 ;(def testfile1 (read-csv-row "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv"))
@@ -90,7 +52,7 @@
 ;; tic e.g. "AAPL"
 ;; return [false "No match date" 0 0 0] if no match
 ;; return [true T+1-date price aprc reference] otherwise
-  (if (not= (resolve 'available-tics-) nil)
+  (if (and (not (deref lazy-mode)) (not= (count (deref available-tics-)) 0))
     (if (and (not= -1 (.indexOf (keys (deref available-tics-)) tic)) (not= (get (get (get (deref available-tics-) tic) :reference) :date) (get (get (deref tics-info) tic) :end-date)))
       (let [t-1-date (get (first (rest (get (get (deref available-tics-) tic) :reference))) :date)
             [b p aprc r] (search-date t-1-date tic (get (get (deref available-tics-) tic) :reference))]
@@ -100,14 +62,16 @@
     (let [[match price aprc reference] (search-date date tic dataset)]
 		;;(let [[match price reference] [true "10" 348]]
       (if match
-        (loop [i 1]
-          (if (<= i MAXLOOKAHEAD)
-            (let [t-1-date (look-ahead-i-days date i)
-                  [b p aprc r] (search-date t-1-date tic dataset)]
-              (if b
-                [b t-1-date (Double/parseDouble p) aprc r]
-                (recur (inc i))))
-            [false (str "No appropriate order date after looking ahead " MAXLOOKAHEAD " days") 0 0 0]))
+        (if (deref lazy-mode) 
+            [match price aprc reference]
+            (loop [i 1]
+              (if (<= i MAXLOOKAHEAD)
+                (let [t-1-date (look-ahead-i-days date i)
+                      [b p aprc r] (search-date t-1-date tic dataset)]
+                  (if b
+                    [b t-1-date (Double/parseDouble p) aprc r]
+                    (recur (inc i))))
+                [false (str "No appropriate order date after looking ahead " MAXLOOKAHEAD " days") 0 0 0])))
         [false "No such date or ticker in the dataset" 0 0 0]))))
 
 ;; Create initial portfolio with cash only (User input thei initial-capital)
@@ -309,9 +273,9 @@
     (println (format "Order: %s | %s | %d." date tic quantity)))
   (if direct
     (.write wrtr (format "Order: %s | %s | %d.\n" date tic quantity)))
-  {:date date :tic tic :price price :quantity quantity :reference reference})
+  {:date date :tic tic :price price :quantity quantity :count (deref count-trading-days)})
 
-(defn- order-internal
+(defn order-internal
 	"This is the main order function"
 	([order-date tic quan remaining leverage dataset print direct]
 	;;@date date-and-time trading date
@@ -358,6 +322,5 @@
   ([arg] ;This function still needs to be developed in order for parallelisium
    (swap! order-record conj (doall (pmap order-internal arg))))
   )
-
 
 
