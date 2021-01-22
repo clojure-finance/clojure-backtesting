@@ -99,7 +99,6 @@
              )))
        (recur remaining))))))
      
-
 (defn next-date
   "This function increment the date counter to the next available date"
   []

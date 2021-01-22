@@ -2,6 +2,8 @@
 
 A backtesting framework for quantitative investing and trading
 
+Documentation website: [https://clojure-finance.github.io/clojure-backtesting-website/](https://clojure-finance.github.io/clojure-backtesting-website/)
+
 ### Requirements
 
 ```
