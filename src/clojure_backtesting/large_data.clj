@@ -62,7 +62,7 @@
   (let [tic (get line :TICKER) date (get line :date) info (get (deref pending-order) tic)]
     (if (not= info nil)
       (if (>= (compare (t/format "yyyy-MM-dd" (t/plus (t/local-date "yyyy-MM-dd" (get info :date)) (t/days (get info :expiration)))) date) 0)
-        (order-internal date tic (get info :quantity) (get info :remaining) (get info :leverage) [line] (get info :print) (get info :direct))
+        (swap! order-record conj (order-internal date tic (get info :quantity) (get info :remaining) (get info :leverage) [line] (get info :print) (get info :direct)))
         )
       (swap! pending-order dissoc tic))))
 

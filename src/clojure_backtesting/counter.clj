@@ -6,7 +6,6 @@
 
 ;This namespace defines the program counter aka date of the program. 
 (def date (atom (t/local-date 2020 11 24)))
-(def count-trading-days (atom 1))
 
 (defn look-ahead-i-days
 	;;return date
@@ -60,31 +59,24 @@
             true)
           (recur (inc count) next-remaining))))))
 
-
 (defn maintain-tics
   "This function should be called either in init-portfolio or next-date"
   ([initial]
   ;traverse the whole dataset
    (def tics-info (atom {}))
    (def available-tics- (atom {}))
-   ;(def tmp-data nil)
-   ;(println "-----")
    (loop [count 0 remaining (deref data-set) cur-tic nil start-date nil end-date nil num 0 reference nil]
      (if (empty? remaining)
        (do
          (if (not= cur-tic nil)
-           (swap! tics-info assoc cur-tic {:start-date start-date :end-date end-date :pointer (atom {:num num :reference nil})}))
-         nil)
+           (swap! tics-info assoc cur-tic {:start-date start-date :end-date end-date :pointer (atom {:num num :reference reference})}))
+         (deref tics-info))
        (let [first-line (first remaining)
              next-remaining (rest remaining)]
          (if (not= cur-tic (get first-line :TICKER))
            (do
-             ;(reset! data-set remaining)
-             ;(println "-----")
              (if (not= cur-tic nil)
-               (do
-                 (reset! data-set remaining)
-                 (swap! tics-info assoc cur-tic {:start-date start-date :end-date end-date :pointer (atom {:num num :reference nil})})))
+               (swap! tics-info assoc cur-tic {:start-date start-date :end-date end-date :pointer (atom {:num num :reference reference})}))
              (let [cur-tic (get first-line :TICKER) start-date (get first-line :date) end-date (get first-line :date) num count reference remaining]
                (recur (inc count) next-remaining cur-tic start-date end-date num reference)))
            (if (= (get (first remaining) :date) (get-date))
@@ -106,9 +98,7 @@
              (swap! available-tics- assoc cur-tic (deref cur-pointer))
              )))
        (recur remaining))))))
-
-    
-
+     
 (defn next-date
   "This function increment the date counter to the next available date"
   []
@@ -120,7 +110,6 @@
         (if (empty? tics)
           (do
             (reset! date date_)
-            (swap! count-trading-days inc)
             (maintain-tics)
             (get-date))
           (let [cur-tic (first tics) remaining (rest tics) cur-reference (get (deref (get  (get (deref tics-info) cur-tic) :pointer)) :reference)]
@@ -136,7 +125,6 @@
         (if (search-next-date (look-ahead-i-days (get-date) i) (deref cur-reference))
           (do
             (swap! date t/plus (t/days i))
-            (swap! count-trading-days inc)
             (get-date))
           (recur (inc i)))
         0))))

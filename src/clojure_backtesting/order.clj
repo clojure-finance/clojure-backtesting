@@ -63,7 +63,7 @@
 		;;(let [[match price reference] [true "10" 348]]
       (if match
         (if (deref lazy-mode) 
-            [match price aprc reference]
+            [match date (Double/parseDouble price) aprc reference]
             (loop [i 1]
               (if (<= i MAXLOOKAHEAD)
                 (let [t-1-date (look-ahead-i-days date i)
@@ -80,8 +80,9 @@
   [date init-capital] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
   ;; example: portfolio -> {:cash {:tot-val 10000} :"AAPL" {:price 400 :aprc adj-price :quantity 100 :tot-val 40000}}
   ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
-  (init-date date)
-  (maintain-tics true)
+  (if (deref lazy-mode)
+    (init-date date)
+    (maintain-tics true))
   (io/delete-file "./order_record.txt") ;First delete the file (act as emptying)
   (def wrtr (io/writer "./order_record.txt" :append true))
   (def order-record (atom []))
@@ -273,7 +274,7 @@
     (println (format "Order: %s | %s | %d." date tic quantity)))
   (if direct
     (.write wrtr (format "Order: %s | %s | %d.\n" date tic quantity)))
-  {:date date :tic tic :price price :quantity quantity :count (deref count-trading-days)})
+  {:date date :tic tic :price price :quantity quantity :count nil})
 
 (defn order-internal
 	"This is the main order function"
