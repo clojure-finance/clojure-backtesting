@@ -36,9 +36,13 @@
 
 (defn -main
   "Write your code here"
-    [& args] ; pass ./resources/CRSP-extract.csv as arg
-    (lazy-traverse :address "/Users/lyc/Downloads/data-sorted/data-CRSP-sorted.csv")
- )
+  [& args] ; pass ./resources/CRSP-extract.csv as arg
+  (load-large-dataset "/Users/lyc/Downloads/data-sorted/data-CRSP-sorted.csv" "main")
+  (set-main "main")
+  
+  (while (< (compare (curr-date) "1960-01") 0)
+    (next-day))
+)
 
 ;;sample activation command:
 ;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"

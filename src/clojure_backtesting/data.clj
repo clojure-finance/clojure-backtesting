@@ -145,7 +145,7 @@
               ticker (get line :TICKER)]
           (if (not= curr-ticker ticker)
               (do
-                (println ticker)
+                ;(println ticker)
                 (def curr-ticker ticker)
                 (def initial-price price)
                 (def cum-ret 0)

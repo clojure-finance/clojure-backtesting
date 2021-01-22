@@ -2,12 +2,11 @@
     (:require   [java-time :as t]
                 [clojure.string :as str]
                 [clojure-backtesting.parameters :refer :all]
-                [clojure-backtesting.data :refer :all]
-                [clj-memory-meter.core :as mm]
                 [clojure-backtesting.data :refer :all]))
 
 ;This namespace defines the program counter aka date of the program. 
 (def date (atom (t/local-date 2020 11 24)))
+(def count-trading-days (atom 1))
 
 (defn look-ahead-i-days
 	;;return date
@@ -121,6 +120,7 @@
         (if (empty? tics)
           (do
             (reset! date date_)
+            (swap! count-trading-days inc)
             (maintain-tics)
             (get-date))
           (let [cur-tic (first tics) remaining (rest tics) cur-reference (get (deref (get  (get (deref tics-info) cur-tic) :pointer)) :reference)]
@@ -136,6 +136,7 @@
         (if (search-next-date (look-ahead-i-days (get-date) i) (deref cur-reference))
           (do
             (swap! date t/plus (t/days i))
+            (swap! count-trading-days inc)
             (get-date))
           (recur (inc i)))
         0))))

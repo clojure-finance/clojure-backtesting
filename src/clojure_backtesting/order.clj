@@ -13,7 +13,7 @@
 ;;testing purpose
 ;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
 ;;(def a (read-csv-row file1))
-
+(def lazy-mode (atom false))
 
 
 ;;testing purpose, delete afterwards
@@ -52,7 +52,7 @@
 ;; tic e.g. "AAPL"
 ;; return [false "No match date" 0 0 0] if no match
 ;; return [true T+1-date price aprc reference] otherwise
-  (if (not= (resolve 'available-tics-) nil)
+  (if (and (not (deref lazy-mode)) (not= (count (deref available-tics-)) 0))
     (if (and (not= -1 (.indexOf (keys (deref available-tics-)) tic)) (not= (get (get (get (deref available-tics-) tic) :reference) :date) (get (get (deref tics-info) tic) :end-date)))
       (let [t-1-date (get (first (rest (get (get (deref available-tics-) tic) :reference))) :date)
             [b p aprc r] (search-date t-1-date tic (get (get (deref available-tics-) tic) :reference))]
@@ -62,14 +62,16 @@
     (let [[match price aprc reference] (search-date date tic dataset)]
 		;;(let [[match price reference] [true "10" 348]]
       (if match
-        (loop [i 1]
-          (if (<= i MAXLOOKAHEAD)
-            (let [t-1-date (look-ahead-i-days date i)
-                  [b p aprc r] (search-date t-1-date tic dataset)]
-              (if b
-                [b t-1-date (Double/parseDouble p) aprc r]
-                (recur (inc i))))
-            [false (str "No appropriate order date after looking ahead " MAXLOOKAHEAD " days") 0 0 0]))
+        (if (deref lazy-mode) 
+            [match price aprc reference]
+            (loop [i 1]
+              (if (<= i MAXLOOKAHEAD)
+                (let [t-1-date (look-ahead-i-days date i)
+                      [b p aprc r] (search-date t-1-date tic dataset)]
+                  (if b
+                    [b t-1-date (Double/parseDouble p) aprc r]
+                    (recur (inc i))))
+                [false (str "No appropriate order date after looking ahead " MAXLOOKAHEAD " days") 0 0 0])))
         [false "No such date or ticker in the dataset" 0 0 0]))))
 
 ;; Create initial portfolio with cash only (User input thei initial-capital)
@@ -266,9 +268,9 @@
     (println (format "Order: %s | %s | %d." date tic quantity)))
   (if direct
     (.write wrtr (format "Order: %s | %s | %d.\n" date tic quantity)))
-  {:date date :tic tic :price price :quantity quantity :reference reference})
+  {:date date :tic tic :price price :quantity quantity :count (deref count-trading-days)})
 
-(defn- order-internal
+(defn order-internal
 	"This is the main order function"
 	([order-date tic quan remaining leverage dataset print direct]
 	;;@date date-and-time trading date
