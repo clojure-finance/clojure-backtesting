@@ -9500,3 +9500,4 @@ Order: 2016-12-23 | AAPL | 1.
 Order: 2016-12-27 | AAPL | 1.
 Order: 2016-12-28 | AAPL | 1.
 Order: 2016-12-29 | AAPL | 1.
+Order: 2016-12-30 | AAPL | 1.

@@ -7,8 +7,8 @@
             [clojure-backtesting.plot :refer :all]
             [clojure-backtesting.specs :refer :all]
             [clojure-backtesting.counter :refer :all]
-            ;[clojure-backtesting.parameters :refer :all]
             ;[clojure-backtesting.large-data :refer :all]
+            [clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
             [clj-time.core :as clj-t]
@@ -39,15 +39,16 @@
     [& args] ; pass ./resources/CRSP-extract.csv as arg
     (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
     (init-portfolio "1980-12-15" 100000)
+    ; test with ordering
     ;(order "AAPL" 50)
 
     (time (do (def MA50-vec-aapl [])
           (def MA200-vec-aapl [])
           (def MA50-vec-f [])
           (def MA200-vec-f [])
-          (while (not= (get-date) "1981-12-15")
+          (while (not= (get-date) "1981-12-29")
             (do
-              ;; write your trading strategy here
+    ;; write your trading strategy here
               (def tics (deref available-tics-)) ;20 ms
               (def MA50-vec-aapl (get-prev-n-days :PRC 50 "AAPL" MA50-vec-aapl (get (get tics "AAPL"):reference)))
               (def MA200-vec-aapl (get-prev-n-days :PRC 200 "AAPL" MA200-vec-aapl (get (get tics "AAPL") :reference)))
@@ -65,6 +66,7 @@
     
     (.close wrtr)
     (pprint/print-table (deref order-record))
+    (view-portfolio)
     (view-portfolio-record)
     
     (update-eval-report (get-date))

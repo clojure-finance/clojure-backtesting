@@ -2,7 +2,9 @@
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
             [clj-time.core :as clj-t]
-            [clojure.pprint :as pprint]))
+            [clojure.pprint :as pprint]
+            [clojure.core.matrix.stats :as stat]
+            ))
 
 
 ;; Get current portfolio total value
@@ -65,7 +67,8 @@
 (defn volatility
   "This function returns the volatility of the portfolio in %."
   []
-  (* (standard-deviation (deref (get-daily-returns))) 100)
+  (* (stat/sd (deref (get-daily-returns))) 100)
+  ;(* (standard-deviation (deref (get-daily-returns))) 100)
 ) 
 
 ;; Sharpe ratio (in %)
@@ -99,16 +102,16 @@
         ; numerical values
         (swap! eval-record concat [(into (sorted-map) {:date date
           :tot-val total-val-data
-          :vol-e volatility-data
-          :sharpe-e sharpe-ratio-data
+          :vol volatility-data
+          :sharpe sharpe-ratio-data
           :pnl-pt pnl-per-trade-data
         })])
         
         ; string formatting
         (swap! eval-report-data concat [(into (sorted-map) {:date date
                 :tot-val (str "$" (int total-val-data))
-                :vol-e (str (format "%.2f" volatility-data) "%")
-                :sharpe-e (str (format "%.2f" sharpe-ratio-data) "%")
+                :vol (str (format "%.2f" volatility-data) "%")
+                :sharpe (str (format "%.2f" sharpe-ratio-data) "%")
                 :pnl-pt (str "$" (int pnl-per-trade-data))
         })])
       )
