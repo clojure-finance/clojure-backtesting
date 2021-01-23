@@ -7,9 +7,8 @@
             [clojure-backtesting.plot :refer :all]
             [clojure-backtesting.specs :refer :all]
             [clojure-backtesting.counter :refer :all]
-            [clojure-backtesting.parameters :refer :all]
-            [clojure-backtesting.large-data :refer :all]
-            ;;[clojure-backtesting.parameters :refer :all]
+            ;[clojure-backtesting.parameters :refer :all]
+            ;[clojure-backtesting.large-data :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
             [clj-time.core :as clj-t]
@@ -39,7 +38,9 @@
   "Write your code here"
     [& args] ; pass ./resources/CRSP-extract.csv as arg
     (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
-    (init-portfolio "1980-12-15" 1000000)
+    (init-portfolio "1980-12-15" 100000)
+    ;(order "AAPL" 50)
+
     (time (do (def MA50-vec-aapl [])
           (def MA200-vec-aapl [])
           (def MA50-vec-f [])
@@ -61,7 +62,7 @@
                   (order "F" 1 :reference (get (get tics "F") :reference) :print false) 
                   (order "F" 0 :remaining true :reference (get (get tics "F") :reference))))
               (next-date)))))
-    ;(update-eval-report (get-date))
+    
     (.close wrtr)
     (pprint/print-table (deref order-record))
     (view-portfolio-record)

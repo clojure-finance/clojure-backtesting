@@ -80,9 +80,12 @@
   [date init-capital] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
   ;; example: portfolio -> {:cash {:tot-val 10000} :"AAPL" {:price 400 :aprc adj-price :quantity 100 :tot-val 40000}}
   ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
-  (if (deref lazy-mode)
-    (init-date date)
-    (maintain-tics true))
+  (if (not (deref lazy-mode))
+    (do
+      (init-date date)
+      (maintain-tics true)
+    )
+  )
   (io/delete-file "./order_record.txt") ;First delete the file (act as emptying)
   (def wrtr (io/writer "./order_record.txt" :append true))
   (def order-record (atom []))
