@@ -8,7 +8,7 @@
             [clojure-backtesting.specs :refer :all]
             [clojure-backtesting.counter :refer :all]
             ;[clojure-backtesting.large-data :refer :all]
-            ;;[clojure-backtesting.parameters :refer :all]
+            [clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
             [clj-time.core :as clj-t]
