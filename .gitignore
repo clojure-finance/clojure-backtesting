@@ -27,3 +27,4 @@ deprecated/
 .DS_Store
 src/.DS_Store
 src/.DS_Store
+.lsp/sqlite.5.db

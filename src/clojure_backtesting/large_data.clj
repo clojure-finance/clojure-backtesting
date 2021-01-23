@@ -127,33 +127,6 @@
 ;;   []
 ;;   )
 
-(defn lazy-traverse
-  [name & {:keys [peek ticker max-cover address next-line] :or {peek false ticker nil max-cover 100000 address nil next-line -1}}]
-  ;; (if address
-  ;;   (def large-data (add-aprc (read-csv-lazy address))))
-  (println "-------")
-  (loop [count 0 remaining (get (deref dataset-col) name) cur-date nil cur-tic nil]
-     (if (and (>= max-cover count) (empty? remaining))
-       (do
-        (println "end of file")
-         nil)
-       (let [first-line (first remaining)
-             next-remaining (rest remaining)
-             date (get first-line :date)
-             tic (get first-line :TICKER)]
-         ;(println first-line)
-         (if (not= cur-date date)
-           (do
-             ;(reset! data-set remaining)
-             ;(println "-----")
-             (if (not= cur-date "nil")
-               (do
-                 (println count)
-                 (println date)
-                 (swap! dataset-col assoc "large" remaining)
-                 (recur (inc count) next-remaining date tic))))
-            (recur (inc count) next-remaining cur-date tic))))))
-
 (defn order-lazy 
 ;;  ([quantity & {:keys [remaining leverage print direct] :or {remaining false leverage LEVERAGE print false direct true}}]
 ;;   (order-lazy (curr-tic) quantity :remaining remaining :leverage leverage :print print :direct direct))
