@@ -12,6 +12,7 @@
                  [clojupyter/clojupyter "0.3.2"]
                  [org.clojure/math.numeric-tower "0.0.4"]
                  [metasoarous/oz "1.6.0-alpha31"]
+                 [net.mikera/core.matrix "0.62.0"]
                  ]
   :aliases			{"clojupyter"			["run" "-m" "clojupyter.cmdline"]}
   :main clojure-backtesting.user
