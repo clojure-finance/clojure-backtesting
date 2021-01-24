@@ -104,7 +104,7 @@
   []
     ;return the new date, if found
     ;return 0, if not found(exceed the finding limit)
-  (if (not= (resolve 'tics-info) nil)
+  (if (not= (count (deref tics-info)) 0)
     (do
       (loop [date_ nil tics (keys (deref tics-info))]
         (if (empty? tics)
