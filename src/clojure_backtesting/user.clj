@@ -72,7 +72,7 @@
     ; (eval-report)
 
     ; fundamental analysis
-    (defn get-set
+    (defn get-set-roe
       "return a set of maps of tickers and datadate" ;;{:tic "AAPL", :datadate "1981/3/31", :ROE x.x}
       [file date]
       (loop [remaining file
@@ -133,7 +133,7 @@
 
       ;; get stock tickers and ROE data
       ;; output {{:tic "AAPL" :year "1980" :ROE x.x}{...}{:ROE 1.x 2.x 3.x 10.x}}
-      (def stock-data (get-set (read-csv-row "./resources/data-testing-merged.csv") "1980-12-18"))
+      (def stock-data (get-set-roe (read-csv-row "./resources/data-testing-merged.csv") "1980-12-18"))
       
       ;; 1. sort the stocks according to their ROE (= Net Income/Total Equity)
       
@@ -169,7 +169,6 @@
               ; move on to the next trading day
               (next-date)
               ; decrement time span
-              (println (get-date))
               (def time-span (dec time-span))
           )
       )
@@ -187,6 +186,3 @@
       (view-portfolio-record)
       (eval-report)
  )
-
-;;sample activation command:
-;;lein run "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP-extract.csv"
