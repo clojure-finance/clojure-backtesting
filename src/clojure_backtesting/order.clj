@@ -91,7 +91,6 @@
   (def order-record (atom []))
   (def init-capital init-capital)
   (def loan-exist false) ; global swtich for storing whether loan exists
-  ;(def num-of-tradays (count (deref data-set))) ;; wrong, to-be-deleted
   (def eval-report-data (atom [])) ; to store evaluation report (in string format, for printing)
   (def eval-record (atom [])) ; to store evaluation report (in number format)
   (def portfolio (atom {:cash {:tot-val init-capital}}))
