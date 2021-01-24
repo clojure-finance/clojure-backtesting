@@ -102,7 +102,8 @@
   ;(println aprc)
   ;; check whether the portfolio already has the security
   (if-not (contains? (deref portfolio) tic) 
-    (let [tot-val (* aprc quantity) tot-val-real (* price quantity)]
+    (let [tot-val (* aprc quantity) 
+          tot-val-real (* price quantity)]
       (do 
         (swap! portfolio (fn [curr-port] (conj curr-port [tic {:price price :aprc aprc :quantity quantity :tot-val tot-val}])))
         (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) tot-val-real)})
@@ -127,24 +128,22 @@
 
   ;; update the portfolio-value vector which records the daily portfolio value
   (let [[tot-value prev-value] [(reduce + (map :tot-val (vals (deref portfolio)))) (:tot-value (last (deref portfolio-value)))]] 
-    (if (and (not= prev-value 0)(not= prev-value 0.0)) ; check division by zero
+    (if (and (not= prev-value 0) (not= prev-value 0.0)) ; check division by zero
       ; if loan != 0 or previous leverage ratio != 0
       (if (or (not= loan 0) (= loan-exist true))
-        ;(or (not= loan 0) (not= (:leverage (last (deref portfolio-value))) 0.0))
       
         (do ; exist leverage
           (let [new-loan (+ loan (get (last (deref portfolio-value)) :loan)) ; update total loan
-            new-leverage (/ new-loan (- tot-value new-loan)) ; update leverage ratio = total debt / total equity
-            ret (* (Math/log (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
-            tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
-            last-date (get (last (deref portfolio-value)) :date)
-            last-index (- (count (deref portfolio-value)) 1)]
+                new-leverage (/ new-loan (- tot-value new-loan)) ; update leverage ratio = total debt / total equity
+                ret (* (Math/log (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
+                tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
+                last-date (get (last (deref portfolio-value)) :date)
+                last-index (- (count (deref portfolio-value)) 1)
+               ]
             (do
               (if (= loan-exist false) ; check switch
                 (def loan-exist true)
               )
-              ; to-write
-              ;(println "testing")
               (if (= last-date date) ; check if date already exists
                 (do 
                   ;(println "last-date")
@@ -276,7 +275,7 @@
     (println (format "Order: %s | %s | %d." date tic quantity)))
   (if direct
     (.write wrtr (format "Order: %s | %s | %d.\n" date tic quantity)))
-  {:date date :tic tic :price price :quantity quantity :count nil})
+  {:date date :tic tic :price price :aprc (format "%.2f" adj-price) :quantity quantity :count nil})
 
 (defn order-internal
 	"This is the main order function"
