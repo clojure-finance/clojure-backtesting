@@ -275,7 +275,7 @@
     (println (format "Order: %s | %s | %d." date tic quantity)))
   (if direct
     (.write wrtr (format "Order: %s | %s | %d.\n" date tic quantity)))
-  {:date date :tic tic :price price :aprc (format "%.2f" adj-price) :quantity quantity :count nil})
+  {:date date :tic tic :price price :aprc (format "%.2f" adj-price) :quantity quantity})
 
 (defn order-internal
 	"This is the main order function"

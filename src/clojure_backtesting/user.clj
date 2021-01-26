@@ -127,62 +127,96 @@
 
     (init-portfolio "1980-12-18" 100000)
 
-      (def start-date (get-date))
-      ;; time span = n days
-      (def time-span 5) 
+    (def year-count 3) ;; hold the stock for 3 years
+    (def start-year 1980)
+    (def rebalance-md (subs (get-date) 4)) ; = -12-18
 
-      ;; get stock tickers and ROE data
-      ;; output {{:tic "AAPL" :year "1980" :ROE x.x}{...}{:ROE 1.x 2.x 3.x 10.x}}
-      (def stock-data (get-set-roe (read-csv-row "./resources/data-testing-merged.csv") "1980-12-18"))
-      
-      ;; 1. sort the stocks according to their ROE (= Net Income/Total Equity)
-      
-      ;; get a set of ROE
-      (def roe-list (get-ROE stock-data))
-      
-      ;; sorting function, return tickers of the top 20% stocks
-      ;; determine what are the top 20% stocks and turn the sorted-set into list format
-      (def roe-sorted (into '[] (apply sorted-set roe-list)))
-      
-      ;(println roe-list)
-      ;(println (int (* 0.8 (count roe-sorted))))
-      
-      ;;find the 20% cut-off ROE value
-      (let [roe-20 (nth roe-sorted (int (* 0.8 (count roe-sorted))))]    
-          ;;get the tickers of the top 20 with function get-roe-20
-          (def stocks-to-buy (get-roe-20 stock-data roe-20))
-      )
-      
-      ;; 2. buy the top 20% stocks and the sell the stocks that are not in the top 20% this year      
-      (def stocks-to-buy-list (into [] stocks-to-buy))
-      ;(println stocks-to-buy-list)
-           
-      (doseq [stock stocks-to-buy-list]        
-        (order stock 10)
-      )
-              
+    (def rebalance-years (into [] (range (+ start-year 1) (+ (+ start-year 1) year-count) 1))) ; rebalance every year
     
-      (while (not= time-span 0)
-          ;; check whether the start day is in the dataset
-          ;; find the quarterly date before inputting into get-set function
-          (do 
-              ; move on to the next trading day
-              (next-date)
-              ; decrement time span
-              (def time-span (dec time-span))
-          )
-      )
-      
-      ;; 3. sell all stocks by the end of time span
-      (doseq [stock stocks-to-buy-list]        
-        (order stock -10)
-      )
-      
-      ; update the eval-report
-      (update-eval-report (get-date))
+    (def rebalance-dates []) ; [1981-12-18, 1982-12-18, 1983-12-18]
+    (doseq [year rebalance-years]
+      (def rebalance-dates (conj rebalance-dates (str year rebalance-md)))
+    )
 
-      (pprint/print-table (deref order-record))
-      (view-portfolio)
-      (view-portfolio-record)
-      (eval-report)
+    (def end-date (last rebalance-dates)) ; 1983-12-18
+    
+    ;; get stock tickers and ROE data
+    ;; output {{:tic "AAPL" :year "1980" :ROE x.x}{...}{:ROE 1.x 2.x 3.x 10.x}}
+    (def stock-data (get-set-roe (read-csv-row "./resources/data-testing-merged.csv") "1980-12-18"))
+    
+    ;; sort the stocks according to their ROE (= Net Income/Total Equity)
+    
+    ;; get a set of ROE
+    (def roe-list (get-ROE stock-data))
+      
+    ;; sorting function, return tickers of the top 20% stocks
+    ;; determine what are the top 20% stocks and turn the sorted-set into list format
+    (def roe-sorted (into '[] (apply sorted-set roe-list)))
+    
+    ;(println roe-list)
+    ;(println (int (* 0.8 (count roe-sorted))))
+    
+    ;; find the 20% cut-off ROE value
+    (let [roe-20 (nth roe-sorted (int (* 0.8 (count roe-sorted))))]    
+        ;;get the tickers of the top 20 with function get-roe-20
+        (def stocks-to-buy (get-roe-20 stock-data roe-20))
+    )
+      
+    ;; buy the top 20% stocks and the sell the stocks that are not in the top 20% this year      
+    (def stocks-to-buy-list (into [] stocks-to-buy))
+
+    ;; buy stocks 
+    (doseq [stock stocks-to-buy-list]        
+      (order stock 10)
+    )
+
+    (update-eval-report (get-date)) ; update evaluation metrics
+    (next-date)
+
+    (while (not= (empty? rebalance-dates) true)
+      ;(println (get-date)) ; debug
+      (if (t/after? (t/local-date (get-date)) (t/local-date (first rebalance-dates))) ; check if (get-date) has passed first date in rebalance-dates
+        (do
+          (def rebalance-dates (rest rebalance-dates)) ; pop the first date in rebalance-dates
+          ;(println (rest rebalance-dates)) ; debug
+          (while (empty? (get-set-roe (read-csv-row "./resources/data-testing-merged.csv") (get-date)))
+              (next-date) ;; move on to next date til data is not empty
+          )
+          (def stock-data (get-set-roe (read-csv-row "./resources/data-testing-merged.csv") (get-date)))
+          (def roe-list (get-ROE stock-data))
+          (def roe-sorted (into '[] (apply sorted-set roe-list)))
+          (let [roe-20 (nth roe-sorted (int (* 0.8 (count roe-sorted))))]    
+              (def stocks-to-buy (get-roe-20 stock-data roe-20))
+          )
+          (def stocks-to-buy-list (into [] stocks-to-buy))
+          
+          ;; sell stocks held in portfolio
+          (doseq [[ticker row] (deref portfolio)]
+            (if (not= ticker :cash)      
+              (order ticker -10)
+            )
+          )
+            
+          ;; buy stocks
+          (doseq [stock stocks-to-buy-list]       
+            (order stock 10)
+          )
+          
+          (update-eval-report (get-date)) ; update evaluation metrics
+        )
+      )
+      (next-date) ; move on to the next trading day
+    )
+    
+    ;; sell stocks held in portfolio (if ticker != "cash" && quantity > 0)
+    (doseq [[ticker row] (deref portfolio)]
+      (if (and (not= ticker :cash) (= (compare (get row :quantity) 0) 1))
+          (order ticker -10)
+      )
+    )
+
+    (pprint/print-table (deref order-record))
+    (view-portfolio)
+    (view-portfolio-record)
+    (eval-report)
  )
