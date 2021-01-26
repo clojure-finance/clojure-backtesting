@@ -14,7 +14,46 @@
 ;(def file1 "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv")
 ;;(def a (read-csv-row file1))
 (def lazy-mode (atom false))
+(def dataset-col (atom {}))
 
+(defn set-main
+  "Doing the initialzation for the lazy mode."
+  [name]
+  (def pending-order (atom {}))
+  (def main-name name)
+  (reset! lazy-mode true))
+
+(defn valid-line
+  "Check if a line is valid in format"
+  [line]
+  (if (not= (get line :TICKER) "")
+    true
+    false))
+
+(defn- lazy-init
+  "Go to the starting line of the dataset, the date should be large or equal the input date."
+  [date & [name]]
+  (loop [count 0 remaining (get (deref dataset-col) (or name main-name))]
+    (if (empty? remaining)
+      (do
+        (println "The date is beyond the date frame of the dataset.")
+        nil)
+      (let [first-line (first remaining)
+            next-remaining (rest remaining)
+            cur-date (get first-line :date)]
+         ;(println first-line)
+        (if (and (>= (compare cur-date date) 0) (valid-line first-line))
+             ;(reset! data-set remaining)
+             ;(println "-----")
+          (do
+             ;(println count)
+            (swap! dataset-col assoc (or name main-name) remaining)
+            first-line)
+          (if (< count 2000)
+            (recur (inc count) next-remaining)
+            (do
+              (swap! dataset-col assoc (or name main-name) remaining)
+              (recur 0 next-remaining))))))))
 
 ;;testing purpose, delete afterwards
 ;(def testfile1 (read-csv-row "/home/kony/Documents/GitHub/clojure-backtesting/resources/CRSP-extract.csv"))
@@ -85,6 +124,7 @@
       (init-date date)
       (maintain-tics true)
     )
+    (lazy-init date)
   )
   (io/delete-file "./order_record.txt") ;First delete the file (act as emptying)
   (def wrtr (io/writer "./order_record.txt" :append true))
