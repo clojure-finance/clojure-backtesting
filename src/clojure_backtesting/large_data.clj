@@ -12,15 +12,6 @@
             [clj-time.core :as clj-t]
             [java-time :as t]))
 
-(def dataset-col (atom {}))
-
-(defn set-main
-  "Doing the initialzation for the lazy mode."
-  [name]
-  (def pending-order (atom {}))
-  (def main-name name)
-  (reset! lazy-mode true))
-
 (defn- lazy-read-csv
   [csv-file]
   (let [in-file (io/reader csv-file)
@@ -103,7 +94,7 @@
              cur-date (get first-line :date)]
          (check-line first-line) ; Do not forget this!!!!
          ;(println first-line)
-         (if (not= cur-date date)
+         (if (and (not= cur-date date) (valid-line first-line))
              ;(reset! data-set remaining)
              ;(println "-----")
            (do
@@ -116,10 +107,27 @@
 (defn next-line
   "Go to the next line of the dataset"
   [& name]
-  (let [name (or name main-name)]
-    (check-line (first (get (deref dataset-col) name)))
-    (swap! dataset-col assoc name (rest (get (deref dataset-col) name)))
-    (first (get (deref dataset-col) name))))
+  (loop [count 0 remaining (rest (get (deref dataset-col) (or name main-name)))]
+    (if (empty? remaining)
+      (do
+        (println "You have reached the end of the file")
+        nil)
+      (let [first-line (first remaining)
+            next-remaining (rest remaining)]
+        (check-line first-line) ; Do not forget this!!!!
+         ;(println first-line)
+        (if (valid-line first-line)
+             ;(reset! data-set remaining)
+             ;(println "-----")
+          (do
+             ;(println count)
+            (swap! dataset-col assoc (or name main-name) remaining)
+            first-line)
+          (if (< count 1000)
+            (recur (inc count) next-remaining)
+            (do
+              (swap! dataset-col assoc (or name main-name) remaining)
+              (recur 0 next-remaining))))))))
 
 
 ;; (defn next-date
