@@ -1,6 +1,6 @@
 # Clojure Backtesting Library
 
-A backtesting framework for quantitative investing and trading
+A backtesting framework for quantitative investing and trading.
 
 ### Requirements
 
