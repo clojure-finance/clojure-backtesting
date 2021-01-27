@@ -109,7 +109,6 @@
       (loop [date_ nil tics (keys (deref tics-info))]
         (if (empty? tics)
           (do
-            (updateHoldingTickers)
             (reset! date date_)
             (maintain-tics)
             (get-date))
