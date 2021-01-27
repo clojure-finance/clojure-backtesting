@@ -126,8 +126,9 @@
     )
     (lazy-init date)
   )
-  (io/delete-file "./order_record.csv") ;First delete the file (act as emptying)
-  (def wrtr (io/writer "./order_record.csv" :append true))
+  (try (io/delete-file "./out_order_record.csv")
+       nil) ;First delete the file (act as emptying)
+  (def wrtr (io/writer "./out_order_record.csv" :append true))
   (.write wrtr "date,TICKER,quantity")
   (def order-record (atom []))
   (def init-capital init-capital)
@@ -377,3 +378,7 @@
   []
   (updateHoldingTickers)
   (internal-next-date))
+
+(defn end-order
+  []
+  (.close wrtr))
