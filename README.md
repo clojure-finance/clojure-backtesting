@@ -14,6 +14,12 @@ Detailed installation instructions and the API documentation could be accessed a
 
 All Jupyter Notebook examples could be found in the `/examples` directory.
 
+Make sure you have the latest version of the code installed by running:
+```
+git pull
+make add_kernel \\ need to re-install kernel after update
+```
+
 ## Report bugs
 
 As we are still working to fully debug the code and create more examples, feel free to report issues in the repository and we appreciate your kind support.  
