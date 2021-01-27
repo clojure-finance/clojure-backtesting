@@ -219,4 +219,5 @@
     (view-portfolio)
     (view-portfolio-record)
     (eval-report)
+    (end-order)
  )

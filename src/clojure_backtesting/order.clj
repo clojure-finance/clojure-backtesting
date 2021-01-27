@@ -126,9 +126,10 @@
     )
     (lazy-init date)
   )
-  (io/delete-file "./order_record.csv") ;First delete the file (act as emptying)
-  (def wrtr (io/writer "./order_record.csv" :append true))
-  (.write wrtr "date,TICKER,quantity")
+  (try (io/delete-file "./out_order_record.csv")
+       nil) ;First delete the file (act as emptying)
+  (def wrtr (io/writer "./out_order_record.csv" :append true))
+  (.write wrtr "date,TICKER,quantity\n")
   (def order-record (atom []))
   (def init-capital init-capital)
   (def loan-exist false) ; global swtich for storing whether loan exists
@@ -377,3 +378,7 @@
   []
   (updateHoldingTickers)
   (internal-next-date))
+
+(defn end-order
+  []
+  (.close wrtr))
