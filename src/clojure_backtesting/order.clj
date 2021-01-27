@@ -129,7 +129,7 @@
   (try (io/delete-file "./out_order_record.csv")
        nil) ;First delete the file (act as emptying)
   (def wrtr (io/writer "./out_order_record.csv" :append true))
-  (.write wrtr "date,TICKER,quantity")
+  (.write wrtr "date,TICKER,quantity\n")
   (def order-record (atom []))
   (def init-capital init-capital)
   (def loan-exist false) ; global swtich for storing whether loan exists
