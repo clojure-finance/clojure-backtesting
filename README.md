@@ -2,16 +2,23 @@
 
 A backtesting framework for quantitative investing and trading
 
-Documentation website: [https://clojure-finance.github.io/clojure-backtesting-website/](https://clojure-finance.github.io/clojure-backtesting-website/)
-
 ### Requirements
 
 ```
 - Clojure
 - Leiningen
 ```
+### How to use
 
-### Usage
+Detailed installation instructions and the API documentation could be accessed at [https://algo-trading.readthedocs.io/](https://algo-trading.readthedocs.io/).
+
+All Jupyter Notebook examples could be found in the `/examples` directory.
+
+### Report bugs
+
+As we are still working to fully debug the code and create more examples, feel free to report issues in the repository and we appreciate your kind support.  
+
+### Development
 
 To start an interactive prompt where you can enter arbitrary code to run in the context of your project:
 ```
@@ -21,10 +28,7 @@ To run the default `:main` set in `project.clj`:
 ```
 lein run
 ```
-
-### Run tests
-
-To run all tests written in the test namespace:
+To run all tests written in the `test` namespace:
 ```
 lein test
 ```
