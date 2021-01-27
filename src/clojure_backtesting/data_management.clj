@@ -104,7 +104,7 @@
   (loop [i 1]
     (if (<= i MAXLOOKAHEAD)
             ;(println (look-ahead-i-days (get-date) i))
-      (let [prev-date (look-n-days-ago date i)]
+      (let [prev-date (look-i-days-ago date i)]
         (let [content (get-with-date-key-tic prev-date key tic data-set)]
           (if (= content NOMATCH)
             (recur (inc i))
@@ -134,25 +134,6 @@
             result))
         result)))
   )
-
-(defn available-tics
-  "This function returns the available tickers and also the optimizor on a date"
-  [date]
-  ;;date e.g. "DD/MM?YYYY"
-  ;;tic e.g. "AAPL"
-  ;;return [false 0 0] if no match
-  ;;return [true price reference] otherwise
-  
-  (loop [remaining (deref data-set) result []] ;(original line)
-  ;(loop [count 0 remaining testfile1] 				;testing line, change the data-set to CRSP
-    (if (empty? remaining)
-      result
-      (let [first-line (first remaining)
-            next-remaining (rest remaining)]
-        (if  (= (get first-line :date) date) ;;amend later if the merge data-set has different keys (using the keys in CRSP now)
-          (recur next-remaining (conj result [(get first-line :TICKER) remaining]))
-          (recur next-remaining result)))))
-)
 
 (defn moving-average
   [key list]

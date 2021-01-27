@@ -50,7 +50,7 @@
     ;       (def MA200-vec-f [])
     ;       (while (not= (get-date) "1981-12-29")
     ;         (do
-    ;           (def tics (deref available-tics-)) ;20 ms
+    ;           (def tics (deref available-tics)) ;20 ms
     ;           (def MA50-vec-aapl (get-prev-n-days :PRC 50 "AAPL" MA50-vec-aapl (get (get tics "AAPL"):reference)))
     ;           (def MA200-vec-aapl (get-prev-n-days :PRC 200 "AAPL" MA200-vec-aapl (get (get tics "AAPL") :reference)))
     ;           (def MA50-vec-f (get-prev-n-days :PRC 50 "F" MA50-vec-f (get (get tics "F"):reference)))

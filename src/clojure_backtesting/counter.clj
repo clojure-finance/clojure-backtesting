@@ -16,7 +16,7 @@
 	(let [[year month day] (map parse-int (str/split date #"-"))]
     (t/format "yyyy-MM-dd" (t/plus (t/local-date year month day) (t/days i)))))
 
-(defn look-n-days-ago
+(defn look-i-days-ago
   "This function is the opposite of look-ahead-n-days."
   [date n]
   (let [[year month day] (map parse-int (str/split date #"-"))]
@@ -64,7 +64,7 @@
   ([initial]
   ;traverse the whole dataset
    (def tics-info (atom {}))
-   (def available-tics- (atom {}))
+   (def available-tics (atom {}))
    (loop [count 0 remaining (deref data-set) cur-tic nil start-date nil end-date nil num 0 reference nil]
      (if (empty? remaining)
        (do
@@ -84,22 +84,22 @@
              (recur (inc count) next-remaining cur-tic start-date (get first-line :date) num reference))))))
    (maintain-tics))
   ([]
-   (reset! available-tics- {})
+   (reset! available-tics {})
    (loop [tics (keys (deref tics-info))]
      (if (empty? tics)
        nil
        (let [cur-tic (first tics) remaining (rest tics) cur-pointer (get  (get (deref tics-info) cur-tic) :pointer) cur-reference (get (deref cur-pointer) :reference) cur-num (get (deref cur-pointer) :num)]
        (if (= (get (first (rest cur-reference)) :date) (get-date))
          (do
-           (swap! available-tics- assoc cur-tic {:num (inc cur-num) :reference (rest cur-reference)})
+           (swap! available-tics assoc cur-tic {:num (inc cur-num) :reference (rest cur-reference)})
            (reset! cur-pointer {:num (inc cur-num) :reference (rest cur-reference)}))
          (if (= (get (first cur-reference) :date) (get-date))
            (do
-             (swap! available-tics- assoc cur-tic (deref cur-pointer))
+             (swap! available-tics assoc cur-tic (deref cur-pointer))
              )))
        (recur remaining))))))
-     
-(defn next-date
+
+(defn internal-next-date
   "This function increment the date counter to the next available date"
   []
     ;return the new date, if found
@@ -109,6 +109,7 @@
       (loop [date_ nil tics (keys (deref tics-info))]
         (if (empty? tics)
           (do
+            (updateHoldingTickers)
             (reset! date date_)
             (maintain-tics)
             (get-date))

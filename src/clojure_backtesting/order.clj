@@ -91,10 +91,10 @@
 ;; tic e.g. "AAPL"
 ;; return [false "No match date" 0 0 0] if no match
 ;; return [true T+1-date price aprc reference] otherwise
-  (if (and (not (deref lazy-mode)) (not= (count (deref available-tics-)) 0))
-    (if (and (not= -1 (.indexOf (keys (deref available-tics-)) tic)) (not= (get (get (get (deref available-tics-) tic) :reference) :date) (get (get (deref tics-info) tic) :end-date)))
-      (let [t-1-date (get (first (rest (get (get (deref available-tics-) tic) :reference))) :date)
-            [b p aprc r] (search-date t-1-date tic (get (get (deref available-tics-) tic) :reference))]
+  (if (and (not (deref lazy-mode)) (not= (count (deref available-tics)) 0))
+    (if (and (not= -1 (.indexOf (keys (deref available-tics)) tic)) (not= (get (get (get (deref available-tics) tic) :reference) :date) (get (get (deref tics-info) tic) :end-date)))
+      (let [t-1-date (get (first (rest (get (get (deref available-tics) tic) :reference))) :date)
+            [b p aprc r] (search-date t-1-date tic (get (get (deref available-tics) tic) :reference))]
         (if b
           [b t-1-date (Double/parseDouble p) aprc r]))
       [false "No such date or ticker in the dataset or the dataset has reached the end" 0 0 0])
@@ -126,8 +126,9 @@
     )
     (lazy-init date)
   )
-  (io/delete-file "./order_record.txt") ;First delete the file (act as emptying)
-  (def wrtr (io/writer "./order_record.txt" :append true))
+  (io/delete-file "./order_record.csv") ;First delete the file (act as emptying)
+  (def wrtr (io/writer "./order_record.csv" :append true))
+  (.write wrtr "date,TICKER,quantity")
   (def order-record (atom []))
   (def init-capital init-capital)
   (def loan-exist false) ; global swtich for storing whether loan exists
@@ -314,7 +315,7 @@
   (if print
     (println (format "Order: %s | %s | %d." date tic quantity)))
   (if direct
-    (.write wrtr (format "Order: %s | %s | %d.\n" date tic quantity)))
+    (.write wrtr (format "%s,%s,%d\n" date tic quantity)))
   {:date date :tic tic :price price :aprc (format "%.2f" adj-price) :quantity quantity})
 
 (defn order-internal
@@ -348,7 +349,8 @@
                     (place-order date tic quantity price adj-price loan reference print direct))) ;This is the buy on margin case
                 (do
                   (println (format "Order request %s | %s | %d fails." order-date tic quantity))
-                  (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell. Try to solve by enabling leverage.")))))))))
+                  (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell. Try to solve by enabling leverage."))))))
+          (update-portfolio date tic 0 price adj-price 0))))
     (do 
       (println (format "The order request %s | %s | %d fails." order-date tic quan))
       (println (format "Failure reason: %s." date))))))
@@ -365,4 +367,13 @@
    (swap! order-record conj (doall (pmap order-internal arg))))
   )
 
+(defn- updateHoldingTickers
+  "Update all the tickers in terms of portfolio"
+  []
+  (for [tic (keys (deref portfolio))]
+    (order-internal (get-date) tic 0 false true (deref data-set) false false)))
 
+(defn next-date
+  []
+  (updateHoldingTickers)
+  (internal-next-date))
