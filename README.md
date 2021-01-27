@@ -8,17 +8,17 @@ A backtesting framework for quantitative investing and trading
 - Clojure
 - Leiningen
 ```
-### How to use
+## How to use
 
 Detailed installation instructions and the API documentation could be accessed at [https://algo-trading.readthedocs.io/](https://algo-trading.readthedocs.io/).
 
 All Jupyter Notebook examples could be found in the `/examples` directory.
 
-### Report bugs
+## Report bugs
 
 As we are still working to fully debug the code and create more examples, feel free to report issues in the repository and we appreciate your kind support.  
 
-### Development
+## Development
 
 To start an interactive prompt where you can enter arbitrary code to run in the context of your project:
 ```
