@@ -371,7 +371,7 @@
 (defn- updateHoldingTickers
   "Update all the tickers in terms of portfolio"
   []
-  (for [tic (keys (deref portfolio))]
+  (doseq [tic (keys (deref portfolio))]
     (order-internal (get-date) tic 0 false true (deref data-set) false false)))
 
 (defn next-date
