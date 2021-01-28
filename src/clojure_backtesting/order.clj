@@ -116,9 +116,10 @@
 ;; Create initial portfolio with cash only (User input thei initial-capital)
 (defn init-portfolio
   "This is the function that initialise or restart the backtesting process"
-  [date init-capital] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
+  [date init-capital &{:keys [standard] :or {standard true}}] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
   ;; example: portfolio -> {:cash {:tot-val 10000} :"AAPL" {:price 400 :aprc adj-price :quantity 100 :tot-val 40000}}
   ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
+  ;; todo: implement case when standard is false
   (if (not (deref lazy-mode))
     (do
       (init-date date)
@@ -321,7 +322,7 @@
 
 (defn order-internal
 	"This is the main order function"
-	([order-date tic quan remaining leverage dataset print direct]
+	[order-date tic quan remaining leverage dataset print direct]
 	;;@date date-and-time trading date
 	;;@tic  trading ticker
 	;;@quantity exact number to buy(+) or sell(-)
@@ -336,7 +337,7 @@
             quantity (cond 
                        remaining (- quan total)
                        :else quan)]
-        (if (and (not= quantity 0) (not= quantity 0.0)) ;; ignore the empty order case
+        (if (and (and (not= quantity 0) (not= quantity 0.0)) (not= quantity "special")) ;; ignore the empty order case
           (if (and (and (>= (+ total quantity) 0) (or (<= quantity 0) (>= cash (* price quantity)))))
             (place-order date tic quantity price adj-price 0 reference print direct) ;loan is 0 here
             (do
@@ -351,11 +352,12 @@
                 (do
                   (println (format "Order request %s | %s | %d fails." order-date tic quantity))
                   (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell. Try to solve by enabling leverage."))))))
-          (update-portfolio date tic 0 price adj-price 0))))
+          (if (= quantity "special")
+            (update-portfolio date tic 0 price adj-price 0)
+            nil))))
     (do 
       (println (format "The order request %s | %s | %d fails." order-date tic quan))
       (println (format "Failure reason: %s." date))))))
-  )
 
 (defn order
   ([tic quantity & {:keys [remaining leverage dataset print direct] :or {remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
@@ -372,7 +374,7 @@
   "Update all the tickers in terms of portfolio"
   []
   (doseq [tic (rest (keys (deref portfolio)))]
-    (order-internal (get-date) tic 0 false true (deref data-set) false false)))
+    (order-internal (get-date) tic "special" false true (deref data-set) false false)))
 
 (defn next-date
   []
