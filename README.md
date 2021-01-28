@@ -10,7 +10,7 @@ A backtesting framework for quantitative investing and trading.
 ```
 ## How to use
 
-Detailed installation instructions and the API documentation could be accessed at [https://algo-trading.readthedocs.io/](https://algo-trading.readthedocs.io/).
+Detailed installation instructions and the API documentation could be accessed at [https://clojure-finance.github.io/clojure-backtesting-website/](https://clojure-finance.github.io/clojure-backtesting-website/).
 
 All Jupyter Notebook examples could be found in the `/examples` directory.
 
