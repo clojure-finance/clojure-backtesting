@@ -2,6 +2,7 @@
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.counter :refer :all]
+            [clojure-backtesting.data :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
             [java-time :as t]
@@ -178,7 +179,7 @@
         (do ; exist leverage
           (let [new-loan (+ loan (get (last (deref portfolio-value)) :loan)) ; update total loan
                 new-leverage (/ new-loan (- tot-value new-loan)) ; update leverage ratio = total debt / total equity
-                ret (* (Math/log (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
+                ret (* (log-10 (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
                 tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
                 last-date (get (last (deref portfolio-value)) :date)
                 last-index (- (count (deref portfolio-value)) 1)
@@ -201,7 +202,7 @@
         )
 
         (do ; no leverage, update return with log formula: daily_ret = log(tot_val/prev_val)
-          (let [ret (Math/log (/ tot-value prev-value))
+          (let [ret (log-10 (/ tot-value prev-value))
             tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
             last-date (get (last (deref portfolio-value)) :date)
             last-index (- (count (deref portfolio-value)) 1)]
