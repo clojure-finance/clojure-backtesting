@@ -123,16 +123,27 @@
                                                                                   [(- n 1) (into [] pre)]
                                                                                   [(- n 1) (into [] (rest pre))])
                                                                                 [0 '()])
-                                                                              [0 '()])]
-    (loop [count count-tmp result result-tmp]
-      (if (< count n)
-        (let [[prev-date content] (get-pre-date-and-content key (deref date) tic (or reference (deref data-set)))]
-          (if (not (= prev-date NOMATCH)) ; has date, has content
-            (do
-              (reset! date prev-date)
-              (recur (+ count 1) (conj result {:date prev-date key content})))
-            result))
-        result)))
+                                                                              [0 '()])
+        ref (or reference (deref data-set))]
+    (if (or (= (get (deref available-tics) tic) nil) (not= ref (deref data-set)))
+      (loop [count count-tmp result result-tmp]
+        (if (< count n)
+          (let [[prev-date content] (get-pre-date-and-content key (deref date) tic ref)]
+            (if (not (= prev-date NOMATCH)) ; has date, has content
+              (do
+                (reset! date prev-date)
+                (recur (+ count 1) (conj result {:date prev-date key content})))
+              result))
+          result))
+      (let [line-num (get (get (deref available-tics) tic) :num)]
+       (loop [count count-tmp result result-tmp num line-num]
+        (if (and (< count n) (>= num 0))
+          (let [line (nth ref num) [date content ticker] [(get line :date) (get line key) (get line :TICKER)]]
+            (if (= ticker tic) ; has date, has content
+              (do
+                (recur (+ count 1) (conj result {:date date key content}) (- num 1)))
+              result))
+          result)))))
   )
 
 (defn moving-average
