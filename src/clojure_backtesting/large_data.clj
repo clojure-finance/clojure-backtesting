@@ -2,6 +2,7 @@
   (:require [clojure-backtesting.data :refer :all]
             ;[clojure-backtesting.data-management :refer :all]
             [clojure-backtesting.order :refer :all]
+            [clojure-backtesting.portfolio :refer :all]
             ;[clojure-backtesting.evaluate :refer :all]
             ;[clojure-backtesting.plot :refer :all]
             [clojure-backtesting.counter :refer :all]
