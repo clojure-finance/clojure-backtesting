@@ -357,8 +357,9 @@
             (update-portfolio date tic 0 price adj-price 0)
             nil))))
     (do 
-      (println (format "The order request %s | %s | %d fails." order-date tic quan))
-      (println (format "Failure reason: %s." date))))))
+      (if (not= quan "special")
+        (println (format "The order request %s | %s | %d fails." order-date tic quan))
+        (println (format "Failure reason: %s." date)))))))
 
 (defn order
   ([tic quantity & {:keys [remaining leverage dataset print direct] :or {remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
