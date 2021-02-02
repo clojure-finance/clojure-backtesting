@@ -10,17 +10,18 @@
             [clojure.math.numeric-tower :as math])
     )
 
-;; Search-date function
 (defn search-date
   "This function tries to retrieve the matching entry from the dataset."
   [date tic dataset]
-  ;;date e.g. "DD/MM?YYYY"
-  ;;tic e.g. "AAPL"
-  ;;return [false 0 0] if no match
-  ;;return [true price reference] otherwise
+  ;; date e.g. "DD/MM/YYYY"
+  ;; tic e.g. "AAPL"
+  ;; dataset
+
+  ;; return [false 0 0] if no match
+  ;; return [true price reference] otherwise
   
   (loop [count 0 remaining dataset] ;(original line)
-  ;(loop [count 0 remaining testfile1] 				;testing line, change the data-set to CRSP
+  ;(loop [count 0 remaining testfile1] 	;testing line, change the data-set to CRSP
     (if (empty? remaining)
       [false 0 0]
       (let [first-line (first remaining)
@@ -35,14 +36,16 @@
 )
 
 
-;; Search in Order function
 (defn search-in-order
   "This function turns the order processed date"
   [date tic dataset]
-;; date e.g. "DD/MM/YYYY"
-;; tic e.g. "AAPL"
-;; return [false "No match date" 0 0 0] if no match
-;; return [true T+1-date price aprc reference] otherwise
+  ;; @date e.g. "DD/MM/YYYY"
+  ;; @tic e.g. "AAPL"
+  ;; @dataset
+
+  ;; return [false "No match date" 0 0 0] if no match
+  ;; return [true T+1-date price aprc reference] otherwise
+
   (if (and (not (deref lazy-mode)) (not= (count (deref available-tics)) 0))
     (if (and (not= -1 (.indexOf (keys (deref available-tics)) tic)) (not= (get (get (get (deref available-tics) tic) :reference) :date) (get (get (deref tics-info) tic) :end-date)))
       (let [t-1-date (get (first (rest (get (get (deref available-tics) tic) :reference))) :date)
@@ -67,7 +70,7 @@
 
 
 (defn- place-order
-  "This private function do the basic routine for an ordering, which are update portfolio and return record"
+  "This private function does the basic routine for an ordering - update portfolio and return record."
   [date tic quantity price adj-price loan reference print direct]
   (update-portfolio date tic quantity price adj-price loan)
   (if print
@@ -76,12 +79,13 @@
     (.write wrtr (format "%s,%s,%d\n" date tic quantity)))
   {:date date :tic tic :price price :aprc (format "%.2f" adj-price) :quantity quantity})
 
+
 (defn order-internal
 	"This is the main order function"
 	[order-date tic quan remaining leverage dataset print direct]
-	;;@date date-and-time trading date
-	;;@tic  trading ticker
-	;;@quantity exact number to buy(+) or sell(-)
+	;; @date date-and-time trading date
+	;; @tic  trading ticker
+	;; @quantity exact number to buy(+) or sell(-)
 	(let [[match date price adj-price reference] (search-in-order order-date tic dataset)] 
    ; Note that the date here may contain error information
 	(if match
@@ -120,9 +124,9 @@
    (let [record (order-internal (get-date) tic quantity remaining leverage dataset print direct)]
      (if record
      (swap! order-record conj record)
-       );else
+       ) ;else
      ))
-  ([arg] ;This function still needs to be developed in order for parallelisium
+  ([arg] ;This function still needs to be developed for parallelisium
    (swap! order-record conj (doall (pmap order-internal arg))))
   )
 

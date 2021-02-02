@@ -52,7 +52,7 @@
               (swap! dataset-col assoc (or name main-name) remaining)
               (recur 0 next-remaining))))))))
 
-  ;; Create initial portfolio with cash only
+  ;; Backtester initialisation
   (defn init-portfolio
     "This is the function that initialise or restart the backtesting process"
     [date init-capital &{:keys [standard] :or {standard true}}] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
