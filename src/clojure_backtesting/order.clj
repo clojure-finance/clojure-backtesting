@@ -132,16 +132,11 @@
    (swap! order-record conj (doall (pmap order-internal arg))))
   )
 
-(defn- updateHoldingTickers
+(defn updateHoldingTickers
   "Update all the tickers in terms of portfolio"
   []
   (doseq [tic (rest (keys (deref portfolio)))]
     (order-internal (get-date) tic "special" false true (deref data-set) false false)))
-
-(defn next-date
-  []
-  (updateHoldingTickers)
-  (internal-next-date))
 
 (defn end-order
   []
