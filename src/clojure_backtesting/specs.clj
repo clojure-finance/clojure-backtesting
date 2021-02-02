@@ -1,6 +1,7 @@
 (ns clojure-backtesting.specs
     (:require [clojure.test :refer :all]
               [clojure-backtesting.data :refer :all]
+              [clojure-backtesting.portfolio :refer :all]
               [clojure-backtesting.order :refer :all]
               [clojure-backtesting.evaluate :refer :all]
               [clojure-backtesting.plot :refer :all]

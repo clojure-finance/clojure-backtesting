@@ -1,6 +1,7 @@
 (ns clojure-backtesting.evaluate
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.order :refer :all]
+            [clojure-backtesting.portfolio :refer :all]
             [clj-time.core :as clj-t]
             [clojure.pprint :as pprint]
             [clojure.core.matrix.stats :as stat]
