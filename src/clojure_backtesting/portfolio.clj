@@ -104,7 +104,13 @@
     (doseq [[ticker -] (deref portfolio)] 
       (if (= ticker tic)
         (let [qty-ticker (get-in (deref portfolio) [ticker :quantity])]
-          (do (swap! portfolio assoc ticker {:price price :aprc aprc :quantity qty-ticker :tot-val (* aprc qty-ticker)})))
+          (do 
+            (if (or (= qty-ticker 0) (= qty-ticker 0.0))
+              (swap! portfolio dissoc ticker) ; remove ticker from portfolio if qty = 0
+              (swap! portfolio assoc ticker {:price price :aprc aprc :quantity qty-ticker :tot-val (* aprc qty-ticker)})
+            )
+          )
+        )
       )
     )
   

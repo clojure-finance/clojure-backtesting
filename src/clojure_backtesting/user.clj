@@ -44,6 +44,8 @@
     (init-portfolio "1980-12-15" 100000)
     ; test with ordering
     (order "AAPL" 50)
+    (next-date)
+    (order "AAPL" -50)
 
     (pprint/print-table (deref order-record))
     (view-portfolio)
