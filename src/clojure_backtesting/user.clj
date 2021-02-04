@@ -42,14 +42,41 @@
     [& args] ; pass ./resources/CRSP-extract.csv as arg
     (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
     (init-portfolio "1980-12-15" 100000)
-    ; test with ordering
-    (order "AAPL" 50)
-    (next-date)
-    (order "AAPL" -50)
 
-    (pprint/print-table (deref order-record))
+    ; test with ordering
+    ; (order "AAPL" 50)
+    ; (update-eval-report (get-date))
+    ; (internal-next-date)
+    ; (order "AAPL" -50)
+    ; (update-eval-report (get-date))
+
+
+    (def MA50-vec-aapl [])
+    (def MA200-vec-aapl [])
+    (def MA50-vec-f [])
+    (def MA200-vec-f [])
+    (while (not= (get-date) "1989-12-29")
+    (do
+      (def tics (deref available-tics)) ;20 ms
+      (def MA50-vec-aapl (get-prev-n-days :PRC 50 "AAPL" MA50-vec-aapl))
+      (def MA200-vec-aapl (get-prev-n-days :PRC 200 "AAPL" MA200-vec-aapl))
+      (def MA50-vec-f (get-prev-n-days :PRC 50 "F" MA50-vec-f ))
+      (def MA200-vec-f (get-prev-n-days :PRC 200 "F" MA200-vec-f))
+      (let [[MA50 MA200] [(moving-average :PRC MA50-vec-aapl) (moving-average :PRC MA200-vec-aapl)]]
+        (if (> MA50 MA200)
+          (order "AAPL" 1 :print false) 
+          (order "AAPL" 0 :remaining true))))
+      (let [[MA50 MA200] [(moving-average :PRC MA50-vec-f) (moving-average :PRC MA200-vec-f)]]
+        (if (> MA50 MA200)
+          (order "F" 1  :print false) 
+          (order "F" 0 :remaining true )))
+      (internal-next-date))
+    (update-eval-report (get-date))
+    (end-order)
+
+    ;(pprint/print-table (deref order-record))
     (view-portfolio)
-    (view-portfolio-record)
+    ;(view-portfolio-record)
     (eval-report)
     (end-order)
  )

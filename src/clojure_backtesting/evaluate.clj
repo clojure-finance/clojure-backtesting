@@ -72,12 +72,30 @@
   ;(* (standard-deviation (deref (get-daily-returns))) 100)
 ) 
 
+(defn volatility-optimised
+  "This function returns the volatility of the portfolio in %."
+  []
+  (if (= (count (deref eval-record)) 0)
+    (* (stat/sd (deref (get-daily-returns))) 100)
+    (let [prev-vol (get-in (last (deref eval-record)) [:vol])
+          prev-vol-square (square prev-vol)
+          x-n (get-in (last (deref portfolio-value)) [:daily-ret])
+          curr-mean (/ (get-in (last (deref portfolio-value)) [:tot-ret]) (count (deref portfolio-value)))
+          prev-mean (/ (get-in (first (take-last 2 (deref portfolio-value))) [:tot-ret]) (- (count (deref portfolio-value)) 1))
+          n (count (deref portfolio-value))
+          numerator (- (* (- x-n prev-mean) (- x-n curr-mean)) prev-vol-square)
+         ]
+      (* (+ prev-vol-square (/ numerator n)) 100)
+    ) 
+  )
+)
+
 ;; Sharpe ratio (in %)
 (defn sharpe-ratio
   "This function returns the sharpe ratio of the portfolio in %."
   []
-  (if (not= (volatility) 0.0)
-    (/ (* (portfolio-total-ret) 100) (volatility))
+  (if (not= (volatility-optimised) 0.0)
+    (/ (* (portfolio-total-ret) 100) (volatility-optimised))
     0.0
   )
 )
@@ -95,7 +113,7 @@
   [date]
   (if (not= (count (deref order-record)) 0) ; check that order record is not empty
     (let [total-val-data (portfolio-total)
-        volatility-data (volatility)
+        volatility-data (volatility-optimised)
         sharpe-ratio-data (sharpe-ratio)
         pnl-per-trade-data (pnl-per-trade)
         ]
