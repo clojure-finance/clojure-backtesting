@@ -4,7 +4,7 @@
             [clojure-backtesting.order :refer :all]
             [clojure-backtesting.portfolio :refer :all]
             ;[clojure-backtesting.evaluate :refer :all]
-            ;[clojure-backtesting.plot :refer :all]
+            [clojure-backtesting.portfolio :refer :all]
             [clojure-backtesting.counter :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
@@ -85,6 +85,7 @@
   "Go to the next day of the dataset."
   [& name]
   (let [date (curr-date)]
+    (reset! available-tics {})
    (loop [count 0 remaining (rest (get (deref dataset-col) (or name main-name)))]
      (if (or (<= MAXRANGE count) (empty? remaining))
        (do
@@ -92,17 +93,21 @@
          nil)
        (let [first-line (first remaining)
              next-remaining (rest remaining)
-             cur-date (get first-line :date)]
+             cur-date (get first-line :date)
+             ticker (get first-line :TICKER)]
          (check-line first-line) ; Do not forget this!!!!
-         ;(println first-line)
+         ;(println first-line)        
          (if (and (not= cur-date date) (valid-line first-line))
              ;(reset! data-set remaining)
              ;(println "-----")
            (do
              ;(println count)
+             (set-date cur-date)
              (swap! dataset-col assoc (or name main-name) remaining)
              first-line)
-           (recur (inc count) next-remaining))))))
+           (do
+             (swap! available-tics assoc ticker {:reference first-line})
+             (recur (inc count) next-remaining)))))))
   )
 
 (defn next-line
@@ -131,10 +136,13 @@
               (recur 0 next-remaining))))))))
 
 
-;; (defn next-date
-;;   "Go to the next date available in the dateset"
-;;   []
-;;   )
+(defn next-date
+  []
+  (if (deref lazy-mode)
+    (next-day)
+    (do
+      (updateHoldingTickers)
+      (internal-next-date))))
 
 (defn order-lazy 
 ;;  ([quantity & {:keys [remaining leverage print direct] :or {remaining false leverage LEVERAGE print false direct true}}]

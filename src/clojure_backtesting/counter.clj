@@ -30,6 +30,11 @@
     (def cur-reference (atom [0 (deref data-set)]))
     )
 
+(defn set-date
+  "This function sets the date with a string"
+  [_date]
+  (reset! date (t/local-date "yyyy-MM-dd" _date)))
+
 (defn get-date
     []
     (t/format "yyyy-MM-dd" (deref date)))
