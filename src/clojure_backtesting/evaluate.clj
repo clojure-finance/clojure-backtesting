@@ -58,10 +58,10 @@
   (doseq [daily-record (deref portfolio-value)] ;; then update the price & aprc of the securities in the portfolio
     (let [daily-ret (daily-record :daily-ret)]
       ;(println daily-ret)
-      (swap! dailyret-record concat [daily-ret])
+      (swap! dailyret-record conj daily-ret)
     )
   )
-  dailyret-record
+  dailyret-record ; can be refactoring no need to create atom
 )
 
 ;; Volatility (in %)
@@ -119,20 +119,18 @@
         ]
       (do
         ; numerical values
-        (swap! eval-record concat [(into (sorted-map) {:date date
-          :tot-val total-val-data
-          :vol volatility-data
-          :sharpe sharpe-ratio-data
-          :pnl-pt pnl-per-trade-data
-        })])
+        (swap! eval-record conj {:date date
+                                 :tot-val total-val-data
+                                 :vol volatility-data
+                                 :sharpe sharpe-ratio-data
+                                 :pnl-pt pnl-per-trade-data})
         
         ; string formatting
-        (swap! eval-report-data concat [(into (sorted-map) {:date date
-                :tot-val (str "$" (int total-val-data))
-                :vol (str (format "%.2f" volatility-data) "%")
-                :sharpe (str (format "%.2f" sharpe-ratio-data) "%")
-                :pnl-pt (str "$" (int pnl-per-trade-data))
-        })])
+        (swap! eval-report-data conj {:date date
+                                      :tot-val (str "$" (int total-val-data))
+                                      :vol (str (format "%.2f" volatility-data) "%")
+                                      :sharpe (str (format "%.2f" sharpe-ratio-data) "%")
+                                      :pnl-pt (str "$" (int pnl-per-trade-data))})
       )
     )
   )

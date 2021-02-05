@@ -74,9 +74,9 @@
   [date tic quantity price adj-price loan reference print direct]
   (update-portfolio date tic quantity price adj-price loan)
   (if print
-    (println (format "Order: %s | %s | %d." date tic quantity)))
+    (println (format "Order: %s | %s | %f." date tic (double quantity))))
   (if direct
-    (.write wrtr (format "%s,%s,%d\n" date tic quantity)))
+    (.write wrtr (format "%s,%s,%f\n" date tic (double quantity))))
   {:date date :tic tic :price price :aprc (format "%.2f" adj-price) :quantity quantity})
 
 
