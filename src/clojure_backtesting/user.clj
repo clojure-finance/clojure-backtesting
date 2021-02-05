@@ -8,7 +8,7 @@
             [clojure-backtesting.plot :refer :all]
             [clojure-backtesting.specs :refer :all]
             [clojure-backtesting.counter :refer :all]
-            ;[clojure-backtesting.large-data :refer :all]
+            [clojure-backtesting.large-data :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
@@ -71,13 +71,13 @@
           (order "F" 1  :print false) 
           (order "F" 0 :remaining true )))
       (update-eval-report (get-date))
-      (internal-next-date))
+      (next-date))
     
     (end-order)
 
     ;(pprint/print-table (deref order-record))
     (view-portfolio)
-    ;(view-portfolio-record 10)
+    (view-portfolio-record 10)
     ;(eval-report 10)
     (end-order)
  )

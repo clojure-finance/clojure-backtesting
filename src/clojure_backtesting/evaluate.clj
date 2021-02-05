@@ -141,10 +141,10 @@
 ;; Print evaluation report
 (defn eval-report
   "This function prints the first n rows of the evaluation report, pass a -ve number to print full report."
-  [n]
-  (if (neg? n)
-    (pprint/print-table (deref eval-report-data))
+  [& [n]]
+  (if (or n (> n 0))
     (pprint/print-table (take n (deref eval-report-data)))
+    (pprint/print-table (deref eval-report-data))
   )
 )
 

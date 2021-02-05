@@ -189,21 +189,20 @@
               leverage (str (format "%.2f" (* (get row :leverage) 100)) "%")
              ]
         
-          (swap! portfolio-record concat [
-            {:date date
-             :tot-value tot-val
-             :daily-ret daily-ret
-             :tot-ret tot-ret
-             :loan loan
-             :leverage leverage
-            }]) 
+          (swap! portfolio-record conj
+                 {:date date
+                  :tot-value tot-val
+                  :daily-ret daily-ret
+                  :tot-ret tot-ret
+                  :loan loan
+                  :leverage leverage}) 
         )
       )
     )
     
-    (if (neg? n)
-      (pprint/print-table (deref portfolio-record))
+    (if (or n (> n 0))
       (pprint/print-table (take n (deref portfolio-record)))
+      (pprint/print-table (deref portfolio-record))
     )
   )
   
@@ -227,13 +226,12 @@
           (if (= ticker :cash)
             (do
               (let [tot-val (int (get row :tot-val))]
-              (swap! portfolio-table concat [
-                {:asset "cash"
-                :price "N/A"
-                :aprc "N/A"
-                :quantity "N/A"
-                :tot-val tot-val
-                }]) 
+              (swap! portfolio-table conj
+                     {:asset "cash"
+                      :price "N/A"
+                      :aprc "N/A"
+                      :quantity "N/A"
+                      :tot-val tot-val}) 
               )
             )
             (do
@@ -242,13 +240,12 @@
                 quantity (get row :quantity)
                 tot-val (int (get row :tot-val))
                ]
-              (swap! portfolio-table concat [
-                {:asset ticker
-                :price price
-                :aprc aprc
-                :quantity quantity
-                :tot-val tot-val
-                }]) 
+              (swap! portfolio-table conj
+                     {:asset ticker
+                      :price price
+                      :aprc aprc
+                      :quantity quantity
+                      :tot-val tot-val}) 
               )
             )
           )
