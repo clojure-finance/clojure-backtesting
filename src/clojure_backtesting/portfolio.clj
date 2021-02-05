@@ -175,8 +175,8 @@
   
   ;; utility function
   (defn view-portfolio-record
-    "This function prints the portfolio value vector in a table format, with units added."
-    []
+    "This function prints the first n rows of the portfolio value record, pass -ve value to print whole record."
+    [n]
     (def portfolio-record (atom [])) ; temporarily stores record for view
   
     (doseq [row (deref portfolio-value)] 
@@ -201,7 +201,10 @@
       )
     )
     
-    (pprint/print-table (deref portfolio-record))
+    (if (neg? n)
+      (pprint/print-table (deref portfolio-record))
+      (pprint/print-table (take n (deref portfolio-record)))
+    )
   )
   
   (defn total-value

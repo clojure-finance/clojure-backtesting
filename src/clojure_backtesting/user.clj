@@ -55,7 +55,7 @@
     (def MA200-vec-aapl [])
     (def MA50-vec-f [])
     (def MA200-vec-f [])
-    (while (not= (get-date) "1989-12-29")
+    (while (not= (get-date) "2003-12-29")
     (do
       (def tics (deref available-tics)) ;20 ms
       (def MA50-vec-aapl (get-prev-n-days :PRC 50 "AAPL" MA50-vec-aapl))
@@ -70,13 +70,14 @@
         (if (> MA50 MA200)
           (order "F" 1  :print false) 
           (order "F" 0 :remaining true )))
+      (update-eval-report (get-date))
       (internal-next-date))
-    (update-eval-report (get-date))
+    
     (end-order)
 
     ;(pprint/print-table (deref order-record))
     (view-portfolio)
-    ;(view-portfolio-record)
-    (eval-report)
+    ;(view-portfolio-record 10)
+    ;(eval-report 10)
     (end-order)
  )
