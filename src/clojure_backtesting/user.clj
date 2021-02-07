@@ -44,13 +44,14 @@
     (init-portfolio "1980-12-15" 100000)
 
     ; test with ordering
-    ; (order "AAPL" 50)
-    ; (update-eval-report (get-date))
-    ; (internal-next-date)
-    ; (order "AAPL" -50)
-    ; (update-eval-report (get-date))
+    ;; (order "AAPL" 5.5)
+    ;; (update-eval-report (get-date))
+    ;; (next-date)
+    ;; (order "AAPL" -5.5)
+    ;; (update-eval-report (get-date))
 
-
+ 
+    ;; golden cross 
     (def MA50-vec-aapl [])
     (def MA200-vec-aapl [])
     (def MA50-vec-f [])

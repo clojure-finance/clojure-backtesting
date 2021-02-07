@@ -130,8 +130,8 @@
         ; string formatting
         (swap! eval-report-data conj {:date date
                                       :tot-val (str "$" (int total-val-data))
-                                      :vol (str (format "%.2f" volatility-data) "%")
-                                      :sharpe (str (format "%.2f" sharpe-ratio-data) "%")
+                                      :vol (str (format "%.4f" volatility-data) "%")
+                                      :sharpe (str (format "%.4f" sharpe-ratio-data) "%")
                                       :pnl-pt (str "$" (int pnl-per-trade-data))})
       )
     )
