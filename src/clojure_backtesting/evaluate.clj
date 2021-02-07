@@ -17,7 +17,7 @@
 
 ;; Calculate portfolio total returns
 (defn portfolio-total-ret
-  "This function returns the current daily return of the portfolio in %."
+  "This function returns the current daily return of the portfolio in decimal."
   []  
   (get (last (deref portfolio-value)) :tot-ret)
 )
@@ -94,8 +94,10 @@
 (defn sharpe-ratio
   "This function returns the sharpe ratio of the portfolio in %."
   []
-  (if (not= (volatility-optimised) 0.0)
-    (/ (* (portfolio-total-ret) 100) (volatility-optimised))
+  (if (not= (volatility) 0.0)
+    (/ (* (portfolio-total-ret) 100) (volatility))
+    ;(get-in (last (deref portfolio-value)) [:tot-ret])
+    ;(/ (* (portfolio-total-ret) 100) (volatility))
     0.0
   )
 )
@@ -113,7 +115,7 @@
   [date]
   (if (not= (count (deref order-record)) 0) ; check that order record is not empty
     (let [total-val-data (portfolio-total)
-        volatility-data (volatility-optimised)
+        volatility-data (volatility)
         sharpe-ratio-data (sharpe-ratio)
         pnl-per-trade-data (pnl-per-trade)
         ]

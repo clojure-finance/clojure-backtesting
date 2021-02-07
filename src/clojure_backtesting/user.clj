@@ -55,7 +55,7 @@
     (def MA200-vec-aapl [])
     (def MA50-vec-f [])
     (def MA200-vec-f [])
-    (while (not= (get-date) "2003-12-29")
+    (while (not= (get-date) "2016-12-29")
     (do
       (def tics (deref available-tics)) ;20 ms
       (def MA50-vec-aapl (get-prev-n-days :PRC 50 "AAPL" MA50-vec-aapl))
@@ -78,6 +78,6 @@
     ;(pprint/print-table (deref order-record))
     (view-portfolio)
     (view-portfolio-record 10)
-    ;(eval-report 10)
+    (eval-report 10)
     (end-order)
  )
