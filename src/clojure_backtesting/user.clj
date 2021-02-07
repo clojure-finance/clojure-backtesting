@@ -19,14 +19,6 @@
             [clojupyter.kernel.version :as ver]
             )(:gen-class))
 
-;;testing purpose
-; (comment 
-; (def filex "/home/kony/Documents/GitHub/clojure-backtesting/resources/Compustat-extract.csv")
-
-; (def a (read-csv-row filex))
-; )        
-
-; maintain a map that contains the necessary information about each ticker
 
 ; main function for reading dataset
 (defn main-read-data
@@ -56,7 +48,7 @@
     (def MA200-vec-aapl [])
     (def MA50-vec-f [])
     (def MA200-vec-f [])
-    (while (not= (get-date) "2016-12-29")
+    (while (not= (get-date) "1983-12-29")
     (do
       (def tics (deref available-tics)) ;20 ms
       (def MA50-vec-aapl (get-prev-n-days :PRC 50 "AAPL" MA50-vec-aapl))

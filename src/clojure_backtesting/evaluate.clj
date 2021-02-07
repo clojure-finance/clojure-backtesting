@@ -5,6 +5,7 @@
             [clj-time.core :as clj-t]
             [clojure.pprint :as pprint]
             [clojure.core.matrix.stats :as stat]
+            [clojure.java.io :as io]
             ))
 
 
@@ -68,7 +69,7 @@
 (defn volatility
   "This function returns the volatility of the portfolio in %."
   []
-  (* (stat/sd (deref (get-daily-returns))) 100)
+  (stat/sd (deref (get-daily-returns)))
   ;(* (standard-deviation (deref (get-daily-returns))) 100)
 ) 
 
@@ -85,7 +86,7 @@
           n (count (deref portfolio-value))
           numerator (- (* (- x-n prev-mean) (- x-n curr-mean)) prev-vol-square)
          ]
-      (* (+ prev-vol-square (/ numerator n)) 100)
+      (+ prev-vol-square (/ numerator n))
     ) 
   )
 )
@@ -95,7 +96,7 @@
   "This function returns the sharpe ratio of the portfolio in %."
   []
   (if (not= (volatility) 0.0)
-    (/ (* (portfolio-total-ret) 100) (volatility))
+    (/ (portfolio-total-ret) (volatility))
     ;(get-in (last (deref portfolio-value)) [:tot-ret])
     ;(/ (* (portfolio-total-ret) 100) (volatility))
     0.0
@@ -122,17 +123,19 @@
       (do
         ; numerical values
         (swap! eval-record conj {:date date
-                                 :tot-val total-val-data
+                                 :tot-value total-val-data
                                  :vol volatility-data
                                  :sharpe sharpe-ratio-data
                                  :pnl-pt pnl-per-trade-data})
         
         ; string formatting
         (swap! eval-report-data conj {:date date
-                                      :tot-val (str "$" (int total-val-data))
-                                      :vol (str (format "%.4f" volatility-data) "%")
+                                      :tot-value (str "$" (int total-val-data))
+                                      :vol (str (format "%.4f" (* volatility-data 100)) "%")
                                       :sharpe (str (format "%.4f" sharpe-ratio-data) "%")
                                       :pnl-pt (str "$" (int pnl-per-trade-data))})
+        ; output to file
+        (.write evalreport-wrtr (format "%s,%f,%f,%f,%f\n" date (double total-val-data) (double volatility-data) (double sharpe-ratio-data) (double pnl-per-trade-data)))
       )
     )
   )

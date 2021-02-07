@@ -66,10 +66,25 @@
       )
       (lazy-init date)
     )
+
+    ;; output order record to csv file
     (try (io/delete-file "./out_order_record.csv")
          nil) ;First delete the file (act as emptying)
     (def wrtr (io/writer "./out_order_record.csv" :append true))
     (.write wrtr "date,TICKER,quantity\n")
+
+    ;; output portfolio value record to csv file
+    (try (io/delete-file "./out_portfolio_value_record.csv")
+         nil) ;First delete the file (act as emptying)
+    (def portvalue-wrtr (io/writer "./out_portfolio_value_record.csv" :append true))
+    (.write portvalue-wrtr "date,tot-value,daily-ret,tot-ret,loan,leverage\n")
+
+    ;; output evaluation report to csv file
+    (try (io/delete-file "./out_evaluation_report.csv")
+         nil) ;First delete the file (act as emptying)
+    (def evalreport-wrtr (io/writer "./out_evaluation_report.csv" :append true))
+    (.write evalreport-wrtr "date,tot-value,vol,sharpe,pnl-pt\n")
+
     (def order-record (atom []))
     (def init-capital init-capital)
     (def loan-exist false) ; global swtich for storing whether loan exists
@@ -133,14 +148,12 @@
                   (def loan-exist true)
                 )
                 (if (= last-date date) ; check if date already exists
-                  (do 
-                    ;(println "last-date")
-                    ;(println last-index)
-                    (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
-                    (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan})))
-                  )
-                  (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan})))
+                  (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
                 ) 
+                ; update portfolio-value vector
+                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan})))
+                ; output to file
+                (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double new-leverage) (double new-loan)))
               )
             )
           )
@@ -152,14 +165,11 @@
               last-index (- (count (deref portfolio-value)) 1)]
               (do 
                 (if (= last-date date) ; check if date already exists
-                  (do 
-                    ;(println "last-date")
-                    ;(println last-index)
-                    (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
-                    (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0})))
-                  )
-                  (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0})))
-                )
+                  (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
+                ) 
+                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0})))
+                ; output to file
+                (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0)))
               )
             )
           )
@@ -167,7 +177,11 @@
         ; if prev_value == 0, let ret = 0.0
         (let [ret 0.0
               tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)]
-          (do (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret}))))
+          (do 
+            (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0})))
+            ; output to file
+            (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0)))
+          )
         )
       )
     )
