@@ -45,7 +45,35 @@
           (do
              ;(println count)
             (swap! dataset-col assoc (or name main-name) remaining)
-            first-line)
+            (set-date cur-date)
+
+            ;; need to call next-day in large-data
+            ;; ============ Direct Copying ============
+            (let [date cur-date dataset (get (deref dataset-col) main-name)]
+              (reset! available-tics {})
+              (loop [count 0 remaining dataset]
+                (if (or (<= MAXRANGE count) (empty? remaining))
+                  (do
+                    (println "Exceed the maximum-line buffer for one date or the dataset reaches the end.")
+                    (swap! dataset-col assoc (or name main-name) remaining))
+                  (let [first-line (first remaining)
+                        next-remaining (rest remaining)
+                        cur-date (get first-line :date)
+                        ticker (get first-line :TICKER)]
+         ;(println first-line)        
+                    (if (and (not= cur-date date) (valid-line first-line))
+             ;(reset! data-set remaining)
+             ;(println "-----")
+                      (do
+             ;(println count)
+                        (swap! dataset-col assoc (or name main-name) remaining)
+                        )
+                      (do
+                        (swap! available-tics assoc ticker {:reference first-line})
+                        (recur (inc count) next-remaining)))))))
+            ;; ============= Direct Copy Ends ============
+                       
+            cur-date)
           (if (< count 2000)
             (recur (inc count) next-remaining)
             (do
@@ -59,29 +87,25 @@
     ;; example: portfolio -> {:cash {:tot-val 10000} :"AAPL" {:price 400 :aprc adj-price :quantity 100 :tot-val 40000}}
     ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
     ;; todo: implement case when standard is false
-    (if (not (deref lazy-mode))
-      (do
-        (init-date date)
-        (maintain-tics true)
-      )
-      (lazy-init date)
-    )
 
     ;; output order record to csv file
     (try (io/delete-file "./out_order_record.csv")
-         nil) ;First delete the file (act as emptying)
+         (catch Exception e "Detect that you run the program for the first time.\n We created a file named out_order_record.csv to store order records.
+                             \n You can find the file under the same directory of your runnning program.\n")) ;First delete the file (act as emptying)
     (def wrtr (io/writer "./out_order_record.csv" :append true))
     (.write wrtr "date,TICKER,quantity\n")
 
     ;; output portfolio value record to csv file
     (try (io/delete-file "./out_portfolio_value_record.csv")
-         nil) ;First delete the file (act as emptying)
+         (catch Exception e "Detect that you run the program for the first time.\n We created a file named out_portfolio_value_record.csv to store portfolio values.
+                             \n You can find the file under the same directory of your runnning program.\n")) ;First delete the file (act as emptying)
     (def portvalue-wrtr (io/writer "./out_portfolio_value_record.csv" :append true))
     (.write portvalue-wrtr "date,tot-value,daily-ret,tot-ret,loan,leverage\n")
 
     ;; output evaluation report to csv file
     (try (io/delete-file "./out_evaluation_report.csv")
-         nil) ;First delete the file (act as emptying)
+         (catch Exception e "Detect that you run the program for the first time.\n We created a file named out_evaluation_report.csv to store the evaluation report
+                             \n You can find the file under the same directory of your runnning program.\n")) ;First delete the file (act as emptying)
     (def evalreport-wrtr (io/writer "./out_evaluation_report.csv" :append true))
     (.write evalreport-wrtr "date,tot-value,vol,sharpe,pnl-pt\n")
 
@@ -91,7 +115,13 @@
     (def eval-report-data (atom [])) ; to store evaluation report (in string format, for printing)
     (def eval-record (atom [])) ; to store evaluation report (in number format)
     (def portfolio (atom {:cash {:tot-val init-capital}}))
-    (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0}])))
+    (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0}]))
+    (if (not (deref lazy-mode))
+      (do
+        (init-date date)
+        (maintain-tics true))
+      (lazy-init date))
+)
   
   ;; Update the portfolio when placing an order
   (defn update-portfolio

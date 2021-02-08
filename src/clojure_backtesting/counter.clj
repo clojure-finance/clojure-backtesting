@@ -6,6 +6,7 @@
 
 ;This namespace defines the program counter aka date of the program. 
 (def date (atom (t/local-date 2020 11 24)))
+(def available-tics (atom {}))
 
 (defn look-ahead-i-days
 	;;return date
@@ -69,7 +70,6 @@
   ([initial]
   ;traverse the whole dataset
    (def tics-info (atom {}))
-   (def available-tics (atom {}))
    (loop [count 0 remaining (deref data-set) cur-tic nil start-date nil end-date nil num 0 reference nil]
      (if (empty? remaining)
        (do

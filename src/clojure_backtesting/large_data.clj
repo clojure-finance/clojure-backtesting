@@ -4,13 +4,11 @@
             [clojure-backtesting.order :refer :all]
             [clojure-backtesting.portfolio :refer :all]
             ;[clojure-backtesting.evaluate :refer :all]
-            [clojure-backtesting.portfolio :refer :all]
             [clojure-backtesting.counter :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.data.csv :as csv]
-            [clj-time.core :as clj-t]
             [java-time :as t]))
 
 (defn- lazy-read-csv
@@ -35,7 +33,7 @@
   true
   )
 
-(defn curr-date
+(defn- curr-date
   "returns the curr date"
   [& [name key]]
   (get (first (get (deref dataset-col) (or name main-name))) (or key :date)))
@@ -54,8 +52,9 @@
   (let [tic (get line :TICKER) date (get line :date) info (get (deref pending-order) tic)]
     (if (not= info nil)
       (if (>= (compare (t/format "yyyy-MM-dd" (t/plus (t/local-date "yyyy-MM-dd" (get info :date)) (t/days (get info :expiration)))) date) 0)
-        (swap! order-record conj (order-internal date tic (get info :quantity) (get info :remaining) (get info :leverage) [line] (get info :print) (get info :direct)))
-        )
+        (do
+          (swap! order-record conj (order-internal date tic (get info :quantity) (get info :remaining) (get info :leverage) [line] (get info :print) (get info :direct)))
+          (swap! pending-order dissoc tic)))
       (swap! pending-order dissoc tic))))
 
 (defn next-tic
@@ -84,30 +83,36 @@
 (defn next-day
   "Go to the next day of the dataset."
   [& name]
-  (let [date (curr-date)]
+  (let [date (curr-date name) dataset (get (deref dataset-col) (or name main-name))]
     (reset! available-tics {})
-   (loop [count 0 remaining (rest (get (deref dataset-col) (or name main-name)))]
-     (if (or (<= MAXRANGE count) (empty? remaining))
-       (do
-         (println "Cannot find a date later than today or the file reaches the end.")
-         nil)
-       (let [first-line (first remaining)
-             next-remaining (rest remaining)
-             cur-date (get first-line :date)
-             ticker (get first-line :TICKER)]
-         (check-line first-line) ; Do not forget this!!!!
+    (if (empty? dataset)
+      (do
+        (println "Cannot find a date later than today or the file reaches the end.")
+        nil)
+      (do
+        (if (or (not name) (= name main-name))
+         (set-date date))
+        (loop [count 0 remaining dataset]
+          (if (or (<= MAXRANGE count) (empty? remaining))
+            (do
+              (println "Exceed the maximum-line buffer for one date or the dataset reaches the end.")
+              (swap! dataset-col assoc (or name main-name) remaining))
+            (let [first-line (first remaining)
+                  next-remaining (rest remaining)
+                  cur-date (get first-line :date)
+                  ticker (get first-line :TICKER)]
+              (check-line first-line) ; Do not forget this!!!!
          ;(println first-line)        
-         (if (and (not= cur-date date) (valid-line first-line))
+              (if (and (not= cur-date date) (valid-line first-line))
              ;(reset! data-set remaining)
              ;(println "-----")
-           (do
+                (do
              ;(println count)
-             (set-date cur-date)
-             (swap! dataset-col assoc (or name main-name) remaining)
-             first-line)
-           (do
-             (swap! available-tics assoc ticker {:reference first-line})
-             (recur (inc count) next-remaining)))))))
+                  (swap! dataset-col assoc (or name main-name) remaining)
+                  date)
+                (do
+                  (swap! available-tics assoc ticker {:reference first-line})
+                  (recur (inc count) next-remaining)))))))))
   )
 
 (defn next-line
@@ -148,4 +153,4 @@
 ;;  ([quantity & {:keys [remaining leverage print direct] :or {remaining false leverage LEVERAGE print false direct true}}]
 ;;   (order-lazy (curr-tic) quantity :remaining remaining :leverage leverage :print print :direct direct))
  ([tic quantity & {:keys [expiration remaining leverage dataset print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
-  (swap! pending-order assoc tic {:date (curr-date) :expiration expiration :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))
+  (swap! pending-order assoc tic {:date (get-date) :expiration expiration :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))
