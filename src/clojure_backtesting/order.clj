@@ -72,6 +72,7 @@
 (defn- place-order
   "This private function does the basic routine for an ordering - update portfolio and return record."
   [date tic quantity price adj-price loan reference print direct]
+  (println loan)
   (update-portfolio date tic quantity price adj-price loan)
   (if print
     (println (format "Order: %s | %s | %f." date tic (double quantity))))
@@ -107,7 +108,7 @@
                   (let [loan
                         (cond (<= cash 0)
                               (* quantity price)
-                              :else (- cash (* quantity price)))]
+                              :else (- (* quantity price) cash))]
                     (place-order date tic quantity price adj-price loan reference print direct))) ;This is the buy on margin case
                 (do
                   (println (format "Order request %s | %s | %d fails." order-date tic quantity))
