@@ -139,5 +139,8 @@
     (order-internal (get-date) tic "special" false true (deref data-set) false false)))
 
 (defn end-order
+  "Call this function at the end of the strategy."
   []
-  (.close wrtr))
+  (.close wrtr)
+  (.close portvalue-wrtr)
+  (.close evalreport-wrtr))
