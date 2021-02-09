@@ -32,15 +32,19 @@
 (defn -main
   "Write your code here"
     [& args] ; pass ./resources/CRSP-extract.csv as arg
-    ;; (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
-    ;; (init-portfolio "1980-12-15" 100000)
+    (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
+    (init-portfolio "1980-12-15" 100000)
 
     ; test with ordering
-    ;; (order "AAPL" 5.5)
-    ;; (update-eval-report (get-date))
-    ;; (next-date)
-    ;; (order "AAPL" -5.5)
-    ;; (update-eval-report (get-date))
+    (order "AAPL" 100)
+    (update-eval-report (get-date))
+    (next-date)
+    (next-date)
+    (next-date)
+    (next-date)
+    (next-date)
+    (order "AAPL" 100)
+    (update-eval-report (get-date))
 
  
     ;; golden cross 
@@ -68,14 +72,13 @@
     
     ;; (end-order)
 
-    ;; ;(pprint/print-table (deref order-record))
-    ;; (view-portfolio)
-    ;; (view-portfolio-record 10)
-    ;; (eval-report 10)
-    ;; (end-order)
+    ;(pprint/print-table (deref order-record))
+    (view-portfolio)
+    (view-portfolio-record -1)
+    (eval-report -1)
+    (end-order)
 
     ;; test with new add-aprc-by-date
-    (reset! data-set (add-aprc-by-date (read-csv-row "./resources/CRSP-extract-sorted.csv")))
-    (println (take 3 (deref data-set)))
-    ;(init-portfolio "1980-12-15" 100000)
+    ;; (reset! data-set (add-aprc-by-date (read-csv-row "./resources/CRSP-extract-sorted.csv")))
+    ;; (println (take 3 (deref data-set)))
  )

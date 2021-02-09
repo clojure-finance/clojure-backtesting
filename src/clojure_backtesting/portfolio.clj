@@ -245,7 +245,7 @@
       )
     )
     
-    (if (or n (> n 0))
+    (if (> n 0)
       (pprint/print-table (take n (deref portfolio-record)))
       (pprint/print-table (deref portfolio-record))
     )

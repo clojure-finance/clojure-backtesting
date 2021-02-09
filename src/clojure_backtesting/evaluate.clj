@@ -86,7 +86,7 @@
           n (count (deref portfolio-value))
           numerator (- (* (- x-n prev-mean) (- x-n curr-mean)) prev-vol-square)
          ]
-      (+ prev-vol-square (/ numerator n))
+      (Math/sqrt (+ prev-vol-square (/ numerator n)))
     ) 
   )
 )
@@ -95,11 +95,11 @@
 (defn sharpe-ratio
   "This function returns the sharpe ratio of the portfolio in %."
   []
-  (if (not= (volatility) 0.0)
-    (/ (portfolio-total-ret) (volatility))
-    ;(get-in (last (deref portfolio-value)) [:tot-ret])
-    ;(/ (* (portfolio-total-ret) 100) (volatility))
-    0.0
+  (let [vol (volatility)]
+    (if (not= vol 0.0)
+      (/ (portfolio-total-ret) vol)
+      0.0
+    )
   )
 )
 
@@ -116,10 +116,10 @@
   [date]
   (if (not= (count (deref order-record)) 0) ; check that order record is not empty
     (let [total-val-data (portfolio-total)
-        volatility-data (volatility)
-        sharpe-ratio-data (sharpe-ratio)
-        pnl-per-trade-data (pnl-per-trade)
-        ]
+          volatility-data (volatility)
+          sharpe-ratio-data (sharpe-ratio)
+          pnl-per-trade-data (pnl-per-trade)
+         ]
       (do
         ; numerical values
         (swap! eval-record conj {:date date
@@ -145,7 +145,7 @@
 (defn eval-report
   "This function prints the first n rows of the evaluation report, pass a -ve number to print full report."
   [& [n]]
-  (if (or n (> n 0))
+  (if (> n 0)
     (pprint/print-table (take n (deref eval-report-data)))
     (pprint/print-table (deref eval-report-data))
   )
