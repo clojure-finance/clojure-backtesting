@@ -46,7 +46,7 @@
     (order "AAPL" 100)
     (update-eval-report (get-date))
 
- 
+
     ;; golden cross 
     ;; (def MA50-vec-aapl [])
     ;; (def MA200-vec-aapl [])
@@ -69,7 +69,7 @@
     ;;       (order "F" 0 :remaining true )))
     ;;   (update-eval-report (get-date))
     ;;   (next-date))
-    
+
     ;; (end-order)
 
     ;(pprint/print-table (deref order-record))
@@ -81,4 +81,18 @@
     ;; test with new add-aprc-by-date
     ;; (reset! data-set (add-aprc-by-date (read-csv-row "./resources/CRSP-extract-sorted.csv")))
     ;; (println (take 3 (deref data-set)))
- )
+  
+    ;; big dataset
+    ;(init-portfolio "1980-12-15" 100000)
+    (load-large-dataset "../data-sorted-cleaned/data-CRSP-sorted-cleaned.csv" "main")
+    ;; load compustat
+    (load-large-dataset "../data-sorted-cleaned/data-Compustat-sorted-cleaned.csv" "compustat")
+    (set-main "main")
+    (init-portfolio "1963-02-05" 10)
+    (order-lazy "PPL" 10 :print true)
+    (time (while
+          (< (compare (get-date) "1965-02") 0)
+            ;(order-lazy "PPL" 10 :direct false)
+            (next-day)))
+
+)

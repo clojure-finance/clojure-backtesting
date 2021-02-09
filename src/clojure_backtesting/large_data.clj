@@ -29,7 +29,7 @@
 
 (defn load-large-dataset
   [address name]
-  (swap! dataset-col assoc name (add-aprc (read-csv-lazy address)))
+  (swap! dataset-col assoc name (add-aprc-by-date (read-csv-lazy address)))
   true
   )
 
@@ -54,8 +54,11 @@
       (if (>= (compare (t/format "yyyy-MM-dd" (t/plus (t/local-date "yyyy-MM-dd" (get info :date)) (t/days (get info :expiration)))) date) 0)
         (do
           (swap! order-record conj (order-internal date tic (get info :quantity) (get info :remaining) (get info :leverage) [line] (get info :print) (get info :direct)))
-          (swap! pending-order dissoc tic)))
-      (swap! pending-order dissoc tic))))
+          (swap! pending-order dissoc tic))
+        (swap! pending-order dissoc tic)) ;; Delete the expired order
+      )
+    (if (get (deref portfolio) tic) ;; update portfolio daily
+      (order-internal (get-date) tic "special" false false [line] false false))))
 
 (defn next-tic
   "Go to the next tic after the current line."
@@ -142,6 +145,7 @@
 
 
 (defn next-date
+  "Wrapper functiono for next-day in large-data and internal-next-date for counter."
   []
   (if (deref lazy-mode)
     (next-day)
@@ -154,3 +158,14 @@
 ;;   (order-lazy (curr-tic) quantity :remaining remaining :leverage leverage :print print :direct direct))
  ([tic quantity & {:keys [expiration remaining leverage dataset print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
   (swap! pending-order assoc tic {:date (get-date) :expiration expiration :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))
+
+;; ============ Supporting functions for Compustat ===========
+
+;; (defn get-compustat-line
+;;   "Get the corresponding line from Compustat for the input line in CRSP"
+;;   [line compustat]
+;;   (let [date (get line :date) tic (get line :TICKER) lower ... upper ...]
+;;     (loop [count 0 data (get (deref dataset-col) compustat)]
+;;       ;; Loop body
+      
+;;       )))

@@ -13,4 +13,5 @@
 (def LEVERAGE true)
 (def MAXDISCONTINUITY 10)
 (def MAXRANGE 50000)
+(def MAXMERGERANGE "1 year")
 

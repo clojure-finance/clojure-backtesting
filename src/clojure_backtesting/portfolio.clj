@@ -90,22 +90,22 @@
 
     ;; output order record to csv file
     (try (io/delete-file "./out_order_record.csv")
-         (catch Exception e "Detect that you run the program for the first time.\n We created a file named out_order_record.csv to store order records.
-                             \n You can find the file under the same directory of your runnning program.\n")) ;First delete the file (act as emptying)
+         (catch Exception e (println "Detect that you run the program for the first time.\n We created a file named out_order_record.csv to store order records.
+                             \n You can find the file under the same directory of your runnning program.\n"))) ;First delete the file (act as emptying)
     (def wrtr (io/writer "./out_order_record.csv" :append true))
     (.write wrtr "date,TICKER,quantity\n")
 
     ;; output portfolio value record to csv file
     (try (io/delete-file "./out_portfolio_value_record.csv")
-         (catch Exception e "Detect that you run the program for the first time.\n We created a file named out_portfolio_value_record.csv to store portfolio values.
-                             \n You can find the file under the same directory of your runnning program.\n")) ;First delete the file (act as emptying)
+         (catch Exception e (println "Detect that you run the program for the first time.\n We created a file named out_portfolio_value_record.csv to store portfolio values.
+                             \n You can find the file under the same directory of your runnning program.\n"))) ;First delete the file (act as emptying)
     (def portvalue-wrtr (io/writer "./out_portfolio_value_record.csv" :append true))
     (.write portvalue-wrtr "date,tot-value,daily-ret,tot-ret,loan,leverage\n")
 
     ;; output evaluation report to csv file
     (try (io/delete-file "./out_evaluation_report.csv")
-         (catch Exception e "Detect that you run the program for the first time.\n We created a file named out_evaluation_report.csv to store the evaluation report
-                             \n You can find the file under the same directory of your runnning program.\n")) ;First delete the file (act as emptying)
+         (catch Exception e (println "Detect that you run the program for the first time.\n We created a file named out_evaluation_report.csv to store the evaluation report
+                             \n You can find the file under the same directory of your runnning program.\n"))) ;First delete the file (act as emptying)
     (def evalreport-wrtr (io/writer "./out_evaluation_report.csv" :append true))
     (.write evalreport-wrtr "date,tot-value,vol,sharpe,pnl-pt\n")
 
