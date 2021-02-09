@@ -127,11 +127,12 @@
 (defn log-10 [n]
   (/ (Math/log n) (Math/log 10)))
 
+;; extract: sorted by ticker, then by date
 ;; for each security:
 ;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
 (defn add-aprc 
-  "This function adds the adjusted price column to the dataset."
+  "This function adds the adjusted price column to the dataset (CRSP-extract)."
   [data]
   ; get price on 1st day
   (def initial-price 0)
@@ -158,6 +159,48 @@
           (assoc line :INIT-PRICE initial-price :APRC aprc :LOG-RET log-ret :CUM-RET cum-ret)
            ;testing
           ; (swap! data-set-adj conj (assoc line-new "APRC" aprc "LOG-RET" log-ret "CUM-RET" cum-ret))
+        )
+      )
+    data
+  )
+)
+
+;; extract: sorted by date, then by ticker
+;; for each security:
+;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
+;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
+(defn add-aprc-by-date
+  "This function adds the adjusted price column to the dataset (data-CRSP-sorted-cleaned)."
+  [data]
+  ; get price on 1st day for each ticker
+  (def initial-price (atom {}))
+  ; record cumulative return for each ticker
+  (def cum-ret (atom {}))
+ ; traverse row by row in dataset
+  (map (fn [line]
+        (let [date (get line :date)
+              price (Double/parseDouble (get line :PRC))
+              ret (Double/parseDouble (get line :RET))
+              ticker (get line :TICKER)]
+          ;; check whether the initial-price map already has the ticker
+          (if-not (contains? (deref initial-price) ticker)
+            (do ;; ticker appears the first time 
+              (swap! initial-price (fn [ticker-map] (conj ticker-map [ticker {:price price}])))
+              (swap! cum-ret (fn [ticker-map] (conj ticker-map [ticker {:cumret ret}])))
+            )
+            ;; ticker does not appear the first time
+            (let [prev-cumret (get-in (deref cum-ret) [ticker :cumret])
+                  log-ret (log-10 (+ 1 ret)) ; log base 10 
+                 ] 
+              (swap! cum-ret (fn [ticker-map] (conj ticker-map [ticker {:cumret (+ log-ret prev-cumret)}])))
+            )
+          )
+          
+          (def ticker-initial-price (get-in (deref initial-price) [ticker :price]))
+          (def curr-cumret (get-in (deref cum-ret) [ticker :cumret]))
+          (def aprc (* ticker-initial-price (Math/pow Math/E curr-cumret)))
+
+          (assoc line :INIT-PRICE ticker-initial-price :APRC aprc :CUM-RET curr-cumret)
         )
       )
     data

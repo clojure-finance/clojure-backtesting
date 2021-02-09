@@ -116,6 +116,7 @@
     (def eval-record (atom [])) ; to store evaluation report (in number format)
     (def portfolio (atom {:cash {:tot-val init-capital}}))
     (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0}]))
+    
     (if (not (deref lazy-mode))
       (do
         (init-date date)
