@@ -28,8 +28,10 @@
   (csv->map (lazy-read-csv filename)))
 
 (defn load-large-dataset
-  [address name]
-  (swap! dataset-col assoc name (add-aprc-by-date (read-csv-lazy address)))
+  [address name & [extra-function]]
+  (if extra-function
+    (swap! dataset-col assoc name (extra-function (read-csv-lazy address)))
+    (swap! dataset-col assoc name (read-csv-lazy address)))
   true
   )
 
@@ -161,11 +163,35 @@
 
 ;; ============ Supporting functions for Compustat ===========
 
-;; (defn get-compustat-line
-;;   "Get the corresponding line from Compustat for the input line in CRSP"
-;;   [line compustat]
-;;   (let [date (get line :date) tic (get line :TICKER) lower ... upper ...]
-;;     (loop [count 0 data (get (deref dataset-col) compustat)]
-;;       ;; Loop body
-      
-;;       )))
+(defn get-compustat-line
+  "Get the corresponding line from Compustat for the input line in CRSP"
+  [line compustat]
+  ;; line is the line in CRSP
+  ;; compustat is the name of dataset
+  (let [date (get line :date) tic (get line :TICKER) lower (t/format "yyyy-MM-dd" (t/minus (t/local-date "yyyy-MM-dd" date) (t/years 1))) upper (t/format "yyyy-MM-dd" (t/minus (t/local-date "yyyy-MM-dd" date) (t/months 3)))]
+    (loop [count 0 data (get (deref dataset-col) compustat)]
+      ;; Loop body
+      (let [first-line (first data)
+            remaining (rest data)
+            line-date (get first-line :datadate)]
+        (if (> (compare line-date lower) 0)
+          (swap! dataset-col assoc compustat data) ;; jump to the first line of the compustat
+          (if (> count 5000) ; limit the size of compustat to 5000 * 200 bytes
+            (do
+              (swap! dataset-col assoc compustat data)
+              (recur 0 remaining))
+            (recur (inc count) remaining))))
+      )
+    ;; start at the first line of the earliest time
+    (loop [data (get (deref dataset-col) compustat) line {}]
+      (let [first-line (first data)
+            remaining (rest data)
+            line-date (get first-line :datadate)
+            ticker (get first-line :tic)]
+        (if (< (compare line-date upper) 0) ;; still eariler than three months
+          (if (= ticker tic)
+            (recur remaining first-line)
+            (recur remaining line))
+          line)
+        ))
+    ))
