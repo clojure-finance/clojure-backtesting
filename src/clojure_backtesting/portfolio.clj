@@ -168,7 +168,7 @@
         
           (do ; exist leverage
             (let [new-loan (+ loan (get (last (deref portfolio-value)) :loan)) ; update total loan
-                  new-leverage (/ new-loan (- tot-value new-loan)) ; update leverage ratio = total debt / total equity
+                  new-leverage (/ new-loan tot-value) ; update leverage ratio = total debt / total equity
                   ret (* (log-10 (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
                   tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
                   last-date (get (last (deref portfolio-value)) :date)
@@ -227,11 +227,11 @@
     (doseq [row (deref portfolio-value)] 
       (do
         (let [date (get row :date)
-              tot-val (str "$" (int (get row :tot-value)))
+              tot-val (str "$" (format "%.2f" (float (get row :tot-value))))
               daily-ret (str (format "%.2f" (* (get row :daily-ret) 100)) "%")
               tot-ret (str (format "%.2f" (* (get row :tot-ret) 100)) "%")
               loan (str "$" (format "%.2f" (get row :loan)))
-              leverage (str (format "%.2f" (* (get row :leverage) 100)) "%")
+              leverage (str (format "%.2f" (get row :leverage)))
              ]
         
           (swap! portfolio-record conj
@@ -240,7 +240,8 @@
                   :daily-ret daily-ret
                   :tot-ret tot-ret
                   :loan loan
-                  :leverage leverage}) 
+                  :leverage leverage
+                 }) 
         )
       )
     )
@@ -270,7 +271,7 @@
           ; (println row)
           (if (= ticker :cash)
             (do
-              (let [tot-val (int (get row :tot-val))]
+              (let [tot-val (format "%.2f" (float (get row :tot-val)))]
               (swap! portfolio-table conj
                      {:asset "cash"
                       :price "N/A"
@@ -281,9 +282,9 @@
             )
             (do
               (let [price (get row :price)
-                aprc (format "%.2f" (get row :aprc))
+                aprc (format "%.4f" (get row :aprc))
                 quantity (get row :quantity)
-                tot-val (int (get row :tot-val))
+                tot-val (format "%.2f" (get row :tot-val))
                ]
               (swap! portfolio-table conj
                      {:asset ticker

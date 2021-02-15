@@ -99,7 +99,7 @@
                        remaining (- quan total)
                        :else quan)]
         (if (and (and (not= quantity 0) (not= quantity 0.0)) (not= quantity "special")) ;; ignore the empty order case
-          (if (and (and (>= (+ total quantity) 0) (or (<= quantity 0) (>= cash (* price quantity)))))
+          (if (and (and (>= (+ total quantity) 0) (or (<= quantity 0) (>= cash (* adj-price quantity)))))
             (place-order date tic quantity price adj-price 0 reference print direct) ;loan is 0 here
             (do
               (if leverage
@@ -107,8 +107,8 @@
                   (place-order date tic quantity price adj-price 0 reference print direct) ;This is the sell on margin case
                   (let [loan
                         (cond (<= cash 0)
-                              (* quantity price)
-                              :else (- (* quantity price) cash))]
+                              (* quantity adj-price)
+                              :else (- (* quantity adj-price) cash))]
                     (place-order date tic quantity price adj-price loan reference print direct))) ;This is the buy on margin case
                 (do
                   (println (format "Order request %s | %s | %d fails." order-date tic quantity))
