@@ -72,7 +72,6 @@
     ;; (reset! data-set (add-aprc-by-date (read-csv-row "./resources/CRSP-extract-sorted.csv")))
     ;; (println (take 3 (deref data-set)))
   
-    ;; buying on margin
     (init-portfolio "1980-12-15" 100)
 
     (order "AAPL" 10)
@@ -86,6 +85,8 @@
     (view-portfolio)
     (view-portfolio-record -1)
     (eval-report -1)
+  
+    (end-order)
 
     ;; big dataset
     ;; ;(init-portfolio "1980-12-15" 100000)
