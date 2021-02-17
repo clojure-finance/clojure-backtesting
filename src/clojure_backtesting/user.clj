@@ -75,7 +75,8 @@
     ;; buying on margin
     (init-portfolio "1980-12-15" 100)
 
-    (order "AAPL" 10 :leverage false) ;without leverage, exact value trade
+    (order "AAPL" 10)
+    (update-eval-report (get-date))
 
     (next-date)
     (next-date)
@@ -84,6 +85,7 @@
     (pprint/print-table (deref order-record))
     (view-portfolio)
     (view-portfolio-record -1)
+    (eval-report -1)
 
     ;; big dataset
     ;; ;(init-portfolio "1980-12-15" 100000)
