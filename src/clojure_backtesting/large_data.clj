@@ -45,7 +45,7 @@
   (get (first (get (deref dataset-col) (or name main-name))) (or key :TICKER)))
 
 (defn get-line
-  [& name]
+  [& [name]]
     (first (get (deref dataset-col) (or name main-name))))
 
 (defn- check-line
@@ -54,9 +54,11 @@
   (let [tic (get line :TICKER) date (get line :date) info (get (deref pending-order) tic)]
     (if (not= info nil)
       (if (>= (compare (t/format "yyyy-MM-dd" (t/plus (t/local-date "yyyy-MM-dd" (get info :date)) (t/days (get info :expiration)))) date) 0)
-        (do
-          (swap! order-record conj (order-internal date tic (get info :quantity) (get info :remaining) (get info :leverage) [line] (get info :print) (get info :direct)))
-          (swap! pending-order dissoc tic))
+        (let [order (order-internal date tic (get info :quantity) (get info :remaining) (get info :leverage) [line] (get info :print) (get info :direct))]
+          (if order
+            (do
+              (swap! order-record conj order)
+              (swap! pending-order dissoc tic))))
         (swap! pending-order dissoc tic)) ;; Delete the expired order
       )
     (if (get (deref portfolio) tic) ;; update portfolio daily
@@ -87,7 +89,7 @@
 
 (defn next-day
   "Go to the next day of the dataset."
-  [& name]
+  [& [name]]
   (let [date (curr-date name) dataset (get (deref dataset-col) (or name main-name))]
     (reset! available-tics {})
     (if (empty? dataset)
@@ -122,7 +124,7 @@
 
 (defn next-line
   "Go to the next line of the dataset"
-  [& name]
+  [& [name]]
   (loop [count 0 remaining (rest (get (deref dataset-col) (or name main-name)))]
     (if (empty? remaining)
       (do
@@ -165,10 +167,11 @@
  ([tic quantity & {:keys [expiration remaining leverage dataset print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
   (swap! pending-order assoc tic {:date (get-date) :expiration expiration :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))
 
-;; ============ Supporting functions for Compustat ===========
+;; ============ Supporting functions for Compustat ============
 
 (defn get-compustat-line
   "Get the corresponding line from Compustat for the input line in CRSP"
+  ;; (get-compustat-line (get (get (deref available-tics) "IBM") :reference) "compustat")
   [line compustat]
   ;; line is the line in CRSP
   ;; compustat is the name of dataset
@@ -187,15 +190,23 @@
             (recur (inc count) remaining))))
       )
     ;; start at the first line of the earliest time
-    (loop [data (get (deref dataset-col) compustat) line {}]
+    (loop [data (get (deref dataset-col) compustat) line {} niq "" cshoq ""]
       (let [first-line (first data)
             remaining (rest data)
             line-date (get first-line :datadate)
-            ticker (get first-line :tic)]
+            ticker (get first-line :tic)
+            new-niq (get first-line :niq)
+            new-cshoq (get first-line :cshoq)]
         (if (< (compare line-date upper) 0) ;; still eariler than three months
           (if (= ticker tic)
-            (recur remaining first-line)
-            (recur remaining line))
-          line)
+            (if (or new-niq new-cshoq)
+              (if (and new-niq new-cshoq)
+                (recur remaining first-line new-niq new-cshoq)
+                (if new-niq
+                  (recur remaining first-line new-niq cshoq)
+                  (recur remaining first-line niq new-cshoq)))
+              (recur remaining first-line niq cshoq))
+            (recur remaining line niq cshoq))
+          (merge line {:niq niq :cshoq cshoq}))
         ))
     ))

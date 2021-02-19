@@ -136,19 +136,23 @@
               result))
           result))
       (let [line-num (get (get (deref available-tics) tic) :num)]
-       (loop [count count-tmp result result-tmp num line-num]
-        (if (and (< count n) (>= num 0))
-          (let [line (nth ref num) [date content ticker] [(get line :date) (get line key) (get line :TICKER)]]
-            (if (= ticker tic) ; has date, has content
-              (do
-                (recur (+ count 1) (conj result {:date date key content}) (- num 1)))
-              result))
-          result)))))
+       (if (= line-num nil)
+         (let [line (get (get (deref available-tics) tic) :reference)] (conj result-tmp {:date (get line :date) key (get line key)}))
+         (loop [count count-tmp result result-tmp num line-num]
+           (if (and (< count n) (>= num 0))
+             (let [line (nth ref num) [date content ticker] [(get line :date) (get line key) (get line :TICKER)]]
+               (if (= ticker tic) ; has date, has content
+                 (do
+                   (recur (+ count 1) (conj result {:date date key content}) (- num 1)))
+                 result))
+             result))))))
   )
 
 (defn moving-average
   [key list]
-   (average (map (fn [_] (Double/parseDouble (get _ key))) list)))
+  (if (<= (count list) 0)
+    0
+    (average (map (fn [_] (Double/parseDouble (get _ key))) list))))
 
 ;; (defn moving-average
 ;;   [key days]

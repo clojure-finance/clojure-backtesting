@@ -73,7 +73,7 @@
 (defn- place-order
   "This private function does the basic routine for an ordering - update portfolio and return record."
   [date tic quantity price adj-price loan reference print direct]
-  (println loan)
+  ;; (println loan)
   (update-portfolio date tic quantity price adj-price loan)
   (if print
     (println (format "Order: %s | %s | %f." date tic (double quantity))))
@@ -146,9 +146,9 @@
   ;; close all positions
   (reset! terminated true)
 
-  (doseq [[ticker row] (deref portfolio)]
+  (doseq [[ticker] (deref portfolio)]
     (if (not= ticker :cash)      
-      (order ticker (* (get row :quantity) -1))
+      (order ticker 0 :remaining true)
     )
   )
   (update-eval-report (get-date))
