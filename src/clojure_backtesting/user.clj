@@ -72,7 +72,7 @@
     ;; (reset! data-set (add-aprc-by-date (read-csv-row "./resources/CRSP-extract-sorted.csv")))
     ;; (println (take 3 (deref data-set)))
   
-    (init-portfolio "1980-12-15" 100)
+    (init-portfolio "1980-12-15" 10)
 
     (order "AAPL" 10)
     (update-eval-report (get-date))
@@ -81,12 +81,21 @@
     (next-date)
     (next-date)
 
+    (order "AAPL" -40)
+
+    (next-date)
+    (next-date)
+    ;(next-date)
+    ;(next-date)
+    ;(next-date)
+
+    ;(end-order)
+
     (pprint/print-table (deref order-record))
     (view-portfolio)
     (view-portfolio-record -1)
     (eval-report -1)
   
-    (end-order)
 
     ;; big dataset
     ;; ;(init-portfolio "1980-12-15" 100000)

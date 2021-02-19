@@ -1,5 +1,6 @@
 (ns clojure-backtesting.order
   (:require [clojure-backtesting.data :refer :all]
+            [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.portfolio :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.counter :refer :all]
@@ -142,6 +143,35 @@
 (defn end-order
   "Call this function at the end of the strategy."
   []
+  ;; close all positions
+  (reset! terminated true)
+
+  (doseq [[ticker row] (deref portfolio)]
+    (if (not= ticker :cash)      
+      (order ticker (* (get row :quantity) -1))
+    )
+  )
+  (update-eval-report (get-date))
+
   (.close wrtr)
   (.close portvalue-wrtr)
-  (.close evalreport-wrtr))
+  (.close evalreport-wrtr)
+
+  ;; reject any more orders unless user call init-portfolio
+)
+
+(defn checkTerminatingCondition
+  "Close all positions if net worth < 0, i.e. user has lost all cash"
+  []
+  (let [tot-value (get (last (deref portfolio-value)) :tot-value)]
+    ;; (println "testing")
+    ;; (println tot-value)
+    (if (and (< (compare tot-value 0) 0) (not (deref terminated))) ; if net worth < 0
+        (do
+            ;(throw (Exception. "You have lost all cash. Closing all positions."))
+            (println "You have lost all cash. Closing all positions.")
+            (end-order)
+        )
+    )
+  )
+)

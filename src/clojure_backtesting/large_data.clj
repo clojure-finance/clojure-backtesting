@@ -147,13 +147,17 @@
 
 
 (defn next-date
-  "Wrapper functiono for next-day in large-data and internal-next-date for counter."
+  "Wrapper function for next-day in large-data and internal-next-date for counter."
   []
   (if (deref lazy-mode)
     (next-day)
     (do
       (updateHoldingTickers)
-      (internal-next-date))))
+      (internal-next-date)
+      (checkTerminatingCondition)
+    )
+  )
+)
 
 (defn order-lazy 
 ;;  ([quantity & {:keys [remaining leverage print direct] :or {remaining false leverage LEVERAGE print false direct true}}]

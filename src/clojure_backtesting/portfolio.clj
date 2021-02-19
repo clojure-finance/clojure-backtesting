@@ -112,6 +112,7 @@
     (def order-record (atom []))
     (def init-capital init-capital)
     (def loan-exist false) ; global swtich for storing whether loan exists
+    (def terminated (atom false)) ; global switch for storing whether user has lost all cash
     (def eval-report-data (atom [])) ; to store evaluation report (in string format, for printing)
     (def eval-record (atom [])) ; to store evaluation report (in number format)
     (def portfolio (atom {:cash {:tot-val init-capital}}))
@@ -216,6 +217,7 @@
         )
       )
     )
+
   )
   
   ;; utility function
