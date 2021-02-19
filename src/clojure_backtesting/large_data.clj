@@ -210,3 +210,39 @@
           (merge line {:niq niq :cshoq cshoq}))
         ))
     ))
+
+(defn end-order
+  "Call this function at the end of the strategy."
+  []
+  ;; close all positions
+  (reset! terminated true)
+
+  (if (deref lazy-mode)
+    (do
+      (doseq [[ticker] (deref portfolio)]
+        (if (not= ticker :cash)
+          (order-lazy ticker 0 :remaining true)))
+      (next-date))
+    (doseq [[ticker] (deref portfolio)]
+      (if (not= ticker :cash)
+        (order ticker 0 :remaining true))))
+  (update-eval-report (get-date))
+
+  (.close wrtr)
+  (.close portvalue-wrtr)
+  (.close evalreport-wrtr)
+
+  ;; reject any more orders unless user call init-portfolio
+  )
+
+(defn checkTerminatingCondition
+  "Close all positions if net worth < 0, i.e. user has lost all cash"
+  []
+  (let [tot-value (get (last (deref portfolio-value)) :tot-value)]
+    ;; (println "testing")
+    ;; (println tot-value)
+    (if (and (< (compare tot-value 0) 0) (not (deref terminated))) ; if net worth < 0
+      (do
+            ;(throw (Exception. "You have lost all cash. Closing all positions."))
+        (println "You have lost all cash. Closing all positions.")
+        (end-order)))))
