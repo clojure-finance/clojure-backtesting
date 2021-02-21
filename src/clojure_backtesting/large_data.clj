@@ -3,7 +3,7 @@
             ;[clojure-backtesting.data-management :refer :all]
             [clojure-backtesting.order :refer :all]
             [clojure-backtesting.portfolio :refer :all]
-            ;[clojure-backtesting.evaluate :refer :all]
+            [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.counter :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
@@ -148,6 +148,51 @@
               (recur 0 next-remaining))))))))
 
 
+(defn order-lazy 
+;;  ([quantity & {:keys [remaining leverage print direct] :or {remaining false leverage LEVERAGE print false direct true}}]
+;;   (order-lazy (curr-tic) quantity :remaining remaining :leverage leverage :print print :direct direct))
+ ([tic quantity & {:keys [expiration remaining leverage dataset print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
+  (swap! pending-order assoc tic {:date (get-date) :expiration expiration :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))
+
+(defn end-order
+  "Call this function at the end of the strategy."
+  []
+  ;; close all positions
+  (reset! terminated true)
+
+  (if (deref lazy-mode)
+    (do
+      (doseq [[ticker] (deref portfolio)]
+        (if (not= ticker :cash)
+          (order-lazy ticker 0 :remaining true)))
+      ;(next-date)
+    )
+    (doseq [[ticker] (deref portfolio)]
+      (if (not= ticker :cash)
+        (order ticker 0 :remaining true))))
+  (update-eval-report (get-date))
+
+  (.close wrtr)
+  (.close portvalue-wrtr)
+  (.close evalreport-wrtr)
+
+  ;; reject any more orders unless user call load data again and call init-portfolio
+  (reset! data-set nil)
+)
+
+(defn checkTerminatingCondition
+  "Close all positions if net worth < 0, i.e. user has lost all cash"
+  []
+  (let [tot-value (get (last (deref portfolio-value)) :tot-value)]
+    ;; (println "testing")
+    ;; (println tot-value)
+    (if (and (< (compare tot-value 0) 0) (not (deref terminated))) ; if net worth < 0
+      (do
+            ;(throw (Exception. "You have lost all cash. Closing all positions."))
+        (println "You have lost all cash. Closing all positions.")
+        (end-order))))
+)
+
 (defn next-date
   "Wrapper function for next-day in large-data and internal-next-date for counter."
   []
@@ -161,11 +206,6 @@
   )
 )
 
-(defn order-lazy 
-;;  ([quantity & {:keys [remaining leverage print direct] :or {remaining false leverage LEVERAGE print false direct true}}]
-;;   (order-lazy (curr-tic) quantity :remaining remaining :leverage leverage :print print :direct direct))
- ([tic quantity & {:keys [expiration remaining leverage dataset print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
-  (swap! pending-order assoc tic {:date (get-date) :expiration expiration :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))
 
 ;; ============ Supporting functions for Compustat ============
 
@@ -210,40 +250,3 @@
           (merge line {:niq niq :cshoq cshoq}))
         ))
     ))
-
-(defn end-order
-  "Call this function at the end of the strategy."
-  []
-  ;; close all positions
-  (reset! terminated true)
-
-  (if (deref lazy-mode)
-    (do
-      (doseq [[ticker] (deref portfolio)]
-        (if (not= ticker :cash)
-          (order-lazy ticker 0 :remaining true)))
-      (next-date))
-    (doseq [[ticker] (deref portfolio)]
-      (if (not= ticker :cash)
-        (order ticker 0 :remaining true))))
-  (update-eval-report (get-date))
-
-  (.close wrtr)
-  (.close portvalue-wrtr)
-  (.close evalreport-wrtr)
-
-  ;; reject any more orders unless user call load data again and call init-portfolio
-  (reset! data-set nil)
-)
-
-(defn checkTerminatingCondition
-  "Close all positions if net worth < 0, i.e. user has lost all cash"
-  []
-  (let [tot-value (get (last (deref portfolio-value)) :tot-value)]
-    ;; (println "testing")
-    ;; (println tot-value)
-    (if (and (< (compare tot-value 0) 0) (not (deref terminated))) ; if net worth < 0
-      (do
-            ;(throw (Exception. "You have lost all cash. Closing all positions."))
-        (println "You have lost all cash. Closing all positions.")
-        (end-order)))))
