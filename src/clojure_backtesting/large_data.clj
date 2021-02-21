@@ -196,6 +196,9 @@
   []
   (if (not (deref terminated))
     (let [tot-value (get (last (deref portfolio-value)) :tot-value)]
+      ;; original inequality: value of stocks (excl. shorted stocks) - net cash > 0
+      ;; rearranging, equivalent to checking value of stocks (incld. shorted stocks) - cash > 0
+      ;; where LHS = net worth
       (if (< (compare tot-value 0) 0)  ; if net worth < 0
         (do
           (println (str (get-date) ": You have lost all cash. Closing all positions."))
