@@ -207,7 +207,7 @@
   "Wrapper function for next-day in large-data and internal-next-date for counter."
   []
   (checkTerminatingCondition)
-  (if (deref lazy-mode)
+  (if (and (deref lazy-mode) (not (deref terminated)))
     (next-day)
     (do
       (updateHoldingTickers)
