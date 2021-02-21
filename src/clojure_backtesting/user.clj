@@ -34,8 +34,8 @@
   (update-eval-report (get-date))
   (println (next-date))
   (println (next-date))
-  ;; (println (next-date))
-  ;; (println (next-date))
+  (next-date)
+  (next-date)
   (update-eval-report (get-date))
 
   (pprint/print-table (deref order-record))

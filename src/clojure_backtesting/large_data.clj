@@ -187,27 +187,30 @@
         (do
           (reset! cur-reference [0 []])
           (reset! tics-info [])))
-      ))
+      )
+  )
 )
 
 (defn checkTerminatingCondition
   "Close all positions if net worth < 0, i.e. user has lost all cash"
   []
-  (let [tot-value (get (last (deref portfolio-value)) :tot-value)]
-    ;; (println "testing")
-    ;; (println tot-value)
-    (if (and (< (compare tot-value 0) 0) (not (deref terminated))) ; if net worth < 0
-      (do
-            ;(throw (Exception. "You have lost all cash. Closing all positions."))
-        (println "You have lost all cash. Closing all positions.")
-        (end-order))))
+  (if (not (deref terminated))
+    (let [tot-value (get (last (deref portfolio-value)) :tot-value)]
+      (if (< (compare tot-value 0) 0)  ; if net worth < 0
+        (do
+          (println (str (get-date) ": You have lost all cash. Closing all positions."))
+          (println "Please reset the dataset and call init-portfolio again.")
+          (end-order))
+      )
+    )
+  )
 )
 
 (defn next-date
   "Wrapper function for next-day in large-data and internal-next-date for counter."
   []
   (checkTerminatingCondition)
-  (if (and (deref lazy-mode))
+  (if (and (deref lazy-mode) (not (deref terminated)))
     (next-day)
     (do
       (updateHoldingTickers)

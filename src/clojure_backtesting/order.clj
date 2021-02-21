@@ -74,7 +74,9 @@
   "This private function does the basic routine for an ordering - update portfolio and return record."
   [date tic quantity price adj-price loan reference print direct]
   ;; (println loan)
-  (update-portfolio date tic quantity price adj-price loan)
+  (if (not (deref terminated))
+    (update-portfolio date tic quantity price adj-price loan)
+  )
   (if print
     (println (format "Order: %s | %s | %f." date tic (double quantity))))
   (if direct
