@@ -232,8 +232,9 @@
   (.close portvalue-wrtr)
   (.close evalreport-wrtr)
 
-  ;; reject any more orders unless user call init-portfolio
-  )
+  ;; reject any more orders unless user call load data again and call init-portfolio
+  (reset! data-set nil)
+)
 
 (defn checkTerminatingCondition
   "Close all positions if net worth < 0, i.e. user has lost all cash"
