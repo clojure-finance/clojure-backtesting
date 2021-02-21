@@ -164,7 +164,8 @@
     (do
       (doseq [[ticker] (deref portfolio)]
         (if (not= ticker :cash)
-          (order-lazy ticker 0 :remaining true)))
+          (order-lazy ticker 0 :remaining true)
+          ))
       ;(next-date)
     )
     (doseq [[ticker] (deref portfolio)]
@@ -178,6 +179,8 @@
 
   ;; reject any more orders unless user call load data again and call init-portfolio
   (reset! data-set nil)
+  (doseq [name (keys (deref dataset-col))]
+    (swap! dataset-col assoc name []))
 )
 
 (defn checkTerminatingCondition
@@ -196,12 +199,12 @@
 (defn next-date
   "Wrapper function for next-day in large-data and internal-next-date for counter."
   []
+  (checkTerminatingCondition)
   (if (deref lazy-mode)
     (next-day)
     (do
       (updateHoldingTickers)
       (internal-next-date)
-      (checkTerminatingCondition)
     )
   )
 )
