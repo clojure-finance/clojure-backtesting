@@ -158,29 +158,36 @@
   "Call this function at the end of the strategy."
   []
   ;; close all positions
-  (reset! terminated true)
-
-  (if (deref lazy-mode)
+  (if (not (deref terminated))
     (do
-      (doseq [[ticker] (deref portfolio)]
-        (if (not= ticker :cash)
-          (order-lazy ticker 0 :remaining true)
-          ))
-      ;(next-date)
-    )
-    (doseq [[ticker] (deref portfolio)]
-      (if (not= ticker :cash)
-        (order ticker 0 :remaining true))))
-  (update-eval-report (get-date))
+      (reset! terminated true)
 
-  (.close wrtr)
-  (.close portvalue-wrtr)
-  (.close evalreport-wrtr)
+      (if (deref lazy-mode)
+        (do
+          (doseq [[ticker] (deref portfolio)]
+            (if (not= ticker :cash)
+              (order-lazy ticker 0 :remaining true)))
+      ;(next-date)
+          )
+        (doseq [[ticker] (deref portfolio)]
+          (if (not= ticker :cash)
+            (order ticker 0 :remaining true))))
+      (update-eval-report (get-date))
+
+      (.close wrtr)
+      (.close portvalue-wrtr)
+      (.close evalreport-wrtr)
 
   ;; reject any more orders unless user call load data again and call init-portfolio
-  (reset! data-set nil)
-  (doseq [name (keys (deref dataset-col))]
-    (swap! dataset-col assoc name []))
+      (reset! data-set nil)
+      (reset! available-tics {})
+      (if (deref lazy-mode)
+        (doseq [name (keys (deref dataset-col))]
+          (swap! dataset-col assoc name []))
+        (do
+          (reset! cur-reference [0 []])
+          (reset! tics-info [])))
+      ))
 )
 
 (defn checkTerminatingCondition

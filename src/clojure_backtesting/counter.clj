@@ -132,4 +132,4 @@
             (swap! date t/plus (t/days i))
             (get-date))
           (recur (inc i)))
-        0))))
+        nil))))
