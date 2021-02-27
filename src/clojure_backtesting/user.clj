@@ -24,9 +24,9 @@
   [& args] ; pass ./resources/CRSP-extract.csv as arg
 
   (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
-  (init-portfolio "1980-12-15" 100)
+  (init-portfolio "1980-12-15" 10000)
 
-  (order "AAPL" -100)
+  (order "AAPL" 10)
   (update-eval-report (get-date))
   (println (next-date))
   (update-eval-report (get-date))
@@ -37,6 +37,17 @@
   (next-date)
   (next-date)
   (update-eval-report (get-date))
+  (next-date)
+  (update-eval-report (get-date))
+  (next-date)
+  (update-eval-report (get-date))
+  (next-date)
+  (update-eval-report (get-date))
+  (next-date)
+  (update-eval-report (get-date))
+
+  (println (max-drawdown))
+
 
   (pprint/print-table (deref order-record))
   (view-portfolio)

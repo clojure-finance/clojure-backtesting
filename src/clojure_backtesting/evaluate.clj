@@ -76,32 +76,9 @@
 ;; Volatility, with rolling time window (in %)
 (defn rolling-volatility
   "This function returns the volatility of the portfolio in %."
-  ([period]
-   (let [list (deref portfolio-value) length (count list)]
-     (if (or (or (<= period 0) (<= (count list) 0)) (< length period))
-       []
-       (loop [count (- period 1) res []]
-         (if (< count length)
-           (let [date (get (nth list count) :date)
-                 sd (standard-deviation (map (fn [_] (get _ :daily-ret)) (subvec list (- (+ count 1) period) (+ count 1))))]
-             (recur (inc count) (conj res {:end-date date :s.d. sd})))
-           res)))))
-  ([period start-date end-date]
-   (let [list (deref portfolio-value) length (count list)]
-     (if (or (or (<= period 0) (<= (count list) 0)) (< length period))
-       []
-       (loop [count (- period 1) res []]
-         (if (< count length)
-           (let [date (get (nth list count) :date)
-                 sd (standard-deviation (map (fn [_] (get _ :daily-ret)) (subvec list (- (+ count 1) period) (+ count 1))))]
-             (if (> (compare start-date date) 0)
-               (recur (inc count) res)
-               (if (< (compare end-date date) 0)
-                 res
-                 (recur (inc count) (conj res {:end-date date :s.d. sd})))))
-           res)))))
+  []
+  (stat/sd (take-last (deref rolling-time-window) (deref (get-daily-returns))))
 )
-
 
 (defn volatility-optimised
   "This function returns the volatility of the portfolio in %."
@@ -134,14 +111,13 @@
 )
 
 ;; Sharpe ratio, with rolling time window (in %)
-;; TO-TEST
-(defn sharpe-ratio-rolling
+(defn rolling-sharpe-ratio
   "This function returns the rolling sharpe ratio of the portfolio in %."
   []
   (let [vol (rolling-volatility)]
-    (if (not= vol 0.0)
-      (/ (portfolio-total-ret) vol)
+    (if (= vol 0.0)
       0.0
+      (/ (portfolio-total-ret) vol)
     )
   )
 )
@@ -153,28 +129,25 @@
   (/ (- (portfolio-total) init-capital) (count (deref order-record)))
 )
 
-;; Maximum drawdown
+;; Maximum drawdown (in %)
 (defn max-drawdown
-  "Will return a negative number, with the largest absolute value"
+  "This function returns the maximum drawdown."
   []
-  (let [list (deref portfolio-value) length (count list)]
-    (loop [count 0
-           max-ret 0
-           drawdown-date ""
-           max-drawdown 1]
-      (if (< count length)
-        (let [line (nth list count)
-              date (get line :date)
-              curr-ret (get line :daily-ret)]
-          (if (> curr-ret max-ret)
-            (recur (inc count) curr-ret drawdown-date max-drawdown)
-            (if (< (/ curr-ret max-ret) max-drawdown)
-              (recur (inc count) max-ret date (/ curr-ret max-ret))
-              (recur (inc count) max-ret drawdown-date max-drawdown)
-            )
-          )
-        )
-        {:date drawdown-date :max-drawdown (- max-drawdown 1)})))
+  (let [max-ret (apply max (deref (get-daily-returns)))
+        min-ret (apply min (deref (get-daily-returns)))
+       ]
+    (if (= max-ret 0.0)
+      0.0
+      (/ (- max-ret min-ret) max-ret)
+    )
+  )
+)
+
+;; Update rolling time window
+(defn update-rolling-window
+  "This functions updates the time window for rolling functions."
+  [n]
+  (swap! rolling-time-window n)
 )
 
 ;; Update evaluation report
@@ -184,33 +157,36 @@
   (if (and (not= (count (deref order-record)) 0) (not (deref terminated))) ; check that order record is not empty
     (let [total-val-data (portfolio-total)
           volatility-data (volatility)
-          ;rolling-volatility-data (rolling-volatility (deref rolling-time-window))
+          rolling-volatility-data (rolling-volatility)
           sharpe-ratio-data (sharpe-ratio)
+          rolling-sharpe-ratio-data (rolling-sharpe-ratio)
           pnl-per-trade-data (pnl-per-trade)
-          ;max-drawdown-data (max-drawdown)
+          max-drawdown-data (max-drawdown)
          ]
       (do
         ; numerical values
         (swap! eval-record conj {:date date
                                  :tot-value total-val-data
                                  :vol volatility-data
-                                 ;:r-vol rolling-volatility-data
+                                 :r-vol rolling-volatility-data
                                  :sharpe sharpe-ratio-data
+                                 :r-sharpe rolling-sharpe-ratio-data
                                  :pnl-pt pnl-per-trade-data
-                                 ;:max-drawdown max-drawdown-data
+                                 :max-drawdown max-drawdown-data
                                  })
         
         ; string formatting
         (swap! eval-report-data conj {:date date
                                       :tot-value (str "$" (int total-val-data))
                                       :vol (str (format "%.4f" (* volatility-data 100)) "%")
-                                      ;:r-vol (str (format "%.4f" (* rolling-volatility-data 100) "%"))
+                                      :r-vol (str (format "%.4f" (* rolling-volatility-data 100)) "%")
                                       :sharpe (str (format "%.4f" sharpe-ratio-data) "%")
+                                      :r-sharpe (str (format "%.4f" rolling-sharpe-ratio-data) "%")
                                       :pnl-pt (str "$" (int pnl-per-trade-data))
-                                      ;:max-drawdown (str max-drawdown-data)
+                                      :max-drawdown (str (format "%.4f" (* max-drawdown-data 100)))
                                       })
         ; output to file
-        (.write evalreport-wrtr (format "%s,%f,%f,%f,%f\n" date (double total-val-data) (double volatility-data) (double sharpe-ratio-data) (double pnl-per-trade-data)))
+        (.write evalreport-wrtr (format "%s,%f,%f,%f,%f,%f,%f,%f\n" date (double total-val-data) (double volatility-data) (double rolling-volatility-data) (double sharpe-ratio-data) (double rolling-sharpe-ratio-data) (double pnl-per-trade-data) (double max-drawdown-data)))
       )
     )
   )

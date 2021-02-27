@@ -108,7 +108,7 @@
          (catch Exception e (println "Detect that you run the program for the first time.\n We created a file named out_evaluation_report.csv to store the evaluation report
                              \n You can find the file under the same directory of your runnning program.\n"))) ;First delete the file (act as emptying)
     (def evalreport-wrtr (io/writer "./out_evaluation_report.csv" :append true))
-    (.write evalreport-wrtr "date,tot-value,vol,sharpe,pnl-pt\n")
+    (.write evalreport-wrtr "date,tot-value,vol,r-vol,sharpe,r-sharpe,pnl-pt,max-drawdown\n")
 
     (def order-record (atom []))
     (def init-capital init-capital)
