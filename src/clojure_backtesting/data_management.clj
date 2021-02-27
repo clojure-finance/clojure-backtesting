@@ -1,7 +1,7 @@
 (ns clojure-backtesting.data-management
   (:require [clojure.test :refer :all]
             [clojure-backtesting.data :refer :all]
-            [clojure-backtesting.specs :refer :all]
+            ;; [clojure-backtesting.specs :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.counter :refer :all]
             [clojure.string :as str]
