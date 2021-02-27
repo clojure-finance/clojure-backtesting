@@ -8,6 +8,8 @@
             ))
 
 
+(def rolling-time-window (atom 30))
+
 ;; Get current portfolio total value
 (defn portfolio-total 
   "This function returns the current total value of the portfolio."
@@ -48,20 +50,19 @@
       (- (count coll) 1)))
   )
 )
-  
 
 ;; Get list of daily returns
 (defn get-daily-returns
   "This function returns a collection of daily returns from 'portfolio-value'."
   []
   (def dailyret-record (atom []))
-  (doseq [daily-record (deref portfolio-value)] ;; then update the price & aprc of the securities in the portfolio
+  (doseq [daily-record (deref portfolio-value)]
     (let [daily-ret (daily-record :daily-ret)]
       ;(println daily-ret)
       (swap! dailyret-record conj daily-ret)
     )
   )
-  dailyret-record ; can be refactoring no need to create atom
+  dailyret-record ; can be refactored no need to create atom
 )
 
 ;; Volatility (in %)
@@ -70,7 +71,37 @@
   []
   (stat/sd (deref (get-daily-returns)))
   ;(* (standard-deviation (deref (get-daily-returns))) 100)
-) 
+)
+
+;; Volatility, with rolling time window (in %)
+(defn rolling-volatility
+  "This function returns the volatility of the portfolio in %."
+  ([period]
+   (let [list (deref portfolio-value) length (count list)]
+     (if (or (or (<= period 0) (<= (count list) 0)) (< length period))
+       []
+       (loop [count (- period 1) res []]
+         (if (< count length)
+           (let [date (get (nth list count) :date)
+                 sd (standard-deviation (map (fn [_] (get _ :daily-ret)) (subvec list (- (+ count 1) period) (+ count 1))))]
+             (recur (inc count) (conj res {:end-date date :s.d. sd})))
+           res)))))
+  ([period start-date end-date]
+   (let [list (deref portfolio-value) length (count list)]
+     (if (or (or (<= period 0) (<= (count list) 0)) (< length period))
+       []
+       (loop [count (- period 1) res []]
+         (if (< count length)
+           (let [date (get (nth list count) :date)
+                 sd (standard-deviation (map (fn [_] (get _ :daily-ret)) (subvec list (- (+ count 1) period) (+ count 1))))]
+             (if (> (compare start-date date) 0)
+               (recur (inc count) res)
+               (if (< (compare end-date date) 0)
+                 res
+                 (recur (inc count) (conj res {:end-date date :s.d. sd})))))
+           res)))))
+)
+
 
 (defn volatility-optimised
   "This function returns the volatility of the portfolio in %."
@@ -103,10 +134,16 @@
 )
 
 ;; Sharpe ratio, with rolling time window (in %)
+;; TO-TEST
 (defn sharpe-ratio-rolling
   "This function returns the rolling sharpe ratio of the portfolio in %."
   []
-  ;; TO-WRITE
+  (let [vol (rolling-volatility)]
+    (if (not= vol 0.0)
+      (/ (portfolio-total-ret) vol)
+      0.0
+    )
+  )
 )
 
 ;; PnL per trade (in $)
@@ -116,6 +153,30 @@
   (/ (- (portfolio-total) init-capital) (count (deref order-record)))
 )
 
+;; Maximum drawdown
+(defn max-drawdown
+  "Will return a negative number, with the largest absolute value"
+  []
+  (let [list (deref portfolio-value) length (count list)]
+    (loop [count 0
+           max-ret 0
+           drawdown-date ""
+           max-drawdown 1]
+      (if (< count length)
+        (let [line (nth list count)
+              date (get line :date)
+              curr-ret (get line :daily-ret)]
+          (if (> curr-ret max-ret)
+            (recur (inc count) curr-ret drawdown-date max-drawdown)
+            (if (< (/ curr-ret max-ret) max-drawdown)
+              (recur (inc count) max-ret date (/ curr-ret max-ret))
+              (recur (inc count) max-ret drawdown-date max-drawdown)
+            )
+          )
+        )
+        {:date drawdown-date :max-drawdown (- max-drawdown 1)})))
+)
+
 ;; Update evaluation report
 (defn update-eval-report
   "This function updates the evaluation report."
@@ -123,23 +184,31 @@
   (if (and (not= (count (deref order-record)) 0) (not (deref terminated))) ; check that order record is not empty
     (let [total-val-data (portfolio-total)
           volatility-data (volatility)
+          ;rolling-volatility-data (rolling-volatility (deref rolling-time-window))
           sharpe-ratio-data (sharpe-ratio)
           pnl-per-trade-data (pnl-per-trade)
+          ;max-drawdown-data (max-drawdown)
          ]
       (do
         ; numerical values
         (swap! eval-record conj {:date date
                                  :tot-value total-val-data
                                  :vol volatility-data
+                                 ;:r-vol rolling-volatility-data
                                  :sharpe sharpe-ratio-data
-                                 :pnl-pt pnl-per-trade-data})
+                                 :pnl-pt pnl-per-trade-data
+                                 ;:max-drawdown max-drawdown-data
+                                 })
         
         ; string formatting
         (swap! eval-report-data conj {:date date
                                       :tot-value (str "$" (int total-val-data))
                                       :vol (str (format "%.4f" (* volatility-data 100)) "%")
+                                      ;:r-vol (str (format "%.4f" (* rolling-volatility-data 100) "%"))
                                       :sharpe (str (format "%.4f" sharpe-ratio-data) "%")
-                                      :pnl-pt (str "$" (int pnl-per-trade-data))})
+                                      :pnl-pt (str "$" (int pnl-per-trade-data))
+                                      ;:max-drawdown (str max-drawdown-data)
+                                      })
         ; output to file
         (.write evalreport-wrtr (format "%s,%f,%f,%f,%f\n" date (double total-val-data) (double volatility-data) (double sharpe-ratio-data) (double pnl-per-trade-data)))
       )
@@ -156,51 +225,3 @@
     (pprint/print-table (deref eval-report-data))
   )
 )
-
-;; ============= Supporting functions for S.D. Max. Drawdown etc. ===============
-
-(defn rolling-sd
-  ([period]
-   (let [list (deref portfolio-value) length (count list)]
-     (if (or (or (<= period 0) (<= (count list) 0)) (< length period))
-       []
-       (loop [count (- period 1) res []]
-         (if (< count length)
-           (let [date (get (nth list count) :date)
-                 sd (standard-deviation (map (fn [_] (get _ :daily-ret)) (subvec list (- (+ count 1) period) (+ count 1))))]
-             (recur (inc count) (conj res {:end-date date :s.d. sd})))
-           res)))))
-  ([period start-date end-date]
-   (let [list (deref portfolio-value) length (count list)]
-     (if (or (or (<= period 0) (<= (count list) 0)) (< length period))
-       []
-       (loop [count (- period 1) res []]
-         (if (< count length)
-           (let [date (get (nth list count) :date)
-                 sd (standard-deviation (map (fn [_] (get _ :daily-ret)) (subvec list (- (+ count 1) period) (+ count 1))))]
-             (if (> (compare start-date date) 0)
-               (recur (inc count) res)
-               (if (< (compare end-date date) 0)
-                 res
-                 (recur (inc count) (conj res {:end-date date :s.d. sd})))))
-           res))))))
-
-;; (defn sharpe-ratio-)
-(defn max-drawdown
-  "Will return a negative number, with the largest absolute value"
-  []
-  (let [list  (deref portfolio-value) length (count list)]
-    (loop [count 0
-           max-ret 0
-           drawdown-date ""
-           max-drawdown 1]
-      (if (< count length)
-        (let [line (nth list count)
-              date (get line :date)
-              curr-ret (get line :daily-ret)]
-          (if (> curr-ret max-ret)
-            (recur (inc count) curr-ret drawdown-date max-drawdown)
-            (if (< (/ curr-ret max-ret) max-drawdown)
-              (recur (inc count) max-ret date (/ curr-ret max-ret))
-              (recur (inc count) max-ret drawdown-date max-drawdown))))
-        {:date drawdown-date :max-drawdown (- max-drawdown 1)}))))
