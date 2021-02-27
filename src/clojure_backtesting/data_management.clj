@@ -154,15 +154,15 @@
     0
     (average (map (fn [_] (Double/parseDouble (get _ key))) list))))
 
-(defn square [n] (* n n))
+;; (defn square [n] (* n n))
 
-(defn mean [a] (/ (reduce + a) (count a)))
+;; (defn mean [a] (/ (reduce + a) (count a)))
 
-(defn standard-deviation
-  [a]
-  (Math/sqrt (/
-              (reduce + (map square (map - a (repeat (mean a)))))
-              (- (count a) 1))))
+;; (defn standard-deviation
+;;   [a]
+;;   (Math/sqrt (/
+;;               (reduce + (map square (map - a (repeat (mean a)))))
+;;               (- (count a) 1))))
 
 
 ;; (defn moving-average
