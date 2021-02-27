@@ -102,6 +102,13 @@
   )
 )
 
+;; Sharpe ratio, with rolling time window (in %)
+(defn sharpe-ratio-rolling
+  "This function returns the rolling sharpe ratio of the portfolio in %."
+  []
+  ;; TO-WRITE
+)
+
 ;; PnL per trade (in $)
 (defn pnl-per-trade
   "This function returns the profit/loss per trade in dollars."
