@@ -155,6 +155,7 @@
   "This functions updates the time window for rolling functions."
   [n]
   (reset! rolling-time-window n)
+  (println (str "Time window is updated as " n ".")) ; success message
 )
 
 ;; Update evaluation report
