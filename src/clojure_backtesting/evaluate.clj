@@ -17,11 +17,17 @@
   (get-in (last (deref portfolio-value)) [:tot-value])
 )
 
-;; Calculate portfolio total returns
+;; Get current portfolio total return
 (defn portfolio-total-ret
-  "This function returns the current daily return of the portfolio in decimal."
+  "This function returns the current total return of the portfolio."
   []  
   (get (last (deref portfolio-value)) :tot-ret)
+)
+
+(defn portfolio-daily-ret
+  "This function returns the current daily return of the portfolio."
+  []
+  (get-in (last (deref portfolio-value)) [:daily-ret])
 )
 
 
@@ -80,6 +86,7 @@
   (stat/sd (take-last (deref rolling-time-window) (deref (get-daily-returns))))
 )
 
+;; Not used since only compute estimated sd
 (defn volatility-optimised
   "This function returns the volatility of the portfolio in %."
   []
@@ -147,7 +154,7 @@
 (defn update-rolling-window
   "This functions updates the time window for rolling functions."
   [n]
-  (swap! rolling-time-window n)
+  (reset! rolling-time-window n)
 )
 
 ;; Update evaluation report
