@@ -80,6 +80,7 @@
   (stat/sd (take-last (deref rolling-time-window) (deref (get-daily-returns))))
 )
 
+;; Not used since only compute estimated sd
 (defn volatility-optimised
   "This function returns the volatility of the portfolio in %."
   []
@@ -147,7 +148,7 @@
 (defn update-rolling-window
   "This functions updates the time window for rolling functions."
   [n]
-  (swap! rolling-time-window n)
+  (reset! rolling-time-window n)
 )
 
 ;; Update evaluation report

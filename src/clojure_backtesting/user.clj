@@ -26,6 +26,8 @@
   (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
   (init-portfolio "1980-12-15" 10000)
 
+  (update-rolling-window 3)
+
   (order "AAPL" 10)
   (update-eval-report (get-date))
   (println (next-date))
