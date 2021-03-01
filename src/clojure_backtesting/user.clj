@@ -48,7 +48,10 @@
   (next-date)
   (update-eval-report (get-date))
 
-  (println (max-drawdown))
+  ;; (println "Testing")
+  ;; (println (portfolio-total))
+  ;; (println (portfolio-total-ret))
+  ;; (println (portfolio-daily-ret))
 
 
   (pprint/print-table (deref order-record))

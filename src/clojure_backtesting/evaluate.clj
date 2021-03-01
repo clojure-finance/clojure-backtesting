@@ -17,11 +17,17 @@
   (get-in (last (deref portfolio-value)) [:tot-value])
 )
 
-;; Calculate portfolio total returns
+;; Get current portfolio total return
 (defn portfolio-total-ret
-  "This function returns the current daily return of the portfolio in decimal."
+  "This function returns the current total return of the portfolio."
   []  
   (get (last (deref portfolio-value)) :tot-ret)
+)
+
+(defn portfolio-daily-ret
+  "This function returns the current daily return of the portfolio."
+  []
+  (get-in (last (deref portfolio-value)) [:daily-ret])
 )
 
 
