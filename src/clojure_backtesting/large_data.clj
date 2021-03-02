@@ -169,7 +169,7 @@
   "This function is ought to be called before next-date and end-date"
   []
   (doseq [[counter [condition order-function]] (deref automated-conditions)]
-    (if condition
+    (if (condition)
       (do (order-function)
           (println (format "Automation %d dispatched." counter))))))
 
