@@ -154,6 +154,31 @@
  ([tic quantity & {:keys [expiration remaining leverage dataset print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
   (swap! pending-order assoc tic {:date (get-date) :expiration expiration :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))
 
+(def automated-conditions (atom {}))
+(def auto-counter (atom 0))
+
+(defn set-automation
+  "This function set an automated order request that will be triggered by a certain condition.
+   Will return a unique int as identifier to the condition"
+  [condition order-function]
+  (swap! auto-counter inc)
+  (swap! automated-conditions assoc (deref auto-counter) [condition order-function])
+  (deref auto-counter))
+
+(defn check-automation
+  "This function is ought to be called before next-date and end-date"
+  []
+  (doseq [[counter [condition order-function]] (deref automated-conditions)]
+    (if condition
+      (do (order-function)
+          (println (format "Automation %d dispatched." counter))))))
+
+(defn cancel-automation
+  "This function removes an automation from the list"
+  [num]
+  (swap! automated-conditions dissoc num)
+  true)
+
 (defn end-order
   "Call this function at the end of the strategy."
   []
@@ -213,6 +238,7 @@
   "Wrapper function for next-day in large-data and internal-next-date for counter."
   []
   (checkTerminatingCondition)
+  (check-automation)
   (if (and (deref lazy-mode) (not (deref terminated)))
     (next-day)
     (do
