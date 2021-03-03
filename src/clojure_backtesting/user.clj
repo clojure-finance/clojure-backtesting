@@ -27,9 +27,10 @@
   (init-portfolio "1980-12-15" 10000)
 
   (update-rolling-window 3)
-  (stop-buy "AAPL" 28 10 "non")
 
-  (order "AAPL" 10)
+  (order "AAPL" 100)
+  (stop-sell "AAPL" 26 10 "non-lazy")
+
   (update-eval-report (get-date))
   (next-date)
   (update-eval-report (get-date))

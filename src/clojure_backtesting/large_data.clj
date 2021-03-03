@@ -202,6 +202,73 @@
   )
 )
 
+(defn limit-buy
+  "This function executes a limit buy order."
+  [tic prc qty mode]
+  (if (= mode "non-lazy")
+    (set-automation 
+    ; check if ticker adjusted price is smaller than prc
+    #(< (get-in (deref portfolio) [tic :aprc]) prc)
+    #(order tic qty)
+    )
+  )
+  (if (= mode "lazy")
+    (set-automation 
+    ; check if ticker adjusted price is smaller than prc
+    #(< (get-in (deref portfolio) [tic :aprc]) prc)
+    #(order-lazy tic qty)
+    )
+  )
+  (if (and (not= mode "lazy") (not= mode "non-lazy"))
+    (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")
+  )
+)
+
+(defn stop-sell
+  "This function executes a stop sell order."
+  [tic prc qty mode]
+  (if (= mode "non-lazy")
+    (set-automation 
+    ; check if ticker adjusted price is smaller than prc
+    #(< (get-in (deref portfolio) [tic :aprc]) prc)
+    #(order tic (* qty -1))
+    )
+  )
+  (if (= mode "lazy")
+    (set-automation 
+    ; check if ticker adjusted price is greater than prc
+    #(< (get-in (deref portfolio) [tic :aprc]) prc)
+    #(order-lazy tic (* qty -1))
+    )
+  )
+  (if (and (not= mode "lazy") (not= mode "non-lazy"))
+    (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")
+  )
+)
+
+(defn limit-sell
+  "This function executes a limit sell order."
+  [tic prc qty mode]
+  (if (= mode "non-lazy")
+    (set-automation 
+    ; check if ticker adjusted price is smaller than prc
+    #(> (get-in (deref portfolio) [tic :aprc]) prc)
+    #(order tic (* qty -1))
+    )
+  )
+  (if (= mode "lazy")
+    (set-automation 
+    ; check if ticker adjusted price is greater than prc
+    #(> (get-in (deref portfolio) [tic :aprc]) prc)
+    #(order-lazy tic (* qty -1))
+    )
+  )
+  (if (and (not= mode "lazy") (not= mode "non-lazy"))
+    (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")
+  )
+)
+
+
 (defn end-order
   "Call this function at the end of the strategy."
   []
