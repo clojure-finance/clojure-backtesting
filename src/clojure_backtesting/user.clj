@@ -27,15 +27,14 @@
   (init-portfolio "1980-12-15" 10000)
 
   (update-rolling-window 3)
+  (stop-buy "AAPL" 28 10 "non")
 
   (order "AAPL" 10)
   (update-eval-report (get-date))
-  (println (next-date))
+  (next-date)
   (update-eval-report (get-date))
-  (println (next-date))
+  (next-date)
   (update-eval-report (get-date))
-  (println (next-date))
-  (println (next-date))
   (next-date)
   (next-date)
   (update-eval-report (get-date))
@@ -47,12 +46,6 @@
   (update-eval-report (get-date))
   (next-date)
   (update-eval-report (get-date))
-
-  ;; (println "Testing")
-  ;; (println (portfolio-total))
-  ;; (println (portfolio-total-ret))
-  ;; (println (portfolio-daily-ret))
-
 
   (pprint/print-table (deref order-record))
   (view-portfolio)

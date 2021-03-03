@@ -166,7 +166,7 @@
   (deref auto-counter))
 
 (defn check-automation
-  "This function is ought to be called before next-date and end-date"
+  "This function is ought to be called before next-date and end-date."
   []
   (doseq [[counter [condition order-function]] (deref automated-conditions)]
     (if (condition)
@@ -174,10 +174,33 @@
           (println (format "Automation %d dispatched." counter))))))
 
 (defn cancel-automation
-  "This function removes an automation from the list"
+  "This function removes an automation from the list."
   [num]
   (swap! automated-conditions dissoc num)
   true)
+
+;; limit order wrappers
+(defn stop-buy
+  "This function executes a stop buy order."
+  [tic prc qty mode]
+  (if (= mode "non-lazy")
+    (set-automation 
+    ; check if ticker adjusted price is greater than prc
+    #(> (get-in (deref portfolio) [tic :aprc]) prc)
+    #(order tic qty)
+    )
+  )
+  (if (= mode "lazy")
+    (set-automation 
+    ; check if ticker adjusted price is greater than prc
+    #(> (get-in (deref portfolio) [tic :aprc]) prc)
+    #(order-lazy tic qty)
+    )
+  )
+  (if (and (not= mode "lazy") (not= mode "non-lazy"))
+    (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")
+  )
+)
 
 (defn end-order
   "Call this function at the end of the strategy."
