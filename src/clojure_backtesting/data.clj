@@ -4,6 +4,7 @@
             [clojure.set :as set]      ;;
             [clj-time.core :as t]
             [clj-time.format :as f]
+            [clojure-backtesting.parameters :refer :all]
             [clojure.pprint :as pprint] )  ;; For input-output handling
      )
 
@@ -140,8 +141,8 @@
   (def curr-ticker "DEFAULT")
  ; traverse row by row in dataset
   (map (fn [line]
-        (let [;line-new (select-keys line [:date :TICKER :PRC :RET])
-              price (Double/parseDouble (get line :PRC))
+        (let [;line-new (select-keys line [:date :TICKER PRICE-KEY :RET])
+              price (Double/parseDouble (get line PRICE-KEY))
               ret (Double/parseDouble (get line :RET))
               ticker (get line :TICKER)]
           (if (not= curr-ticker ticker)
@@ -177,7 +178,7 @@
  ; traverse row by row in dataset
   (map (fn [line]
         (let [date (get line :date)
-              price (Double/parseDouble (get line :PRC))
+              price (Double/parseDouble (get line PRICE-KEY))
               ret (Double/parseDouble (get line :RET))
               ticker (get line :TICKER)]
           ;; check whether the initial-price map already has the ticker
