@@ -127,7 +127,7 @@
 (defn log-10 [n]
   (/ (Math/log n) (Math/log 10)))
 
-;; extract: sorted by ticker, then by date
+;; extract dataset: sorted by ticker, then by date
 ;; for each security:
 ;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
@@ -146,7 +146,6 @@
               ticker (get line :TICKER)]
           (if (not= curr-ticker ticker)
               (do
-                ;(println ticker)
                 (def curr-ticker ticker)
                 (def initial-price price)
                 (def cum-ret 0)
@@ -157,7 +156,6 @@
           (def cum-ret (+ cum-ret log-ret))
           (def aprc (* initial-price (Math/pow Math/E cum-ret)))
           (assoc line :INIT-PRICE initial-price :APRC aprc :LOG-RET log-ret :CUM-RET cum-ret)
-           ;testing
           ; (swap! data-set-adj conj (assoc line-new "APRC" aprc "LOG-RET" log-ret "CUM-RET" cum-ret))
         )
       )
@@ -165,7 +163,7 @@
   )
 )
 
-;; extract: sorted by date, then by ticker
+;; large dataset: sorted by date, then by ticker
 ;; for each security:
 ;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
