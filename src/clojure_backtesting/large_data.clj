@@ -230,14 +230,14 @@
   (if (= mode "non-lazy")
     (set-automation 
     ; check if ticker adjusted price is smaller than prc
-    #(< (get-in (deref portfolio) [tic :aprc]) prc)
+    #(< (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
     #(order tic (* qty -1))
     )
   )
   (if (= mode "lazy")
     (set-automation 
     ; check if ticker adjusted price is greater than prc
-    #(< (get-in (deref portfolio) [tic :aprc]) prc)
+    #(< (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
     #(order-lazy tic (* qty -1))
     )
   )
@@ -252,14 +252,14 @@
   (if (= mode "non-lazy")
     (set-automation 
     ; check if ticker adjusted price is smaller than prc
-    #(> (get-in (deref portfolio) [tic :aprc]) prc)
+    #(> (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
     #(order tic (* qty -1))
     )
   )
   (if (= mode "lazy")
     (set-automation 
     ; check if ticker adjusted price is greater than prc
-    #(> (get-in (deref portfolio) [tic :aprc]) prc)
+    #(> (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
     #(order-lazy tic (* qty -1))
     )
   )

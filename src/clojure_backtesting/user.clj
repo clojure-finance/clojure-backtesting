@@ -28,8 +28,8 @@
 
   (update-rolling-window 3)
 
-  (order "AAPL" 100)
-  (stop-sell "AAPL" 26 10 "non-lazy")
+  (order "AAPL" 10)
+  (stop-buy "AAPL" 25 10 "non-lazy")
 
   (update-eval-report (get-date))
   (next-date)
