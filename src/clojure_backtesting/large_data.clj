@@ -9,7 +9,8 @@
             [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.data.csv :as csv]
-            [java-time :as t]))
+            [java-time :as t])
+  (:use [clojure.repl :only (source)]))
 
 (defn- lazy-read-csv
   [csv-file]
@@ -156,28 +157,34 @@
 
 (def automated-conditions (atom {}))
 (def auto-counter (atom 0))
+(def dispatch-history (atom []))
 
 (defn set-automation
   "This function set an automated order request that will be triggered by a certain condition.
    Will return a unique int as identifier to the condition"
-  [condition order-function]
+  [condition order-function & [max-dispatch]]
   (swap! auto-counter inc)
-  (swap! automated-conditions assoc (deref auto-counter) [condition order-function])
+  (swap! automated-conditions assoc (deref auto-counter) [condition order-function (atom max-dispatch)])
   (deref auto-counter))
-
-(defn check-automation
-  "This function is ought to be called before next-date and end-date."
-  []
-  (doseq [[counter [condition order-function]] (deref automated-conditions)]
-    (if (condition)
-      (do (order-function)
-          (println (format "Automation %d dispatched." counter))))))
 
 (defn cancel-automation
   "This function removes an automation from the list."
   [num]
   (swap! automated-conditions dissoc num)
   true)
+
+(defn check-automation
+  "This function is ought to be called before next-date and end-date."
+  []
+  (doseq [[counter [condition order-function max-dispatch]] (deref automated-conditions)]
+    (if (and (or (= (deref max-dispatch) nil) (> (deref max-dispatch) 0))(condition))
+      (do (order-function)
+          (println (format "Automation %d dispatched." counter))
+          (swap! dispatch-history conj {:date (get-date) :automation counter})
+          (if (deref max-dispatch) ;; if it is not nil
+            (swap! max-dispatch dec)))
+      (if (and (not= (deref max-dispatch) nil) (<= (deref max-dispatch) 0))
+        (cancel-automation counter)))))
 
 ;; limit order wrappers
 (defn stop-buy
