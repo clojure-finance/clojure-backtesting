@@ -117,7 +117,7 @@
     (def eval-report-data (atom [])) ; to store evaluation report (in string format, for printing)
     (def eval-record (atom [])) ; to store evaluation report (in number format)
     (def portfolio (atom {:cash {:tot-val init-capital}}))
-    (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0}]))
+    (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0 :margin 0.0}]))
     
     (if (not (deref lazy-mode))
       (do
@@ -171,6 +171,8 @@
           (do ; exist leverage
             (let [new-loan (+ loan (get (last (deref portfolio-value)) :loan)) ; update total loan
                   new-leverage (/ new-loan tot-value) ; update leverage ratio = total debt / total equity
+                  cash (get-in (deref portfolio) [:cash :tot-val]) ; get total amount of cash
+                  new-margin (/ tot-value (+ tot-value new-loan)) ; calculate portfolio margin
                   ret (* (log-10 (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
                   tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
                   last-date (get (last (deref portfolio-value)) :date)
@@ -184,7 +186,7 @@
                   (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
                 ) 
                 ; update portfolio-value vector
-                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan})))
+                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan :margin new-margin})))
                 ; output to file
                 (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double new-leverage) (double new-loan)))
               )
@@ -200,7 +202,7 @@
                 (if (= last-date date) ; check if date already exists
                   (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
                 ) 
-                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0})))
+                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0 :margin 0.0})))
                 ; output to file
                 (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0)))
               )
@@ -211,7 +213,7 @@
         (let [ret 0.0
               tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)]
           (do 
-            (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0})))
+            (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0 :margin 0.0})))
             ; output to file
             (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0)))
           )
@@ -235,6 +237,7 @@
               tot-ret (str (format "%.2f" (* (get row :tot-ret) 100)) "%")
               loan (str "$" (format "%.2f" (get row :loan)))
               leverage (str (format "%.2f" (get row :leverage)))
+              margin (str (format "%.2f" (* (get row :margin) 100)) "%")
              ]
         
           (swap! portfolio-record conj
@@ -244,6 +247,7 @@
                   :tot-ret tot-ret
                   :loan loan
                   :leverage leverage
+                  :margin margin
                  }) 
         )
       )

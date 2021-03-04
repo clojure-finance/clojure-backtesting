@@ -24,12 +24,11 @@
   [& args] ; pass ./resources/CRSP-extract.csv as arg
 
   (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
-  (init-portfolio "1980-12-15" 10000)
+  (init-portfolio "1980-12-15" 100)
 
   (update-rolling-window 3)
 
-  (order "AAPL" 10)
-  (stop-buy "AAPL" 25 10 "non-lazy")
+  (order "AAPL" 1000)
 
   (update-eval-report (get-date))
   (next-date)
