@@ -20,3 +20,6 @@
 (def INITIAL-MARGIN 0.5)
 ;; This is the min cash / order total 
 ;; set it to nil to enable infinite margin
+
+(def MAINTENANCE-MARGIN 0.25)
+;; When portfolio margin is < maintenance margin, all positions will be closed
