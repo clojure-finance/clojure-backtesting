@@ -17,4 +17,6 @@
 (def PRICE-KEY :PRC)
 ;; (def PRICE-KEY :OPENPRC) uncomment this if you want to use the opening price instead of the closing price
 ;; 
-
+(def INITIAL-MARGIN 0.5)
+;; This is the min cash / order total 
+;; set it to nil to enable infinite margin

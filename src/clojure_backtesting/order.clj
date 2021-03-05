@@ -112,7 +112,8 @@
                         (cond (<= cash 0)
                               (* quantity adj-price)
                               :else (- (* quantity adj-price) cash))]
-                    (place-order date tic quantity price adj-price loan reference print direct))) ;This is the buy on margin case
+                    (if (or (= INITIAL-MARGIN nil) (>= cash (* INITIAL-MARGIN (+ loan cash))))
+                     (place-order date tic quantity price adj-price loan reference print direct)))) ;This is the buy on margin case
                 (do
                   (println (format "Order request %s | %s | %d fails." order-date tic quantity))
                   (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell. Try to solve by enabling leverage."))))))
