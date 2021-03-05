@@ -322,14 +322,16 @@
 )
 
 (defn checkTerminatingCondition
-  "Close all positions if net worth < 0, i.e. user has lost all cash"
+  "Close all positions if net worth < 0 or portfolio margin < maintenance margin, i.e. user has lost all cash"
   []
   (if (not (deref terminated))
-    (let [tot-value (get (last (deref portfolio-value)) :tot-value)]
+    (let [tot-value (get (last (deref portfolio-value)) :tot-value)
+          port-margin (get (last (deref portfolio-value)) :margin)
+         ]
       ;; original inequality: value of stocks (excl. shorted stocks) - net cash > 0
       ;; rearranging, equivalent to checking value of stocks (incld. shorted stocks) - cash > 0
       ;; where LHS = net worth
-      (if (< (compare tot-value 0) 0)  ; if net worth < 0
+      (if (or (< (compare tot-value 0) 0) (< port-margin MAINTENANCE-MARGIN))  ; if net worth < 0
         (do
           (println (str (get-date) ": You have lost all cash. Closing all positions."))
           (println "Please reset the dataset and call init-portfolio again.")
