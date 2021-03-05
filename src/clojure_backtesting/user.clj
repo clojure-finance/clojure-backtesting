@@ -15,13 +15,12 @@
             [clj-time.core :as clj-t]
             [clojure.edn :as edn]
             [java-time :as t]
-            ;[clojure.spec.alpha :as s]
             [clojupyter.kernel.version :as ver]
             )(:gen-class))
 
 (defn -main
   "Write your code here"
-  [& args] ; pass ./resources/CRSP-extract.csv as arg
+  [& args]
 
   (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
   (init-portfolio "1980-12-15" 210)

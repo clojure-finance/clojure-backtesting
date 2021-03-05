@@ -89,6 +89,7 @@
     ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
     ;; todo: implement case when standard is false
 
+    ;; todo: refactor below by writing a function
     ;; output order record to csv file
     (try (io/delete-file "./out_order_record.csv")
          (catch Exception e (println "Detect that you run the program for the first time.\n We created a file named out_order_record.csv to store order records.
@@ -101,7 +102,7 @@
          (catch Exception e (println "Detect that you run the program for the first time.\n We created a file named out_portfolio_value_record.csv to store portfolio values.
                              \n You can find the file under the same directory of your runnning program.\n"))) ;First delete the file (act as emptying)
     (def portvalue-wrtr (io/writer "./out_portfolio_value_record.csv" :append true))
-    (.write portvalue-wrtr "date,tot-value,daily-ret,tot-ret,loan,leverage\n")
+    (.write portvalue-wrtr "date,tot-value,daily-ret,tot-ret,loan,leverage,margin\n")
 
     ;; output evaluation report to csv file
     (try (io/delete-file "./out_evaluation_report.csv")
@@ -188,7 +189,7 @@
                 ; update portfolio-value vector
                 (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan :margin new-margin})))
                 ; output to file
-                (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double new-leverage) (double new-loan)))
+                (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double new-leverage) (double new-loan) (double new-margin)))
               )
             )
           )
@@ -204,7 +205,7 @@
                 ) 
                 (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0 :margin 0.0})))
                 ; output to file
-                (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0)))
+                (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0) (double 0.0)))
               )
             )
           )
@@ -215,7 +216,7 @@
           (do 
             (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0 :margin 0.0})))
             ; output to file
-            (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0)))
+            (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0) (double 0.0)))
           )
         )
       )
