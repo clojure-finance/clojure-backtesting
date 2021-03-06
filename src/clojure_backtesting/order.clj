@@ -87,7 +87,7 @@
   (if (not (deref terminated))
     (do
       (incur-transaction-cost quantity price adj-price)
-      (update-portfolio date tic quantity price adj-price loan)
+      (update-portfolio date tic quantity price adj-price loan) ; w/o loan interest
     )
   )
   (if print

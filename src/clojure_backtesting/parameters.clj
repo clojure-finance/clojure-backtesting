@@ -28,8 +28,9 @@
 
 ;; ============ Parameters for interests & transaction costs ============
 
-(def INTEREST-RATE 0.0)
-;; The interest rate to for making a loan
+(def INTEREST-RATE 0.3)
+;; The simple interest rate (p.a.) for making a loan
+;; Usually between 3% and 12% per annum
 
 (def TRANSACTION-COST 0.0)
 ;; Front-end load (%) that needs to be paid when making a purchase, must be < 1.0
@@ -47,7 +48,6 @@
     )
 )
 
-
 (defn update-maintenance-margin 
     "This function updates the maintenance margin."
 	[new-mm]
@@ -57,11 +57,20 @@
     )
 )
 
+(defn update-interest-rate
+    "This function updates the interest rate."
+	[new-ir]
+    (if (and (pos? new-ir) (< new-ir 1))
+        (def INTEREST-RATE new-ir)
+        (println "Failed: The interest rate needs to be within the range of [0,1).")
+    )
+)
+
 (defn update-transaction-cost
     "This function updates the transaction cost."
 	[new-tc]
-    (if (and (pos new-tc) (< new-tc 1))
-        (def TRANSACTION-COST new-tt)
+    (if (and (pos? new-tc) (< new-tc 1))
+        (def TRANSACTION-COST new-tc)
         (println "Failed: The transaction cost needs to be within the range of [0,1).")
     )
 )
