@@ -17,12 +17,24 @@
 (def PRICE-KEY :PRC)
 ;; (def PRICE-KEY :OPENPRC) uncomment this if you want to use the opening price instead of the closing price
 ;; 
-(def INITIAL-MARGIN 0.5)
+
+;; ============ Parameters for margin requirements ============
+(def INITIAL-MARGIN 0.5) 
 ;; This is the min cash / order total 
-;; set it to nil to enable infinite margin
+;; Set it to nil to enable infinite margin
 
 (def MAINTENANCE-MARGIN 0.25)
 ;; When portfolio margin is < maintenance margin, all positions will be closed
+
+;; ============ Parameters for interests & transaction costs ============
+
+(def INTEREST-RATE 0.0)
+;; The interest rate to for making a loan
+
+(def TRANSACTION-COST 0.0)
+;; Frontend load (%) that needs to be paid when making a purchase, must be < 1.0
+;; Typically falls within a range of 3.75% to 5.75%
+
 
 ;; ============ Functions for updating parameters ============
 
