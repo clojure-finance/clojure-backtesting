@@ -23,3 +23,24 @@
 
 (def MAINTENANCE-MARGIN 0.25)
 ;; When portfolio margin is < maintenance margin, all positions will be closed
+
+;; ============ Functions for updating parameters ============
+
+(defn update-initial-margin 
+    "This function updates the initial margin."
+	[new-im]
+    (if (> new-im 0)
+        (def INITIAL-MARGIN new-im)
+        (println "Failed: The initial margin needs to be greater than zero.")
+    )
+)
+
+
+(defn update-maintenance-margin 
+    "This function updates the maintenance margin."
+	[new-mm]
+    (if (> new-mm 0)
+        (def MAINTENANCE-MARGIN new-mm)
+        (println "Failed: The maintenance margin needs to be greater than zero.")
+    )
+)

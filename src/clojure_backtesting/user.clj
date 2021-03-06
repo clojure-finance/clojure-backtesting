@@ -25,6 +25,9 @@
   (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
   (init-portfolio "1980-12-15" 210)
 
+  (update-initial-margin 0.7)
+  (println INITIAL-MARGIN)
+
   (order "AAPL" 10)
 
   (update-eval-report (get-date))
