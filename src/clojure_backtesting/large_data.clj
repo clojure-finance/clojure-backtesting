@@ -162,9 +162,11 @@
 (defn set-automation
   "This function set an automated order request that will be triggered by a certain condition.
    Will return a unique int as identifier to the condition"
-  [condition order-function & [max-dispatch]]
+  [condition order-function & {:keys [max-dispatch expiration] :or {max-dispatch nil expiration nil}}]
   (swap! auto-counter inc)
-  (swap! automated-conditions assoc (deref auto-counter) [condition order-function (atom max-dispatch)])
+  (swap! automated-conditions assoc (deref auto-counter) [condition order-function (atom max-dispatch) (if expiration
+                                                                                                         (t/format "yyyy-MM-dd" (t/plus (deref date) (t/days expiration)))
+                                                                                                         nil)])
   (deref auto-counter))
 
 (defn cancel-automation
@@ -176,26 +178,28 @@
 (defn check-automation
   "This function is ought to be called before next-date and end-date."
   []
-  (doseq [[counter [condition order-function max-dispatch]] (deref automated-conditions)]
-    (if (and (or (= (deref max-dispatch) nil) (> (deref max-dispatch) 0))(condition))
-      (do (order-function)
-          (println (format "Automation %d dispatched." counter))
-          (swap! dispatch-history conj {:date (get-date) :automation counter})
-          (if (deref max-dispatch) ;; if it is not nil
-            (swap! max-dispatch dec)))
-      (if (and (not= (deref max-dispatch) nil) (<= (deref max-dispatch) 0))
-        (cancel-automation counter)))))
+  (doseq [[counter [condition order-function max-dispatch expiration-date]] (deref automated-conditions)]
+    (if (and (not= expiration-date nil)(> (compare (get-date) expiration-date) 0))
+      (cancel-automation counter)
+      (if (and (or (= (deref max-dispatch) nil) (> (deref max-dispatch) 0)) (condition))
+        (do (order-function)
+            (println (format "Automation %d dispatched." counter))
+            (swap! dispatch-history conj {:date (get-date) :automation counter})
+            (if (deref max-dispatch) ;; if it is not nil
+              (swap! max-dispatch dec)))
+        (if (and (not= (deref max-dispatch) nil) (<= (deref max-dispatch) 0))
+          (cancel-automation counter))))))
 
 ;; limit order wrappers
 (defn stop-buy
   "This function executes a stop buy order."
-  [tic prc qty mode]
+  [tic prc qty mode & [expiration]]
   (if (= mode "non-lazy")
     (set-automation 
       ; check if ticker adjusted price is greater than prc
-      #(> (get-in (deref portfolio) [tic :aprc]) prc)
+      #(and  (> (get-in (deref portfolio) [tic :aprc]) prc))
       #(order tic qty)
-      1
+      :max-dispatch 1
     )
   )
   (if (= mode "lazy")
@@ -203,7 +207,7 @@
       ; check if ticker adjusted price is greater than prc
       #(> (get-in (deref portfolio) [tic :aprc]) prc)
       #(order-lazy tic qty)
-      1
+      :max-dispatch 1
     )
   )
   (if (and (not= mode "lazy") (not= mode "non-lazy"))
@@ -219,7 +223,7 @@
       ; check if ticker adjusted price is smaller than prc
       #(< (get-in (deref portfolio) [tic :aprc]) prc)
       #(order tic qty)
-      1
+      :max-dispatch 1
     )
   )
   (if (= mode "lazy")
@@ -227,7 +231,7 @@
       ; check if ticker adjusted price is smaller than prc
       #(< (get-in (deref portfolio) [tic :aprc]) prc)
       #(order-lazy tic qty)
-      1
+      :max-dispatch 1
     )
   )
   (if (and (not= mode "lazy") (not= mode "non-lazy"))
@@ -243,7 +247,7 @@
       ; check if ticker adjusted price is smaller than prc
       #(< (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
       #(order tic (* qty -1))
-      1
+      :max-dispatch 1
     )
   )
   (if (= mode "lazy")
@@ -251,7 +255,7 @@
       ; check if ticker adjusted price is greater than prc
       #(< (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
       #(order-lazy tic (* qty -1))
-      1
+      :max-dispatch 1
     )
   )
   (if (and (not= mode "lazy") (not= mode "non-lazy"))
@@ -267,7 +271,7 @@
       ; check if ticker adjusted price is smaller than prc
       #(> (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
       #(order tic (* qty -1))
-      1
+      :max-dispatch 1
     )
   )
   (if (= mode "lazy")
@@ -275,7 +279,7 @@
       ; check if ticker adjusted price is greater than prc
       #(> (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
       #(order-lazy tic (* qty -1))
-      1
+      :max-dispatch 1
     )
   )
   (if (and (not= mode "lazy") (not= mode "non-lazy"))
