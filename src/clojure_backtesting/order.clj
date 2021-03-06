@@ -67,21 +67,35 @@
                     [b t-1-date (Double/parseDouble p) aprc r]
                     (recur (inc i))))
                 [false (str "No appropriate order date after looking ahead " MAXLOOKAHEAD " days") 0 0 0])))
-        [false "No such date or ticker in the dataset" 0 0 0]))))
+        [false "No such date or ticker in the dataset" 0 0 0])))
+)
 
+(defn- incur-transaction-cost
+  "This private function deducts the transactional cost (front-end load) for making an order."
+  [quantity price adj-price]
+  (if (> TRANSACTION-COST 0)
+    (let [cash-to-pay (* (* quantity adj-price) TRANSACTION-COST)]
+      (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) cash-to-pay)})
+    )
+  )
+)
 
 (defn- place-order
   "This private function does the basic routine for an ordering - update portfolio and return record."
   [date tic quantity price adj-price loan reference print direct]
   ;; (println loan)
   (if (not (deref terminated))
-    (update-portfolio date tic quantity price adj-price loan)
+    (do
+      (incur-transaction-cost quantity price adj-price)
+      (update-portfolio date tic quantity price adj-price loan)
+    )
   )
   (if print
     (println (format "Order: %s | %s | %f." date tic (double quantity))))
   (if direct
     (.write wrtr (format "%s,%s,%f\n" date tic (double quantity))))
-  {:date date :tic tic :price price :aprc (format "%.2f" adj-price) :quantity quantity})
+  {:date date :tic tic :price price :aprc (format "%.2f" adj-price) :quantity quantity}
+)
 
 
 (defn order-internal

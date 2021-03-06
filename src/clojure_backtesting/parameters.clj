@@ -32,7 +32,7 @@
 ;; The interest rate to for making a loan
 
 (def TRANSACTION-COST 0.0)
-;; Frontend load (%) that needs to be paid when making a purchase, must be < 1.0
+;; Front-end load (%) that needs to be paid when making a purchase, must be < 1.0
 ;; Typically falls within a range of 3.75% to 5.75%
 
 
@@ -54,5 +54,14 @@
     (if (> new-mm 0)
         (def MAINTENANCE-MARGIN new-mm)
         (println "Failed: The maintenance margin needs to be greater than zero.")
+    )
+)
+
+(defn update-transaction-cost
+    "This function updates the transaction cost."
+	[new-tc]
+    (if (and (pos new-tc) (< new-tc 1))
+        (def TRANSACTION-COST new-tt)
+        (println "Failed: The transaction cost needs to be within the range of [0,1).")
     )
 )
