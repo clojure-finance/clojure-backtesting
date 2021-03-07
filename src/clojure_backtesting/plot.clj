@@ -9,7 +9,8 @@
 
 ;; Plotting function
 (defn plot
-  "this is the function that allows the users to plot charts,"
+  "This is the function that allows the users to plot charts."
+  ;; With one y value
   ([dataset series x y full-date]
     (if (= true full-date)
       (oz/view! ; with full-date
@@ -35,6 +36,7 @@
     )
   )
   
+  ;; with 2 y values
   ([dataset series x y1 y2 full-date] ;y1 & y2 should be key for values to be plotted, e.g. :tot-value or :daily-ret
     (if (= true full-date)
       (oz/view!

@@ -113,13 +113,15 @@
 
     (def order-record (atom []))
     (def init-capital init-capital)
-    (def loan-exist false) ; global swtich for storing whether loan exists
-    (def terminated (atom false)) ; global switch for storing whether user has lost all cash
     (def eval-report-data (atom [])) ; to store evaluation report (in string format, for printing)
     (def eval-record (atom [])) ; to store evaluation report (in number format)
     (def portfolio (atom {:cash {:tot-val init-capital}}))
     (def portfolio-value (atom [{:date date :tot-value init-capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0 :margin 0.0}]))
     
+    ;; ============ Global switches for internal use ============
+    (def LOAN-EXIST false) ; global swtich for storing whether loan exists
+    (def terminated (atom false)) ; global switch for storing whether user has lost all cash
+
     (if (not (deref lazy-mode))
       (do
         (init-date date)
@@ -127,10 +129,43 @@
       (lazy-init date))
 )
   
+  ;; Update loan in portfolio
+  (defn update-loan
+    [date loan is-interest]
+    (if (= is-interest true)
+      ;; deduct cash in portfolio
+      (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) loan)})
+    )
+    ;; update portfolio-value record
+    (let [tot-value (reduce + (map :tot-val (vals (deref portfolio))))
+          prev-value (:tot-value (last (deref portfolio-value)))
+          new-loan (+ loan (get (last (deref portfolio-value)) :loan)) ; update total loan
+          new-leverage (/ new-loan tot-value) ; update leverage ratio = total debt / total equity
+          cash (get-in (deref portfolio) [:cash :tot-val]) ; get total amount of cash
+          new-margin (/ tot-value (+ tot-value new-loan)) ; calculate portfolio margin
+          ret (* (log-10 (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
+          tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
+          last-date (get (last (deref portfolio-value)) :date)
+          ]
+      (do
+        (if (= LOAN-EXIST false) ; check loan-exist switch
+          (def LOAN-EXIST true) ; flip the switch
+        )
+        (if (= last-date date) ; check if date already exists
+          (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
+        ) 
+        ; update portfolio-value vector
+        (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan :margin new-margin})))
+        ; output to file
+        (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double new-leverage) (double new-loan) (double new-margin)))
+      )
+    )
+  )
+
   ;; Update the portfolio when placing an order
   (defn update-portfolio
     [date tic quantity price aprc loan]
-    ;(println aprc)
+    
     ;; check whether the portfolio already has the security
     (if-not (contains? (deref portfolio) tic) 
       (let [tot-val (* aprc quantity) 
@@ -167,31 +202,10 @@
     (let [[tot-value prev-value] [(reduce + (map :tot-val (vals (deref portfolio)))) (:tot-value (last (deref portfolio-value)))]] 
       (if (and (not= prev-value 0) (not= prev-value 0.0)) ; check division by zero
         ; if loan != 0 or previous leverage ratio != 0
-        (if (or (not= loan 0) (= loan-exist true))
+        (if (or (not= loan 0) (= LOAN-EXIST true))
         
           (do ; exist leverage
-            (let [new-loan (+ loan (get (last (deref portfolio-value)) :loan)) ; update total loan
-                  new-leverage (/ new-loan tot-value) ; update leverage ratio = total debt / total equity
-                  cash (get-in (deref portfolio) [:cash :tot-val]) ; get total amount of cash
-                  new-margin (/ tot-value (+ tot-value new-loan)) ; calculate portfolio margin
-                  ret (* (log-10 (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
-                  tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
-                  last-date (get (last (deref portfolio-value)) :date)
-                  last-index (- (count (deref portfolio-value)) 1)
-                 ]
-              (do
-                (if (= loan-exist false) ; check switch
-                  (def loan-exist true)
-                )
-                (if (= last-date date) ; check if date already exists
-                  (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value)))) ; drop last entry in old portfolio-value vector
-                ) 
-                ; update portfolio-value vector
-                (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan :margin new-margin})))
-                ; output to file
-                (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double new-leverage) (double new-loan) (double new-margin)))
-              )
-            )
+            (update-loan date loan false)
           )
   
           (do ; no leverage, update return with log formula: daily_ret = log(tot_val/prev_val)
