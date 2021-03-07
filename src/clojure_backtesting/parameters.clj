@@ -28,7 +28,7 @@
 
 ;; ============ Parameters for interests & transaction costs ============
 
-(def INTEREST-RATE 0.3)
+(def INTEREST-RATE 0.0)
 ;; The simple interest rate (p.a.) for making a loan
 ;; Usually between 3% and 12% per annum
 

@@ -80,6 +80,19 @@
   )
 )
 
+;; todo: call somewhere to incur every month
+(defn- incur-interest-cost
+  "This private function deducts the interests cost by the end of every month for making a loan."
+  []
+  (if (and (> INTEREST-RATE 0) (= LOAN-EXIST true))
+    (let 
+      [tot-loan (get-in (last (deref portfolio-value)) [:loan])
+       cash-to-pay (* (* INTEREST-RATE (/ 1 12)) tot-loan)]
+      (update-loan (get-date) (+ tot-loan cash-to-pay) true)
+    )
+  )
+)
+
 (defn- place-order
   "This private function does the basic routine for an ordering - update portfolio and return record."
   [date tic quantity price adj-price loan reference print direct]
