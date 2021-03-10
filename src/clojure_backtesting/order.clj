@@ -81,7 +81,7 @@
 )
 
 ;; todo: call somewhere to incur every month
-(defn- incur-interest-cost
+(defn incur-interest-cost
   "This private function deducts the interests cost by the end of every month for making a loan."
   []
   (if (and (> INTEREST-RATE 0) (= LOAN-EXIST true))

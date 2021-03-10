@@ -345,9 +345,18 @@
   )
 )
 
+(def days-in-month (atom 0))
+
 (defn next-date
   "Wrapper function for next-day in large-data and internal-next-date for counter."
   []
+  (if LOAN-EXIST 
+    (do (swap! days-in-month inc)
+        (if (>= (deref days-in-month) 30)
+          (do 
+            (incur-interest-cost)
+            (reset! days-in-month 0))))
+    (reset! days-in-month 0))
   (checkTerminatingCondition)
   (check-automation)
   (if (and (deref lazy-mode) (not (deref terminated)))
