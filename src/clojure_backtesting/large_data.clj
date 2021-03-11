@@ -335,7 +335,7 @@
       ;; original inequality: value of stocks (excl. shorted stocks) - net cash > 0
       ;; rearranging, equivalent to checking value of stocks (incld. shorted stocks) - cash > 0
       ;; where LHS = net worth
-      (if (or (< (compare tot-value 0) 0) (< port-margin MAINTENANCE-MARGIN))  ; if net worth < 0
+      (if (or (< (compare tot-value 0) 0) (and (< port-margin MAINTENANCE-MARGIN) (= LOAN-EXIST true)))  ; if net worth < 0
         (do
           (println (str (get-date) ": You have lost all cash. Closing all positions."))
           (println "Please reset the dataset and call init-portfolio again.")

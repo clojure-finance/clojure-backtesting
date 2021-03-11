@@ -28,13 +28,12 @@
 
 ;; ============ Parameters for interests & transaction costs ============
 
+(def TRANSACTION-COST 0.0)
+;; Commission fee (%) that needs to be paid when making a purchase, must be < 1.0
+
 (def INTEREST-RATE 0.0)
 ;; The simple interest rate (p.a.) for making a loan
 ;; Usually between 3% and 12% per annum
-
-(def TRANSACTION-COST 0.0)
-;; Front-end load (%) that needs to be paid when making a purchase, must be < 1.0
-;; Typically falls within a range of 3.75% to 5.75%
 
 
 ;; ============ Functions for updating parameters ============
@@ -42,7 +41,7 @@
 (defn update-initial-margin 
     "This function updates the initial margin."
 	[new-im]
-    (if (> new-im 0)
+    (if (or (> new-im 0) (= new-im nil))
         (def INITIAL-MARGIN new-im)
         (println "Failed: The initial margin needs to be greater than zero.")
     )
