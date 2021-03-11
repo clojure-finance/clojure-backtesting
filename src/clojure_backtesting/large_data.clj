@@ -359,12 +359,13 @@
     (reset! days-in-month 0))
   (checkTerminatingCondition)
   (check-automation)
-  (if (and (deref lazy-mode) (not (deref terminated)))
-    (next-day)
-    (do
-      (updateHoldingTickers)
-      (internal-next-date)
-    )
+  (if (not (deref terminated))
+    (if (deref lazy-mode)
+      (next-day)
+      (do
+        (updateHoldingTickers)
+        (internal-next-date)))
+    nil
   )
 )
 
