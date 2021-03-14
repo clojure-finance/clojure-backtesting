@@ -32,6 +32,8 @@
   (update-eval-report (get-date))
   (next-date)
   (update-eval-report (get-date))
+
+  (println (portfolio-daily-ret))
   ;; (next-date)
   ;; (update-eval-report (get-date))
   ;; (next-date)
@@ -48,6 +50,7 @@
   (next-date)
   (next-date)
   (next-date)
+  (println (portfolio-daily-ret))
 
   (pprint/print-table (deref order-record))
   (view-portfolio)

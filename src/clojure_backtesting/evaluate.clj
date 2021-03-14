@@ -120,7 +120,7 @@
 (defn update-eval-report
   "This function updates the evaluation report."
   [date]
-  (if (and (not= (count (deref order-record)) 0) (not (deref terminated))) ; check that order record is not empty
+  '(when (and (not= (count (deref order-record)) 0) (not (deref terminated))) ; check that order record is not empty
     (let [total-val-data (portfolio-total)
           volatility-data (volatility)
           rolling-volatility-data (rolling-volatility)
@@ -129,7 +129,7 @@
           pnl-per-trade-data (pnl-per-trade)
           max-drawdown-data (max-drawdown)
          ]
-      (do ; numerical values
+       ; numerical values
         (swap! eval-record conj {:date date
                                  :tot-value total-val-data
                                  :vol volatility-data
@@ -151,7 +151,7 @@
                                       })
         ; output to file
         (.write evalreport-wrtr (format "%s,%f,%f,%f,%f,%f,%f,%f\n" date (double total-val-data) (double volatility-data) (double rolling-volatility-data) (double sharpe-ratio-data) (double rolling-sharpe-ratio-data) (double pnl-per-trade-data) (double max-drawdown-data)))
-      ))))
+      )))
 
 
 ;; ============ Record inspection ============

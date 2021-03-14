@@ -11,7 +11,7 @@
   "This is the function for plotting line charts."
   ;; With only one y-axis value
   ([dataset series x y full-date]
-    (if (= true full-date)
+    (if full-date
       (oz/view! ; with full-date
         { :width 800 :height 500 ; adjust the graph size
           :data      {:values dataset}
@@ -33,7 +33,7 @@
   
   ;; With two y-axis values
   ([dataset series x y1 y2 full-date] ;y1 & y2 should be key for values to be plotted, e.g. :tot-value or :daily-ret
-    (if (= true full-date)
+    (if full-date
       (oz/view!
         { :width 800 :height 500 ;adjust the graph size
           :data      {:values dataset}
