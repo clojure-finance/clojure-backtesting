@@ -30,9 +30,7 @@
 (defn get-tickers 
   "return a set of tickers"
   [file]
-  (let [tickers-map (get-set file)]
-    tickers-map
-  )
+  (get-set file)
 )
 
 (defn- last-quar
@@ -85,7 +83,6 @@
   [date key tic data-set]
   ;The code below is mostly copying from search-date
   (loop [count 0 remaining data-set] ;(original line)
-  ;(loop [count 0 remaining testfile1] 				;testing line, change the data-set to CRSP
     (if (empty? remaining)
       NOMATCH
       (let [first-line (first remaining)
@@ -153,18 +150,3 @@
   (if (<= (count list) 0)
     0
     (average (map (fn [_] (Double/parseDouble (get _ key))) list))))
-
-;; (defn square [n] (* n n))
-
-;; (defn mean [a] (/ (reduce + a) (count a)))
-
-;; (defn standard-deviation
-;;   [a]
-;;   (Math/sqrt (/
-;;               (reduce + (map square (map - a (repeat (mean a)))))
-;;               (- (count a) 1))))
-
-
-;; (defn moving-average
-;;   [key days]
-;;   ())
