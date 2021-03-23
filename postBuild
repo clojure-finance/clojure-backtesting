@@ -1,0 +1,2 @@
+# build using lein
+make add_kernel
