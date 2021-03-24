@@ -14,11 +14,14 @@
                  [metasoarous/oz "1.6.0-alpha31"]
                  [com.clojure-goes-fast/clj-memory-meter "0.1.3"]
                  [net.mikera/core.matrix "0.62.0"]
+                 [huri "0.10.0-SNAPSHOT"]
                  ]
   :aliases			{"clojupyter"			["run" "-m" "clojupyter.cmdline"]}
   :main clojure-backtesting.user
   :aot [clojure-backtesting.user]
-  :plugins [[lein-jupyter "0.1.16"]]
+  :plugins [[lein-jupyter "0.1.16"]
+            [org.clojars.benfb/lein-gorilla "0.6.0"]
+            ]
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all
                        :jvm-opts ["-Djdk.attach.allowAttachSelf" "-Dclojure.compiler.direct-linking=true"]}})

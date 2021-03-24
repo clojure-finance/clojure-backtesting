@@ -16,8 +16,8 @@ pom.xml.asc
 .hg/
 Debugging/
 
-profiles.clj
 specs.clj
+huri-test.clj
 
 Compustat-extract_sorted.csv
 CRSP-extract_sorted.csv
