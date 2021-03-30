@@ -7,6 +7,7 @@
             [clojure.string :as str]
             [clj-time.core :as clj-t]
             [java-time :as t]
+            [clojure.core.matrix.stats :as stat] ;; For the standard deviation formula
             ))
 
 (defn- get-set
@@ -150,3 +151,14 @@
   (if (<= (count list) 0)
     0
     (average (map (fn [_] (Double/parseDouble (get _ key))) list))))
+
+;; Two functions designed for example/Bollinger Bands
+(defn moving-sd
+  [key vec]
+  "This function returns the s.d. of the vec[key]"
+  (stat/sd (map (fn [_] (Double/parseDouble (get _ key))) vec)))
+
+(defn get-price
+  [tic]
+  "Returns the price of a ticker today"
+  (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) :PRC)))

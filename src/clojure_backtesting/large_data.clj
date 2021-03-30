@@ -294,15 +294,12 @@
   ;; close all positions
   (if (not (deref terminated))
     (do
-      (reset! terminated true)
-
       (if (deref lazy-mode)
         (do
           (doseq [[ticker] (deref portfolio)]
             (if (not= ticker :cash)
               (order-lazy ticker 0 :remaining true)))
-      ;(next-date)
-          )
+          (next-day))
         (doseq [[ticker] (deref portfolio)]
           (if (not= ticker :cash)
             (order ticker 0 :remaining true))))
@@ -311,6 +308,7 @@
       (.close wrtr)
       (.close portvalue-wrtr)
       (.close evalreport-wrtr)
+      (reset! terminated true)
 
   ;; reject any more orders unless user call load data again and call init-portfolio
       (reset! data-set nil)

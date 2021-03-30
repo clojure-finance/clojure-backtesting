@@ -6,7 +6,7 @@
             [clojure-backtesting.order :refer :all]
             [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.plot :refer :all]
-            [clojure-backtesting.specs :refer :all]
+            ;; [clojure-backtesting.specs :refer :all]
             [clojure-backtesting.counter :refer :all]
             [clojure-backtesting.large-data :refer :all]
             [clojure-backtesting.parameters :refer :all]
