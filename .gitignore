@@ -28,3 +28,5 @@ examples/out_portfolio_value_record.csv
 out_evaluation_report.csv
 out_order_record.csv
 out_portfolio_value_record.csv
+
+Rplots.pdf
