@@ -155,6 +155,9 @@
  ([tic quantity & {:keys [expiration remaining leverage dataset print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
   (swap! pending-order assoc tic {:date (get-date) :expiration expiration :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))
 
+
+;; ============ Automated orders ============
+
 (def automated-conditions (atom {}))
 (def auto-counter (atom 0))
 (def dispatch-history (atom []))
@@ -303,6 +306,7 @@
         (doseq [[ticker] (deref portfolio)]
           (if (not= ticker :cash)
             (order ticker 0 :remaining true))))
+          
       (update-eval-report (get-date))
 
       (.close wrtr)
@@ -310,51 +314,48 @@
       (.close evalreport-wrtr)
       (reset! terminated true)
 
-  ;; reject any more orders unless user call load data again and call init-portfolio
+      ;; reject any more orders unless user call load data again and call init-portfolio
       (reset! data-set nil)
       (reset! available-tics {})
+
       (if (deref lazy-mode)
         (doseq [name (keys (deref dataset-col))]
           (swap! dataset-col assoc name []))
         (do
           (reset! cur-reference [0 []])
           (reset! tics-info [])))
-      )
-  )
+    )
 )
 
-(defn checkTerminatingCondition
+(defn check-terminating-condition
   "Close all positions if net worth < 0 or portfolio margin < maintenance margin, i.e. user has lost all cash"
   []
-  (if (not (deref terminated))
+  (if (not (deref TERMINATED))
     (let [tot-value (get (last (deref portfolio-value)) :tot-value)
           port-margin (get (last (deref portfolio-value)) :margin)
          ]
       ;; original inequality: value of stocks (excl. shorted stocks) - net cash > 0
       ;; rearranging, equivalent to checking value of stocks (incld. shorted stocks) - cash > 0
       ;; where LHS = net worth
-      (if (or (< (compare tot-value 0) 0) (and (< port-margin MAINTENANCE-MARGIN) (= LOAN-EXIST true)))  ; if net worth < 0
-        (do
-          (println (str (get-date) ": You have lost all cash. Closing all positions."))
-          (println "Please reset the dataset and call init-portfolio again.")
-          (end-order))
-      )
-    )
-  )
-)
+      (when (or (< (compare tot-value 0) 0) (and (< port-margin MAINTENANCE-MARGIN) (= LOAN-EXIST true)))  ; if net worth < 0
+        (println (str (get-date) ": You have lost all cash. Closing all positions."))
+        (println "Please reset the dataset and call init-portfolio again.")
+        (end-order)))))
 
 (defn next-date
   "Wrapper function for next-day in large-data and internal-next-date for counter."
   []
-  (if LOAN-EXIST 
+  (if (deref LOAN-EXIST) 
     (incur-interest-cost))
-  (checkTerminatingCondition)
+
+  (check-terminating-condition)
   (check-automation)
-  (if (not (deref terminated))
+
+  (if (not (deref TERMINATED))
     (if (deref lazy-mode)
       (next-day)
       (do
-        (updateHoldingTickers)
+        (update-holding-tickers)
         (internal-next-date)))
     nil
   )

@@ -90,7 +90,7 @@
   ;; Backtester initialisation
   (defn init-portfolio
     "This function initialises or restarts the backtester."
-    [date capital &{:keys [standard] :or {standard true}}] ;; the dataset is the filtered dataset the user uses, as we need the number of days from it
+    [date capital &{:keys [standard] :or {standard true}}]
     ;; example: portfolio -> {:cash {:tot-val 10000} :"AAPL" {:price 400 :aprc adj-price :quantity 100 :tot-val 40000}}
     ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
     ;; todo: implement case when standard is false
@@ -122,8 +122,8 @@
       (lazy-init date))
 
     ;; ============ Global switches for internal use ============
-    (def LOAN-EXIST false) ; global swtich for storing whether loan exists
-    (def terminated (atom false)) ; global switch for storing whether user has lost all cash
+    (def LOAN-EXIST (atom false)) ; global swtich for storing whether loan exists
+    (def TERMINATED (atom false)) ; global switch for storing whether user has lost all cash
     )
 
   
@@ -145,8 +145,8 @@
           last-date (get (last (deref portfolio-value)) :date)
           ]
       (do
-        (if (= LOAN-EXIST false) ; check loan-exist switch
-          (def LOAN-EXIST true)) ; flip the switch
+        (if (= (deref LOAN-EXIST) false) ; check loan-exist switch
+          (reset! LOAN-EXIST true)) ; flip the switch
         (if (= last-date date) ; check if date already exists
           (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value))))) ; drop last entry in old portfolio-value vector
         
@@ -190,7 +190,7 @@
 
       (if (and (not= prev-value 0) (not= prev-value 0.0)) ; check division by zero
         ; if prev_value not 0
-        (if (or (not= loan 0) LOAN-EXIST)
+        (if (or (not= loan 0) (deref LOAN-EXIST))
 
           ; exist leverage
           (update-loan date loan false)
@@ -263,7 +263,6 @@
     "This function prints portfolio map in a table format."
     []
     (def portfolio-table (atom [])) ; temporarily stores record for view
-  
     (doseq [[ticker row] (deref portfolio)] 
       (do
         (if (= ticker :cash)
