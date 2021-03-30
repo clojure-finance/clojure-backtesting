@@ -83,20 +83,18 @@
 (defn incur-interest-cost
   "This private function deducts the loan interests cost on every trading day."
   []
-  (if (and (> INTEREST-RATE 0) (= LOAN-EXIST true))
+  (if (and (> INTEREST-RATE 0) (= (deref LOAN-EXIST) true))
     (let 
       [tot-loan (get-in (last (deref portfolio-value)) [:loan])
        cash-to-pay (* (* INTEREST-RATE (/ 1 252)) tot-loan)]
       (update-loan (get-date) cash-to-pay true)
-    )
-  )
-)
+    )))
 
 (defn- place-order
   "This private function does the basic routine for an ordering - update portfolio and return record."
   [date tic quantity price adj-price loan reference print direct]
   ;; (println loan)
-  (if (not (deref terminated))
+  (if (not (deref TERMINATED))
     (do
       (incur-transaction-cost quantity price adj-price)
       (update-portfolio date tic quantity price adj-price loan) ; w/o loan interest
@@ -165,7 +163,7 @@
    (swap! order-record conj (doall (pmap order-internal arg))))
   )
 
-(defn updateHoldingTickers
+(defn update-holding-tickers
   "Update all the tickers in terms of portfolio"
   []
   (doseq [tic (rest (keys (deref portfolio)))]
