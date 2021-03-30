@@ -295,7 +295,7 @@
   "Call this function at the end of the strategy."
   []
   ;; close all positions
-  (if (not (deref terminated))
+  (if (not (deref TERMINATED))
     (do
       (if (deref lazy-mode)
         (do
@@ -306,13 +306,12 @@
         (doseq [[ticker] (deref portfolio)]
           (if (not= ticker :cash)
             (order ticker 0 :remaining true))))
-          
       (update-eval-report (get-date))
 
       (.close wrtr)
       (.close portvalue-wrtr)
       (.close evalreport-wrtr)
-      (reset! terminated true)
+      (reset! TERMINATED true)
 
       ;; reject any more orders unless user call load data again and call init-portfolio
       (reset! data-set nil)
@@ -323,9 +322,7 @@
           (swap! dataset-col assoc name []))
         (do
           (reset! cur-reference [0 []])
-          (reset! tics-info [])))
-    )
-)
+          (reset! tics-info []))))))
 
 (defn check-terminating-condition
   "Close all positions if net worth < 0 or portfolio margin < maintenance margin, i.e. user has lost all cash"
