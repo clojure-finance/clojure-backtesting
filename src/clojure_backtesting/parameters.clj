@@ -15,7 +15,7 @@
 (def MAXMERGERANGE "1 year")
 (def PRICE-KEY :PRC) ;; trade at closing price
 ;; (def PRICE-KEY :OPENPRC) uncomment this if you want to trade at opening price instead
-
+(def EMA-CYCLE 20)
 
 ;; ============ Parameters for margin requirements ============
 
