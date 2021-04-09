@@ -152,7 +152,7 @@
     0
     (average (map (fn [_] (Double/parseDouble (get _ key))) list))))
 
-;; Two functions designed for example/Bollinger Bands
+;; Two functions designed for example / Bollinger Bands
 (defn moving-sd
   [key vec]
   "This function returns the s.d. of the vec[key]"
