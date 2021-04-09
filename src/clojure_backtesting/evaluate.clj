@@ -120,7 +120,7 @@
 (defn update-eval-report
   "This function updates the evaluation report."
   [date]
-  '(when (and (not= (count (deref order-record)) 0) (not (deref terminated))) ; check that order record is not empty
+  (when (and (not= (count (deref order-record)) 0) (not (deref TERMINATED))) ; check that order record is not empty
     (let [total-val-data (portfolio-total)
           volatility-data (volatility)
           rolling-volatility-data (rolling-volatility)

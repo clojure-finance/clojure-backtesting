@@ -161,11 +161,14 @@
 (defn get-price
   "Returns the price of a ticker today"
   ([tic]
-   (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) :PRC)))
+    (if (deref lazy-mode)
+        (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) :PRC))
+        (get (first (get (get (deref available-tics) "AAPL") :reference)) :PRC)
+      ))
   ([tic key]
    (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) key)))
   )
-;; These function are additional APIS to calculate indices like EMA, MACD:
+;; These function are additional APIs to calculate indices like EMA, MACD:
 
 (defn EMA
   "This function uses the recursion formula to calculate EMA. 
