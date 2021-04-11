@@ -9,9 +9,8 @@
               [clojure.java.io :as io]
               [clojure.math.numeric-tower :as math]))
   
-(def lazy-mode (atom false))
 (def dataset-col (atom {}))
-
+(def lazy-mode (atom false))
 
 (defn set-main
   "This function does the initialisation for the lazy mode."
