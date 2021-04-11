@@ -12,7 +12,7 @@
 
 
 (defn EMA
-    "This function uses the recursion formula to calculate EMA. 
+    "This function uses the recursion formula to calculate the exponential moving average (EMA). 
      Note that the result is trustworthy after calling it for 20 times."
     ([price]
      price)
@@ -27,10 +27,37 @@
         (EMA (get-price tic key "lazy") prev-ema)))
 
 (defn MACD
-    "Return a vector of three values: MACD, 12 days EMA, 26 days EMA"
+    "Returns a vector: (MACD, 12-day EMA, 26-day EMA)"
     ([price ema-12 ema-26]
         (let [ema-12-new (/ (+ (* price 2) (* (- 12 1) ema-12)) (+ 12 1))
             ema-26-new (/ (+ (* price 2) (* (- 26 1) ema-26)) (+ 26 1))]
         [(- ema-12-new ema-26-new) ema-12-new ema-26-new]))
     ([price vector]
         (MACD price (nth vector 1) (nth vector 2))))
+
+(defn ROC
+    "Returns the rate of change (ROC) value."
+    [n] ; time window
+    (let [old-price (Double/parseDouble (get (first (get-prev-n-days :PRC n "AAPL")) :PRC)) ;; get price n days ago
+          curr-price (Double/parseDouble (get (last (get-prev-n-days :PRC n "AAPL")) :PRC))] ;; get today's price
+       (if (not= old-price 0)
+           (* (/ (- curr-price old-price) old-price) 100) ; calculate ROC
+           )))
+
+(defn RSI
+    "Returns the relative strength index (RSI) value."
+    [n] ; time window
+    (let [num-of-days (atom n)
+          avg-gain (atom 0.0)
+          avg-loss (atom 0.0)]
+        (while (> @num-of-days 1) ;; check if counter is > 0
+            (let [prev-price (Double/parseDouble (get (first (get-prev-n-days :PRC (deref num-of-days) "AAPL")) :PRC))
+                  curr-price (Double/parseDouble (get (first (get-prev-n-days :PRC (- (deref num-of-days) 1) "AAPL")) :PRC))
+                  price-diff (- curr-price prev-price)]
+                 (if (pos? price-diff)
+                      (swap! avg-gain (partial + price-diff)) ;; add to 1st average gain
+                      (swap! avg-loss (partial + price-diff)) ;; add to 1st average loss
+                     ))
+            (swap! num-of-days dec))
+        (/ avg-gain avg-loss) ; calculate RSI
+        ))
