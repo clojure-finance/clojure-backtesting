@@ -12,7 +12,7 @@
 
 
 (defn EMA
-    "This function uses the recursion formula to calculate the exponential moving average (EMA). 
+    "Returns the exponential moving average (EMA) using the recursion formula. 
      Note that the result is trustworthy after calling it for 20 times."
     ([price]
      price)
@@ -20,7 +20,7 @@
      (/ (+ (* price 2) (* (- EMA-CYCLE 1) prev-ema)) (+ EMA-CYCLE 1))))
   
 (defn tic-EMA
-    "This function is the wrapper of EMA()."
+    "This function is a wrapper of EMA()."
     ([tic key]
         (EMA (get-price tic key "lazy")))
     ([tic key prev-ema]
@@ -37,22 +37,22 @@
 
 (defn ROC
     "Returns the rate of change (ROC) value."
-    [n] ; time window
-    (let [old-price (Double/parseDouble (get (first (get-prev-n-days :PRC n "AAPL")) :PRC)) ;; get price n days ago
-          curr-price (Double/parseDouble (get (last (get-prev-n-days :PRC n "AAPL")) :PRC))] ;; get today's price
+    [tic n] ; time window
+    (let [old-price (Double/parseDouble (get (first (get-prev-n-days :PRC n tic)) :PRC)) ;; get price n days ago
+          curr-price (Double/parseDouble (get (last (get-prev-n-days :PRC n tic)) :PRC))] ;; get today's price
        (if (not= old-price 0)
            (* (/ (- curr-price old-price) old-price) 100) ; calculate ROC
            )))
 
 (defn RSI
     "Returns the relative strength index (RSI) value."
-    [n] ; time window
+    [tic n] ; time window
     (let [num-of-days (atom n)
           avg-gain (atom 0.0)
           avg-loss (atom 0.0)]
         (while (> @num-of-days 1) ;; check if counter is > 0
-            (let [prev-price (Double/parseDouble (get (first (get-prev-n-days :PRC (deref num-of-days) "AAPL")) :PRC))
-                  curr-price (Double/parseDouble (get (first (get-prev-n-days :PRC (- (deref num-of-days) 1) "AAPL")) :PRC))
+            (let [prev-price (Double/parseDouble (get (first (get-prev-n-days :PRC (deref num-of-days) tic)) :PRC))
+                  curr-price (Double/parseDouble (get (first (get-prev-n-days :PRC (- (deref num-of-days) 1) tic)) :PRC))
                   price-diff (- curr-price prev-price)]
                  (if (pos? price-diff)
                       (swap! avg-gain (partial + price-diff)) ;; add to 1st average gain
