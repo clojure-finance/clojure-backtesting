@@ -1,4 +1,4 @@
-(ns clojure-backtesting.data-management
+(ns clojure-backtesting.indicators
     (:require [clojure.test :refer :all]
               [clojure-backtesting.data :refer :all]
               [clojure-backtesting.parameters :refer :all]
@@ -61,3 +61,11 @@
             (swap! num-of-days dec))
         (/ avg-gain avg-loss) ; calculate RSI
         ))
+
+(defn sd-last-n-days
+    "Returns volatility of a stock for the last n days."
+    [days tic]
+    ;(println (get-prev-n-days :PRC days tic))
+    ;(println (map :PRC (get-prev-n-days :PRC days tic)))
+    (moving-sd :PRC (get-prev-n-days :PRC days tic))
+    )

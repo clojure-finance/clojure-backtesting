@@ -9,6 +9,7 @@
             [clojure-backtesting.counter :refer :all]
             [clojure-backtesting.large-data :refer :all]
             [clojure-backtesting.parameters :refer :all]
+            [clojure-backtesting.indicators :refer :all]
             [clojure.string :as str]
             [clojure.pprint :as pprint]
             [clj-time.core :as clj-t]
@@ -55,6 +56,8 @@
   (view-portfolio)
   (view-portfolio-record -1)
   (eval-report -1)
+
+  (println (sd-last-n-days 10 "AAPL"))
 
   (end-order)
 )
