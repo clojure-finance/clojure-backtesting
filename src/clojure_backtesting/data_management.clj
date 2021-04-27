@@ -163,10 +163,19 @@
     (if (= "lazy" mode)
       ;(deref lazy-mode)
         (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) :PRC))
-        (get (first (get (get (deref available-tics) "AAPL") :reference)) :PRC)
+        (get (first (get (get (deref available-tics) tic) :reference)) :PRC)
       ))
   ([tic key mode]
     (if (= "lazy" mode)
-      (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) key)))
+      (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) key))
+      (get (first (get (get (deref available-tics) tic) :reference)) key))
       )
   )
+
+(defn get-by-key
+  "Returns the [key] of a ticker today"
+  [tic key mode]
+    (if (= "lazy" mode)
+      (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) key))
+      (get (first (get (get (deref available-tics) tic) :reference)) key))
+    )

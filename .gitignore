@@ -19,6 +19,7 @@ Debugging/
 specs.clj
 huri-test.clj
 
+data-*.csv
 Compustat-extract_sorted.csv
 CRSP-extract_sorted.csv
 debug.csv

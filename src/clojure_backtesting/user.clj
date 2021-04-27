@@ -22,31 +22,17 @@
   "Write your code here"
   [& args]
 
-  (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
-  (init-portfolio "1980-12-15" 200)
-  (order "AAPL" 10)
+  ;; (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
+  (reset! data-set (add-aprc (read-csv-row "./resources/data-CRSP-lohi-extract-1000.csv")))
+  (init-portfolio "1986-01-09" 2000)
+  (order "OMFGA" 10)
   (next-date)
-
-  ;; (order "AAPL" 10)
 
   (update-eval-report (get-date))
   (next-date)
   (update-eval-report (get-date))
 
   (println (portfolio-daily-ret))
-  ;; (next-date)
-  ;; (update-eval-report (get-date))
-  ;; (next-date)
-  ;; (next-date)
-  ;; (update-eval-report (get-date))
-  ;; (next-date)
-  ;; (update-eval-report (get-date))
-  ;; (next-date)
-  ;; (update-eval-report (get-date))
-  ;; (next-date)
-  ;; (update-eval-report (get-date))
-  ;; (next-date)
-  ;; (update-eval-report (get-date))
   (next-date)
   (next-date)
   (next-date)
@@ -57,7 +43,10 @@
   (view-portfolio-record -1)
   (eval-report -1)
 
-  (println (sd-last-n-days 10 "AAPL"))
+  ;; (println (sd-last-n-days "OMFGA" 10))
+  (let [prev-close (Double/parseDouble (get (first (get-prev-n-days :PRC 1 "OMFGA")) :PRC))]
+    (println (parabolic-SAR "OMFGA" "non-lazy" 0.2 prev-close))
+    )
 
   (end-order)
 )
