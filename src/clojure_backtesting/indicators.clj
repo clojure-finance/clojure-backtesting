@@ -59,7 +59,7 @@
                       (swap! avg-loss (partial + price-diff)) ;; add to 1st average loss
                      ))
             (swap! num-of-days dec))
-        (/ avg-gain avg-loss) ; calculate RSI
+        (/ (deref avg-gain) (deref avg-loss)) ; calculate RSI
         ))
 
 (defn sd-last-n-days

@@ -5,6 +5,8 @@ A backtesting framework for quantitative investing and trading.
 ### Try it out online
 [Online interactive notebook](https://mybinder.org/v2/gh/clojure-finance/clojure-backtesting/binder)
 
+Go to `/examples` folder to find the executable notebooks.
+
 ### Requirements
 
 ```
