@@ -64,8 +64,18 @@
 
 (defn sd-last-n-days
     "Returns volatility of a stock for the last n days."
-    [days tic]
+    [tic days]
     ;(println (get-prev-n-days :PRC days tic))
     ;(println (map :PRC (get-prev-n-days :PRC days tic)))
     (moving-sd :PRC (get-prev-n-days :PRC days tic))
+    )
+
+(defn parabolic-SAR
+    [tic mode af prev-psar]
+    (let [low-price (Double/parseDouble (get-by-key tic :BIDLO mode))
+          high-price (Double/parseDouble (get-by-key tic :ASKHI mode))
+          rising-sar (+ prev-psar (* af (- high-price prev-psar)))
+          falling-sar (+ prev-psar (* af (- low-price prev-psar)))]
+        (vector rising-sar falling-sar)
+        )
     )
