@@ -28,12 +28,13 @@
 
 (defn MACD
     "Returns a vector: (MACD, 12-day EMA, 26-day EMA)"
-    ([price ema-12 ema-26]
-        (let [ema-12-new (/ (+ (* price 2) (* (- 12 1) ema-12)) (+ 12 1))
-            ema-26-new (/ (+ (* price 2) (* (- 26 1) ema-26)) (+ 26 1))]
-        [(- ema-12-new ema-26-new) ema-12-new ema-26-new]))
+    ([price ema-12 ema-26 ema-9]
+        (let [ema-12-new (/ (+ (* price 2) (* (- MACD-SHORT 1) ema-12)) (+ MACD-SHORT 1))
+              ema-26-new (/ (+ (* price 2) (* (- MACD-LONG 1) ema-26)) (+ MACD-LONG 1))
+              ema-9-new (/ (+ (* price 2) (* (- MACD-SIGNAL 1) ema-9)) (+ MACD-SIGNAL 1))] 
+        [(- ema-12-new ema-26-new) ema-12-new ema-26-new ema-9-new]))
     ([price vector]
-        (MACD price (nth vector 1) (nth vector 2))))
+        (MACD price (nth vector 1) (nth vector 2) (nth vector 3))))
 
 (defn ROC
     "Returns the rate of change (ROC) value."
