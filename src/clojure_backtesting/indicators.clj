@@ -21,10 +21,10 @@
   
 (defn tic-EMA
     "This function is a wrapper of EMA()."
-    ([tic key]
-        (EMA (get-price tic key "lazy")))
-    ([tic key prev-ema]
-        (EMA (get-price tic key "lazy") prev-ema)))
+    ([tic key mode]
+        (EMA (get-price tic key mode)))
+    ([tic key prev-ema mode]
+        (EMA (get-price tic key mode) prev-ema)))
 
 (defn MACD
     "Returns a vector: (MACD, 12-day EMA, 26-day EMA)"
@@ -78,5 +78,27 @@
           rising-sar (+ prev-psar (* af (- high-price prev-psar)))
           falling-sar (+ prev-psar (* af (- low-price prev-psar)))]
         (vector rising-sar falling-sar)
+        )
+    )
+
+(defn ATR
+    [tic mode prev-atr n]
+    (let [low-price (Double/parseDouble (get-by-key tic :BIDLO mode))
+          high-price (Double/parseDouble (get-by-key tic :ASKHI mode))
+          current-tr (- high-price low-price)]
+        (/ (+ (* prev-atr 13) current-tr) n)
+        )
+    )
+
+(defn kelter-channel
+    [tic mode window prev-atr]
+    ; set window for EMA
+    (if (not= EMA-CYCLE 20)
+        (CHANGE-EMA-CYCLE 20)
+        )
+    (let [middle-line (Double/parseDouble (tic-EMA tic :PRC mode))
+          upper-channel (+ middle-line (* 2 (ATR tic mode prev-atr window)))
+          lower-channel (- middle-line (* 2 (ATR tic mode prev-atr window)))]
+        (vector middle-line upper-channel lower-channel)
         )
     )

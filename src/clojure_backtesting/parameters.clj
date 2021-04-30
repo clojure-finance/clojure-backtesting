@@ -23,15 +23,19 @@
 (def MACD-SHORT 12)
 (def MACD-LONG 26)
 (def MACD-SIGNAL 9)
+
 (defn CHANGE-MACD-SHORT
   [int]
   (def MACD-SHORT int))
+
 (defn CHANGE-MACD-SIGNAL
   [int]
   (def MACD-SIGNAL int))
+
 (defn CHANGE-MACD-LONG
   [int]
   (def MACD-LONG int))
+
 ;; ============ Parameters for margin requirements ============
 
 (def INITIAL-MARGIN 0.5) 
