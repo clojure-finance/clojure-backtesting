@@ -51,7 +51,7 @@
   (let [low-price (Double/parseDouble (get-by-key "OMFGA" :BIDLO "non-lazy"))
         high-price (Double/parseDouble (get-by-key "OMFGA" :ASKHI "non-lazy"))
         prev-atr (- high-price low-price)]
-    (println (kelter-channel "OMFGA" "non-lazy" 10 prev-atr))
+    (println (keltner-channel "OMFGA" "non-lazy" 10 prev-atr))
     )
 
   (end-order)

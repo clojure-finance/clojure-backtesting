@@ -90,7 +90,7 @@
         )
     )
 
-(defn kelter-channel
+(defn keltner-channel
     [tic mode window prev-atr]
     ; set window for EMA
     (if (not= EMA-CYCLE 20)
