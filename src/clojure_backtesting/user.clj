@@ -36,7 +36,8 @@
   (next-date)
   (next-date)
   (next-date)
-  (println (portfolio-daily-ret))
+  (next-date)
+  (next-date)
 
   (pprint/print-table (deref order-record))
   (view-portfolio)
@@ -44,15 +45,17 @@
   (eval-report -1)
 
   ;; (println (sd-last-n-days "OMFGA" 10))
-  (let [prev-close (Double/parseDouble (get (first (get-prev-n-days :PRC 1 "OMFGA")) :PRC))]
-    (println (parabolic-SAR "OMFGA" "non-lazy" 0.2 prev-close))
-    )
+  ;; (let [prev-close (Double/parseDouble (get (first (get-prev-n-days :PRC 1 "OMFGA")) :PRC))]
+  ;;   (println (parabolic-SAR "OMFGA" "non-lazy" 0.2 prev-close))
+  ;;   )
 
-  (let [low-price (Double/parseDouble (get-by-key "OMFGA" :BIDLO "non-lazy"))
-        high-price (Double/parseDouble (get-by-key "OMFGA" :ASKHI "non-lazy"))
-        prev-atr (- high-price low-price)]
-    (println (keltner-channel "OMFGA" "non-lazy" 10 prev-atr))
-    )
+  ;; (let [low-price (Double/parseDouble (get-by-key "OMFGA" :BIDLO "non-lazy"))
+  ;;       high-price (Double/parseDouble (get-by-key "OMFGA" :ASKHI "non-lazy"))
+  ;;       prev-atr (- high-price low-price)]
+  ;;   (println (keltner-channel "OMFGA" "non-lazy" 10 prev-atr))
+  ;;   )
+
+  (println (force-index "OMFGA" "non-lazy" 20))
 
   (end-order)
 )

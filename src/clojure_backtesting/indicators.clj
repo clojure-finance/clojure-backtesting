@@ -102,3 +102,37 @@
         (vector middle-line upper-channel lower-channel)
         )
     )
+
+;; to-check
+(defn force-index
+    [tic mode window]
+    (if (= window 1)
+        ;; calculate force index for window = 1
+        (let [prev-price (Double/parseDouble (get (first (get-prev-n-days :PRC 1 tic)) :PRC))
+              curr-price (Double/parseDouble (get-price tic :PRC mode))
+              curr-volume (Double/parseDouble (get-by-key tic :VOL mode))]
+              (* (- curr-price prev-price) curr-volume)
+                )
+        ;; calculate force index for window > 1
+        (do
+            ;; check EMA window
+            (if (not= EMA-CYCLE window)
+                (CHANGE-EMA-CYCLE window))
+            ;; get EMA of force index(1)
+            (let [prev-price (Double/parseDouble (get (first (get-prev-n-days :PRC 1 tic)) :PRC))
+                  prev-fi (atom prev-price)
+                  ema-value (atom 0)]
+                  (doseq [prev-n-prices (get-prev-n-days :PRC window tic)]
+                    (do
+                        (let [curr-price (Double/parseDouble (get prev-n-prices :PRC))
+                              curr-fi (force-index tic mode 1)]
+                              (println (EMA curr-fi (deref prev-fi)))
+                              (reset! ema-value (EMA curr-fi (deref prev-fi)))
+                              (reset! prev-fi curr-fi))
+                        ))
+                    ;; return force index
+                    (deref ema-value)
+                )
+            )
+        )
+    )
