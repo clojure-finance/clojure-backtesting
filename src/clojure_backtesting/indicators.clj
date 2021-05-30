@@ -103,7 +103,7 @@
         )
     )
 
-;; to-check
+;; need to double-check
 (defn force-index
     [tic mode window]
     (if (= window 1)

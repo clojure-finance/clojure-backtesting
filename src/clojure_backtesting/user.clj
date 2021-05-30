@@ -22,10 +22,15 @@
   "Write your code here"
   [& args]
 
-  ;; (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
-  (reset! data-set (add-aprc (read-csv-row "./resources/data-CRSP-lohi-extract-1000.csv")))
+  (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
+  ;(reset! data-set (add-aprc (read-csv-row "./resources/data-CRSP-lohi-extract-1000.csv")))
   (init-portfolio "1986-01-09" 2000)
-  (order "OMFGA" 10)
+  (let [tot-val (get-in (deref portfolio) [:cash :tot-val])]
+    (println tot-val)
+  )
+
+  (order "AAPL" 10)
+  ;(order "OMFGA" 10)
   (next-date)
 
   (update-eval-report (get-date))
@@ -55,7 +60,7 @@
   ;;   (println (keltner-channel "OMFGA" "non-lazy" 10 prev-atr))
   ;;   )
 
-  (println (force-index "OMFGA" "non-lazy" 20))
+  ;; (println (force-index "OMFGA" "non-lazy" 20))
 
   (end-order)
 )
