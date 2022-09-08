@@ -29,7 +29,7 @@ A good [tutorial](https://ericnormand.me/guide/how-to-install-clojure) about ins
 
       `lein repl`
 
-   3. Run the examples in the [`/examples`]("/examples") folder run by run in the REPL.
+   3. Run the examples in the [`/examples`](/examples) folder run by run in the REPL.
 
 2. ### Juputer Notebook
 
@@ -37,7 +37,7 @@ A good [tutorial](https://ericnormand.me/guide/how-to-install-clojure) about ins
 
    Detailed installation instructions about running backtester with Jupyter Notebook could be found [here](https://clojure-finance.github.io/clojure-backtesting-website/posts/get-started/https://clojure-finance.github.io/clojure-backtesting-website/).
 
-   All Jupyter Notebook examples could be found in the [`/examples`]("/examples") folder.
+   All Jupyter Notebook examples could be found in the [`/examples`](/examples) folder.
 
 3. ### Try it out online
 
@@ -47,7 +47,7 @@ A good [tutorial](https://ericnormand.me/guide/how-to-install-clojure) about ins
 
 ## How to use
 
-1. Go through every examples in the [`/examples`]("/examples") folder to get a basic understanding of the system.
+1. Go through every examples in the [`/examples`](/examples) folder to get a basic understanding of the system.
 2. Documentations for every detailed APIs can be found [here](https://clojure-finance.github.io/clojure-backtesting-website/#part-ii-api-documentation).
 3. Learn to use the APIs to write your own strategy!
 
