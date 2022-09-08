@@ -1,10 +1,15 @@
 (ns clojure-backtesting.plot
   (:require [clojure-backtesting.data :refer :all]
             [clojupyter.misc.helper :as helper]
-            [oz.notebook.clojupyter :as oz]
-            ))
+            [oz.core :as oz]
+            [oz.notebook.clojupyter :as oz-nb]
+            [clojure.java.string :as str]))
 
 ;; Oz library for Clojure: https://github.com/metasoarous/oz
+
+(def oz-view! (if (str/ends-with? *file* "clj")
+                 oz/view!
+                 oz-nb/view!))
 
 ;; Plotting function
 (defn plot
@@ -12,7 +17,7 @@
   ;; With only one y-axis value
   ([dataset series x y full-date]
     (if full-date
-      (oz/view! ; with full-date
+      (oz-view! ; with full-date
         { :width 800 :height 500 ; adjust the graph size
           :data      {:values dataset}
           :encoding  {:x {:field x :type "temporal" :timeUnit "yearmonthdate"};"field" means the x-axis name, "type" asking what's the data type of x-axis values; choosing from "quantity"/"nominal"/"temporal"  
@@ -21,7 +26,7 @@
                     } 
           :mark "line"
         })
-      (oz/view! ; w/o full date
+      (oz-view! ; w/o full date
         { :width 800 :height 500 ;adjust the graph size
           :data      {:values dataset}
           :encoding  {:x {:field x :type "temporal"} ;"field" means the x-axis name, "type" asking what's the data type of x-axis values; choosing from "quantity"/"nominal"/"temporal"  
@@ -34,7 +39,7 @@
   ;; With two y-axis values
   ([dataset series x y1 y2 full-date] ;y1 & y2 should be key for values to be plotted, e.g. :tot-value or :daily-ret
     (if full-date
-      (oz/view!
+      (oz-view!
         { :width 800 :height 500 ;adjust the graph size
           :data      {:values dataset}
           :encoding  {:x {:field x :type "temporal" :timeUnit "yearmonthdate"} ;"field" means the x-axis name, "type" asking what's the data type of x-axis values; choosing from "quantity"/"nominal"/"temporal"  
@@ -51,7 +56,7 @@
                     }]
           :resolve   {:scale {:y "independent"}}
         })
-      (oz/view!
+      (oz-view!
         { :width 800 :height 500 ;adjust the graph size
           :data      {:values dataset}
           :encoding  {:x {:field x :type "temporal"} ;"field" means the x-axis name, "type" asking what's the data type of x-axis values; choosing from "quantity"/"nominal"/"temporal"  
