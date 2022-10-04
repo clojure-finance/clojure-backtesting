@@ -3,7 +3,7 @@
             [clojupyter.misc.helper :as helper]
             [oz.core :as oz]
             [oz.notebook.clojupyter :as oz-nb]
-            [clojure.java.string :as str]))
+            [clojure.string :as str]))
 
 ;; Oz library for Clojure: https://github.com/metasoarous/oz
 

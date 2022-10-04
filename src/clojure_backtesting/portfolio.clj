@@ -123,6 +123,7 @@
     ;; ============ Global switches for internal use ============
     (def LOAN-EXIST (atom false)) ; global swtich for storing whether loan exists
     (def TERMINATED (atom false)) ; global switch for storing whether user has lost all cash
+    true
     )
 
   

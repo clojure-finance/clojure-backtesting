@@ -8,20 +8,25 @@
             [clojure-backtesting.parameters :refer :all]
             [clojure.string :as str]
             [clojure.java.io :as io]
+            [clojask-io.input :refer [read-file]]
             [clojure.data.csv :as csv]
             [java-time :as t])
   (:use [clojure.repl :only (source)]))
 
+;; (defn- lazy-read-csv
+;;   [csv-file]
+;;   (let [in-file (io/reader csv-file)
+;;         csv-seq (csv/read-csv in-file)
+;;         lazy (fn lazy [wrapped]
+;;                (lazy-seq
+;;                  (if-let [s (seq wrapped)]
+;;                    (cons (first s) (lazy (rest s)))
+;;                    )))]
+;;     (lazy csv-seq)))
+
 (defn- lazy-read-csv
   [csv-file]
-  (let [in-file (io/reader csv-file)
-        csv-seq (csv/read-csv in-file)
-        lazy (fn lazy [wrapped]
-               (lazy-seq
-                 (if-let [s (seq wrapped)]
-                   (cons (first s) (lazy (rest s)))
-                   )))]
-    (lazy csv-seq)))
+  (:data (read-file csv-file)))
 
 (defn read-csv-lazy
   "Read CSV data into memory by row"
