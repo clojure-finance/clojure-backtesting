@@ -29,7 +29,7 @@ A good [tutorial](https://ericnormand.me/guide/how-to-install-clojure) about ins
 
       `lein repl`
 
-   3. Run the examples in the [`/examples`](/examples) folder run by run in the REPL.
+   3. Run the examples in the [`/examples`](/examples) folder line by line in the REPL.
 
 2. ### Juputer Notebook
 
