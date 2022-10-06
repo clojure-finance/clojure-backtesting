@@ -19,6 +19,8 @@
   :aliases			{"clojupyter"			["run" "-m" "clojupyter.cmdline"]}
   :main clojure-backtesting.user
   :aot [clojure-backtesting.user]
+  :repl-options {:init-ns clojure-backtesting.user
+                 :timeout 180000}
   :plugins [[lein-jupyter "0.1.16"]
             [org.clojars.benfb/lein-gorilla "0.6.0"]
             ]

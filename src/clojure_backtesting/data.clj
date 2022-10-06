@@ -5,7 +5,8 @@
             [clj-time.core :as t]
             [clj-time.format :as f]
             [clojure-backtesting.parameters :refer :all]
-            [clojure.pprint :as pprint] )  ;; For input-output handling
+            [clojure.pprint :as pprint] 
+            [clojure.string :as str])  ;; For input-output handling
      )
 
 ;; This file is to construct the basic data structure for backtesting 
@@ -132,55 +133,132 @@
 ;; for each security:
 ;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
-(defn add-aprc 
-  "This function adds the adjusted price column to the dataset (CRSP-extract)."
-  [data]
-  ; get price on 1st day
-  (def initial-price 0)
-  (def cum-ret 0)
-  (def curr-ticker "DEFAULT")
- ; traverse row by row in dataset
-  (map (fn [line]
-        (let [;line-new (select-keys line [:date :TICKER PRICE-KEY :RET])
-              price (Double/parseDouble (get line PRICE-KEY))
-              ret (Double/parseDouble (get line :RET))
-              ticker (get line :TICKER)]
-          (if (not= curr-ticker ticker)
-              (do
-                (def curr-ticker ticker)
-                (def initial-price price)
-                (def cum-ret 0)
-              )
-          )
-          ;(def log-ret (Math/log (+ 1 ret))) ; natural log
-          (def log-ret (log-10 (+ 1 ret))) ; log base 10
-          (def cum-ret (+ cum-ret log-ret))
-          (def aprc (* initial-price (Math/pow Math/E cum-ret)))
-          (assoc line :INIT-PRICE initial-price :APRC aprc :LOG-RET log-ret :CUM-RET cum-ret)
-          ; (swap! data-set-adj conj (assoc line-new "APRC" aprc "LOG-RET" log-ret "CUM-RET" cum-ret))
-        )
-      )
-    data
-  )
-)
+;; (defn add-aprc 
+;;   "This function adds the adjusted price column to the dataset (CRSP-extract)."
+;;   [data]
+;;   ; get price on 1st day
+;;   (def initial-price 0)
+;;   (def cum-ret 0)
+;;   (def curr-ticker "DEFAULT")
+;;  ; traverse row by row in dataset
+;;   (map (fn [line]
+;;         (let [;line-new (select-keys line [:date :TICKER PRICE-KEY :RET])
+;;               price (Double/parseDouble (get line PRICE-KEY))
+;;               ret (Double/parseDouble (get line :RET))
+;;               ticker (get line :TICKER)]
+;;           (if (not= curr-ticker ticker)
+;;               (do
+;;                 (def curr-ticker ticker)
+;;                 (def initial-price price)
+;;                 (def cum-ret 0)
+;;               )
+;;           )
+;;           ;(def log-ret (Math/log (+ 1 ret))) ; natural log
+;;           (def log-ret (log-10 (+ 1 ret))) ; log base 10
+;;           (def cum-ret (+ cum-ret log-ret))
+;;           (def aprc (* initial-price (Math/pow Math/E cum-ret)))
+;;           (assoc line :INIT-PRICE initial-price :APRC aprc :LOG-RET log-ret :CUM-RET cum-ret)
+;;           ; (swap! data-set-adj conj (assoc line-new "APRC" aprc "LOG-RET" log-ret "CUM-RET" cum-ret))
+;;         )
+;;       )
+;;     data
+;;   )
+;; )
 
 ;; large dataset: sorted by date, then by ticker
 ;; for each security:
 ;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
-(defn add-aprc-by-date
-  "This function adds the adjusted price column to the dataset (data-CRSP-sorted-cleaned)."
-  [data]
-  ; get price on 1st day for each ticker
-  (def initial-price (atom {}))
+;; (defn add-aprc-by-date
+;;   "This function adds the adjusted price column to the dataset (data-CRSP-sorted-cleaned)."
+;;   [data]
+;;   ; get price on 1st day for each ticker
+;;   (def initial-price (atom {}))
+;;   ; record cumulative return for each ticker
+;;   (def cum-ret (atom {}))
+;;  ; traverse row by row in dataset
+;;   (map (fn [line]
+;;         (let [date (get line :date)
+;;               price (Double/parseDouble (get line PRICE-KEY))
+;;               ret (Double/parseDouble (get line :RET))
+;;               ticker (get line :TICKER)]
+;;           ;; check whether the initial-price map already has the ticker
+;;           (if-not (contains? (deref initial-price) ticker)
+;;             (do ;; ticker appears the first time 
+;;               (swap! initial-price (fn [ticker-map] (conj ticker-map [ticker {:price price}])))
+;;               (swap! cum-ret (fn [ticker-map] (conj ticker-map [ticker {:cumret ret}])))
+;;             )
+;;             ;; ticker does not appear the first time
+;;             (let [prev-cumret (get-in (deref cum-ret) [ticker :cumret])
+;;                   log-ret (log-10 (+ 1 ret)) ; log base 10 
+;;                  ] 
+;;               (swap! cum-ret (fn [ticker-map] (conj ticker-map [ticker {:cumret (+ log-ret prev-cumret)}])))
+;;             )
+;;           )
+          
+;;           (def ticker-initial-price (get-in (deref initial-price) [ticker :price]))
+;;           (def curr-cumret (get-in (deref cum-ret) [ticker :cumret]))
+;;           (def aprc (* ticker-initial-price (Math/pow Math/E curr-cumret)))
+
+;;           (assoc line :INIT-PRICE ticker-initial-price :APRC aprc :CUM-RET curr-cumret)
+;;         )
+;;       )
+;;     data
+;;   )
+;; )
+
+;; =========== below is Leo's refactoring using Clojask ==========
+;; 2022/10/6
+
+;; Global Variables for the dataset
+(def data-files {})
+(def data-files2 {})
+(def headers nil)
+(def headers2 nil)
+(def available-tics (atom nil))
+
+;; Global functions to set the variables
+(defn get-file-date
+  [file]
+  (let [file-name (str file)
+        file-name (subs file-name (+ (str/last-index-of file-name "/") 1))
+        tmp (read-string file-name)]
+    (first tmp)))
+
+(defn load-dataset
+  [dir name]
+  (let [dir (if (str/ends-with? dir "/") dir (str dir "/"))
+        header (read-string (slurp (str dir "header")))
+        file-dir (io/file (str dir "grouped"))
+        files (rest (vec (file-seq file-dir)))
+        file-date (mapv get-file-date files)
+        ]
+    (cond
+      (= name "main") (do
+                        (def headers (mapv keyword header))
+                        (def data-files (into (sorted-map) (zipmap file-date files))))
+      (= name "compustat") (do
+                             (def headers2 (mapv keyword header))
+                             (def data-files2 (into (sorted-map) (zipmap file-date files)))))))
+
+;; for each security:
+;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
+;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
+(def initial-price (atom {}))
   ; record cumulative return for each ticker
-  (def cum-ret (atom {}))
+(def cum-ret (atom {}))
+
+(defn add-aprc-file
+  "This function adds the adjusted price column to the dataset (data-CRSP-sorted-cleaned)."
+  [data price-index ret-index ticker-index]
+  ; get price on 1st day for each ticker
  ; traverse row by row in dataset
-  (map (fn [line]
-        (let [date (get line :date)
-              price (Double/parseDouble (get line PRICE-KEY))
-              ret (Double/parseDouble (get line :RET))
-              ticker (get line :TICKER)]
+  (mapv (fn [line]
+        (let [
+              ;; date (nth line date-index)
+              price (get line price-index)
+              ret (get line ret-index)
+              ticker (get line ticker-index)]
           ;; check whether the initial-price map already has the ticker
           (if-not (contains? (deref initial-price) ticker)
             (do ;; ticker appears the first time 
@@ -194,14 +272,30 @@
               (swap! cum-ret (fn [ticker-map] (conj ticker-map [ticker {:cumret (+ log-ret prev-cumret)}])))
             )
           )
-          
+
           (def ticker-initial-price (get-in (deref initial-price) [ticker :price]))
           (def curr-cumret (get-in (deref cum-ret) [ticker :cumret]))
           (def aprc (* ticker-initial-price (Math/pow Math/E curr-cumret)))
 
-          (assoc line :INIT-PRICE ticker-initial-price :APRC aprc :CUM-RET curr-cumret)
+          (vec (concat line [ticker-initial-price aprc curr-cumret]))
         )
       )
     data
   )
 )
+
+
+(defn add-aprc
+  "Data augmentation of adding aprc to each file"
+  [dir headers data-files]
+  (for [[date file] data-files]
+    (let [rdr (io/reader file)
+          data (map read-string (line-seq rdr))
+          price-index (.indexOf headers :PRC)
+          ret-index (.indexOf headers :RET)
+          ticker-index (.indexOf headers :TICKER)
+          new-data (add-aprc-file data price-index ret-index ticker-index)
+          new-data (str/join "\n" (mapv str new-data))]
+      (spit file new-data)
+      (println date)))
+  (spit (str dir "header") (str (vec (concat headers [:INIT-PRICE :APRC :CUM-RET])))))

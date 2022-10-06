@@ -31,3 +31,7 @@ out_order_record.csv
 out_portfolio_value_record.csv
 
 Rplots.pdf
+
+# Clojask scipt
+clojask-script/
+resources/
