@@ -215,7 +215,10 @@
 (def data-files2 {})
 (def headers nil)
 (def headers2 nil)
-(def available-tics (atom nil))
+
+;; Global Hidden Variables
+(def tics-today (atom nil))
+(def tics-tomorrow (atom nil))
 
 ;; Global functions to set the variables
 (defn get-file-date

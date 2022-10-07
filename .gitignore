@@ -16,6 +16,7 @@ pom.xml.asc
 .hg/
 Debugging/
 
+# project specific
 specs.clj
 huri-test.clj
 

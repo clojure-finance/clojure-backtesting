@@ -21,21 +21,32 @@
     (if-let [_date (first (first (subseq data-files > _date)))]
       (reset! date _date)
       (throw (Exception. "Input date is wrong"))))
-  (reset! available-tics nil)
+  (reset! tics-today nil)
+  (reset! tics-tomorrow nil)
   (get-date))
 
-(defn next-date
+(defn get-next-date
+  "Returns the next date without actually moving the counter."
   []
-  (if-let [_date (first (first (subseq data-files > (get-date))))]
-    (do
-      (reset! date _date)
-      (reset! available-tics nil)
-      _date)
-    (do
-      (reset! available-tics nil)
-      nil))
-  ;; todo
-  )
+  (first (first (subseq data-files > (get-date)))))
+
+;; (defn next-date
+;;   []
+;;   (if-let [_date (get-next-date)]
+;;     (do
+;;       (reset! date _date)
+;;       (if (= (deref tics-tomorrow) nil)
+;;         (reset! tics-today nil)
+;;         (do
+;;           (reset! tics-today (deref tics-tomorrow))
+;;           (reset! tics-tomorrow nil)))
+;;       _date)
+;;     (do
+;;       (reset! tics-today nil)
+;;       (reset! tics-tomorrow nil)
+;;       nil))
+;;   ;; todo
+;;   )
 
 
 ;; ========= deprecated codes =============

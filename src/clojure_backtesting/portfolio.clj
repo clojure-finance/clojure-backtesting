@@ -9,15 +9,15 @@
               [clojure.java.io :as io]
               [clojure.math.numeric-tower :as math]))
   
-(def dataset-col (atom {}))
+;; (def dataset-col (atom {}))
 (def lazy-mode (atom false))
 
-(defn set-main
-  "This function does the initialisation for the lazy mode."
-  [name]
-  (def pending-order (atom {}))
-  (def main-name name)
-  (reset! lazy-mode true))
+;; (defn set-main
+;;   "This function does the initialisation for the lazy mode."
+;;   [name]
+;;   (def pending-order (atom {}))
+;;   (def main-name name)
+;;   (reset! lazy-mode true))
 
 (defn valid-line
   "Check if a line is valid in format"
@@ -97,7 +97,7 @@
     ;; output order record to csv file
     (check-filepath "./out_order_record.csv")
     (def wrtr (io/writer "./out_order_record.csv" :append true))
-    (.write wrtr "date,TICKER,quantity\n")
+    (.write wrtr "date,ticker,quantity\n")
     ;; output portfolio value record to csv file
     (check-filepath "./out_portfolio_value_record.csv")
     (def portvalue-wrtr (io/writer "./out_portfolio_value_record.csv" :append true))
@@ -114,12 +114,13 @@
     (def portfolio (atom {:cash {:tot-val capital}}))
     (def portfolio-value (atom [{:date date :tot-value capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0 :margin 0.0}]))
     
-    (if (not (deref lazy-mode))
-      (do
-        (init-date date)
-        (maintain-tics true))
-      ;; (lazy-init date)
-      )
+    ;; (if (not (deref lazy-mode))
+    ;;   (do
+    ;;     (init-date date)
+    ;;     (maintain-tics true))
+    ;;   ;; (lazy-init date)
+    ;;   )
+    (init-date date)
 
     ;; ============ Global switches for internal use ============
     (def LOAN-EXIST (atom false)) ; global swtich for storing whether loan exists

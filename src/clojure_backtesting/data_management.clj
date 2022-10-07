@@ -88,20 +88,37 @@
   "Returns the whole information for the all the tics today.\n
    A sequence of maps."
   []
-  (if-let [info (deref available-tics)]
+  (if-let [info (deref tics-today)]
     info
     (let [info (get-info-by-date (get-date))]
-      (reset! available-tics info)
+      (reset! tics-today info)
       info)))
+
+(defn get-info-map
+  "Returns the whole information for the all the tics today.\n
+   A map of tic:info."
+  []
+  (zipmap (map :TICKER (get-info)) (get-info)))
+
+(defn get-info-tomorrow
+  "Returns the whole information for the all the tics today.\n
+   A sequence of maps."
+  []
+  (if-let [info (deref tics-tomorrow)]
+    info
+    (let [info (get-info-by-date (get-next-date))]
+      (reset! tics-tomorrow info)
+      info))
+  )
 
 (defn get-tic-info
   "Returns the information for the specified tic today.\n
    A map if any, otherwise nil."
-  [tic]
+  [tic & [info]]
   ;; (doseq [row (get-info)]
   ;;   (if (= tic (:TICKER row))
   ;;     row))
-  (loop [info (get-info)]
+  (loop [info (or info (get-info))]
     (let [row (first info)
           info (rest info)]
       (if (= row nil)
@@ -114,6 +131,12 @@
   "Returns the price of a given ticker today, otherwise nil."
   [tic]
   (:PRC (get-tic-info tic)))
+
+(defn get-tic-by-key
+  "Returns the value of the key of a given ticker today, otherwise nil."
+  [tic key]
+  (get (get-tic-info tic) key)
+  )
 
 (defn get-prev-n-days
   "Returns a sequence of vector of maps that contains data of the previous n days.\n
@@ -139,7 +162,7 @@
   [n tic]
   (let []
     (loop [res [] data (get-prev-n-days)]
-      (if (>= (count res) n)
+      (if (or (= data ()) (>= (count res) n))
         res
         (let [curr (first data)
               data (rest data)]
@@ -234,25 +257,25 @@
 ;;   "This function returns the s.d. of the vec[key]"
 ;;   (stat/sd (map (fn [_] (Double/parseDouble (get _ key))) vec)))
 
-(defn get-price
-  "Returns the price of a ticker today"
-  ([tic mode]
-    (if (= "lazy" mode)
-      ;(deref lazy-mode)
-        (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) :PRC))
-        (get (first (get (get (deref available-tics) tic) :reference)) :PRC)
-      ))
-  ([tic key mode]
-    (if (= "lazy" mode)
-      (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) key))
-      (get (first (get (get (deref available-tics) tic) :reference)) key))
-      )
-  )
+;; (defn get-price
+;;   "Returns the price of a ticker today"
+;;   ([tic mode]
+;;     (if (= "lazy" mode)
+;;       ;(deref lazy-mode)
+;;         (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) :PRC))
+;;         (get (first (get (get (deref available-tics) tic) :reference)) :PRC)
+;;       ))
+;;   ([tic key mode]
+;;     (if (= "lazy" mode)
+;;       (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) key))
+;;       (get (first (get (get (deref available-tics) tic) :reference)) key))
+;;       )
+;;   )
 
-(defn get-by-key
-  "Returns the [key] of a ticker today"
-  [tic key mode]
-    (if (= "lazy" mode)
-      (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) key))
-      (get (first (get (get (deref available-tics) tic) :reference)) key))
-    )
+;; (defn get-by-key
+;;   "Returns the [key] of a ticker today"
+;;   [tic key mode]
+;;     (if (= "lazy" mode)
+;;       (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) key))
+;;       (get (first (get (get (deref available-tics) tic) :reference)) key))
+;;     )

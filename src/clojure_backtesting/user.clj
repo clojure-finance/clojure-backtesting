@@ -2,7 +2,7 @@
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.data-management :refer :all]
             [clojure-backtesting.portfolio :refer :all]
-            ;; [clojure-backtesting.order :refer :all]
+            [clojure-backtesting.order :refer :all]
             [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.plot :refer :all]
             [clojure-backtesting.counter :refer :all]
@@ -20,13 +20,12 @@
 (defn -main
   "Write your code here"
   [& args]
-
+  (load-dataset "/Volumes/T7/CRSP" "main")
   ;; (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
   ;(reset! data-set (add-aprc (read-csv-row "./resources/data-CRSP-lohi-extract-1000.csv")))
   (init-portfolio "1986-01-09" 2000)
   (let [tot-val (get-in (deref portfolio) [:cash :tot-val])]
-    (println tot-val)
-  )
+    (println tot-val))
 
   ;; (order "AAPL" 10)
   ;(order "OMFGA" 10)
@@ -62,4 +61,4 @@
   ;; (println (force-index "OMFGA" "non-lazy" 20))
 
   ;; (end-order)
-)
+  )
