@@ -184,7 +184,7 @@
           quantity (cond
                      remaining (- quan total)
                      :else quan)]
-      (if (and (and (not= quantity 0) (not= quantity 0.0)) (not= quantity "special")) ;; ignore the empty order case
+      (if (and (not= quantity 0) (not= quantity 0.0) (not= quantity "special")) ;; ignore the empty order case
         (if (and (and (>= (+ total quantity) 0) (or (<= quantity 0) (>= cash (* adj-price quantity)))))
           (place-order date tic quantity price adj-price 0 print direct) ;loan is 0 here
           (do
@@ -234,7 +234,7 @@
 
   ;; traverse pending order for potential placing
   (loop [new-order (sorted-map) pending (deref pending-order)]
-    (if (= pending ())
+    (if (= (count pending) 0)
       (reset! pending-order new-order)
       (let [pair (first pending)
             tic (nth (first pair) 1)
@@ -247,8 +247,52 @@
           (recur (assoc new-order (first pair) arg) remain)))))
   )
 
+(defn update-holding-tickers
+  "Update all the tickers in terms of portfolio"
+  []
+  (doseq [tic (rest (keys (deref portfolio)))]
+    (order-internal (get-date) tic "special" false true (deref data-set) false false)))
 
+(defn end-order
+  "Call this function at the end of the strategy."
+  []
+  ;; close all positions
+  (if (not (deref TERMINATED))
+    (do
+      (doseq [[ticker] (deref portfolio)]
+        (if (not= ticker :cash)
+          (order-internal (get-date) ticker 0 true false false false (get (get-info-map) ticker))))
+      (update-eval-report (get-date))
+      (.close wrtr)
+      (.close portvalue-wrtr)
+      (.close evalreport-wrtr)
+      (reset! TERMINATED true)
 
+      ;; reject any more orders unless user call load data again and call init-portfolio
+      ;; (reset! data-set nil)
+      ;; (reset! available-tics {})
+
+      ;; (if (deref lazy-mode)
+      ;;   (doseq [name (keys (deref dataset-col))]
+      ;;     (swap! dataset-col assoc name []))
+      ;;   (do
+      ;;     (reset! cur-reference [0 []])
+      ;;     (reset! tics-info [])))
+      )))
+
+(defn check-terminating-condition
+  "Close all positions if net worth < 0 or portfolio margin < maintenance margin, i.e. user has lost all cash"
+  []
+  (if (not (deref TERMINATED))
+    (let [tot-value (get (last (deref portfolio-value)) :tot-value)
+          port-margin (get (last (deref portfolio-value)) :margin)]
+      ;; original inequality: value of stocks (excl. shorted stocks) - net cash > 0
+      ;; rearranging, equivalent to checking value of stocks (incld. shorted stocks) - cash > 0
+      ;; where LHS = net worth
+      (when (or (< (compare tot-value 0) 0) (and (< port-margin MAINTENANCE-MARGIN) (= LOAN-EXIST true)))  ; if net worth < 0
+        (println (str (get-date) ": You have lost all cash. Closing all positions."))
+        (println "Please reset the dataset and call init-portfolio again.")
+        (end-order)))))
 
 (defn next-date
   []
@@ -269,10 +313,3 @@
       nil))
   ;; todo
   )
-
-(defn update-holding-tickers
-  "Update all the tickers in terms of portfolio"
-  []
-  (doseq [tic (rest (keys (deref portfolio)))]
-    (order-internal (get-date) tic "special" false true (deref data-set) false false)))
-

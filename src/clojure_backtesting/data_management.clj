@@ -162,7 +162,7 @@
   [n tic]
   (let []
     (loop [res [] data (get-prev-n-days)]
-      (if (or (= data ()) (>= (count res) n))
+      (if (or (= (count data) 0) (>= (count res) n))
         res
         (let [curr (first data)
               data (rest data)]
