@@ -90,15 +90,19 @@
   []
   (if-let [info (deref tics-today)]
     info
-    (let [info (get-info-by-date (get-date))]
-      (reset! tics-today info)
-      info)))
+    (let []
+      (reset! tics-today (get-info-by-date (get-date))))))
 
 (defn get-info-map
   "Returns the whole information for the all the tics today.\n
    A map of tic:info."
-  []
-  (zipmap (map :TICKER (get-info)) (get-info)))
+  [& [info]]
+
+  (if info
+    (zipmap (map :TICKER (get-info)) info)
+    (if-let [tmp (deref tics-map-today)]
+      tmp
+      (reset! tics-map-today (zipmap (map :TICKER (get-info)) (get-info))))))
 
 (defn get-info-tomorrow
   "Returns the whole information for the all the tics today.\n
@@ -114,47 +118,55 @@
 (defn get-tic-info
   "Returns the information for the specified tic today.\n
    A map if any, otherwise nil."
-  [tic & [info]]
+  ([tic]
   ;; (doseq [row (get-info)]
   ;;   (if (= tic (:TICKER row))
   ;;     row))
-  (loop [info (or info (get-info))]
-    (let [row (first info)
-          info (rest info)]
-      (if (= row nil)
-        nil
-        (if (= tic (:TICKER row))
-          row
-          (recur info))))))
+  ;; ;; method 1
+  ;; (loop [info (or info (get-info))]
+  ;;   (let [row (first info)
+  ;;         info (rest info)]
+  ;;     (if (= row nil)
+  ;;       nil
+  ;;       (if (= tic (:TICKER row))
+  ;;         row
+  ;;         (recur info)))))
+  ;; method 2
+   (get (get-info-map) tic))
+  ([date tic]
+   (get (get-info-map (get-info-by-date date)) tic)))
 
 (defn get-tic-price
   "Returns the price of a given ticker today, otherwise nil."
-  [tic]
-  (:PRC (get-tic-info tic)))
+  ([tic]
+   (:PRC (get-tic-info tic)))
+  ([date tic]
+   (:PRC (get-tic-info date tic))))
 
 (defn get-tic-by-key
   "Returns the value of the key of a given ticker today, otherwise nil."
-  [tic key]
-  (get (get-tic-info tic) key)
-  )
+  ([tic key]
+   (get (get-tic-info tic) key))
+  ([date tic key]
+   (get (get-tic-info date tic) key)))
 
 (defn get-prev-n-days
-  "Returns a sequence of vector of maps that contains data of the previous n days.\n
+  "Returns a sequence of sequence of maps that contains data of the previous n days (including today).\n
    Date in descending order, ie from the most recent to the oldest.\n
    If no n, return a lazy sequence of all prev days.
    "
   ;n  number of counting ahead
   ([]
    (let [date (get-date)
-         dates (map first (rsubseq data-files < date))]
+         dates (map first (rsubseq data-files <= date))]
      (map get-info-by-date dates)))
   ([n]
    (let [date (get-date)
-         dates (take n (map first (rsubseq data-files < date)))]
+         dates (take n (map first (rsubseq data-files <= date)))]
      (map get-info-by-date dates))))
 
 (defn get-tic-prev-n-records
-  "This function returns a sequence of vector of the previous n records of a specific ticker.\n
+  "This function returns a sequence of vector of the previous n records of a specific ticker (including today).\n
    Date in descending order, ie from the most recent to the oldest.\n
    Note that the time span can be greater than n days"
   ;n  number of counting ahead
@@ -169,9 +181,21 @@
           ;; (doseq [row curr]
           ;;   (if (= tic (get row :TICKER))
           ;;     (recur (conj res row) data)))
-          (let [index (.indexOf (mapv :TICKER curr) tic)]
+          (let [
+                index (.indexOf (mapv :TICKER curr) tic)
+                ;; row (loop [daily-data curr]
+                ;;       (if (= 0 (count daily-data))
+                ;;         nil
+                ;;         (let [row (first daily-data)
+                ;;               remain (rest daily-data)]
+                ;;           (if (= tic (:TICKER row))
+                ;;             row
+                ;;             (recur remain)))))
+                ]
             (if (not= index -1)
+            ;; (if (not= row nil)
               (recur (conj res (nth curr index)) data)
+              ;; (recur (conj res row) data)
               (recur res data))))))
     )
   )

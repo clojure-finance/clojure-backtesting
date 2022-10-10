@@ -218,7 +218,14 @@
 
 ;; Global Hidden Variables
 (def tics-today (atom nil))
+(def tics-map-today (atom nil))
 (def tics-tomorrow (atom nil))
+
+(defn reset-daily-var
+  []
+  (reset! tics-today (deref tics-tomorrow))
+  (reset! tics-tomorrow nil)
+  (reset! tics-map-today nil))
 
 ;; Global functions to set the variables
 (defn get-file-date

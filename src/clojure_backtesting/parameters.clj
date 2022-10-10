@@ -7,6 +7,8 @@
 
 ;; ============ CONFIGURABLE PARAMETERS ============
 
+(def PRINT false)
+(def DIRECT true)
 (def MAXLOOKAHEAD 10) ; This parameter is used in `get-pre-date-and-content`
 (def ORDER-EXPIRATION 3)
 (def LEVERAGE true)

@@ -3,6 +3,7 @@
               [clojure-backtesting.data-management :refer :all]
               [clojure-backtesting.parameters :refer :all]
               [clojure-backtesting.counter :refer :all]
+              [clojure-backtesting.indicators :refer :all]
               [clojure.string :as str]
               [clojure.pprint :as pprint]
               [java-time :as t]
@@ -10,7 +11,7 @@
               [clojure.math.numeric-tower :as math]))
   
 ;; (def dataset-col (atom {}))
-(def lazy-mode (atom false))
+;; (def lazy-mode (atom false))
 
 ;; (defn set-main
 ;;   "This function does the initialisation for the lazy mode."
@@ -97,7 +98,7 @@
     ;; output order record to csv file
     (check-filepath "./out_order_record.csv")
     (def wrtr (io/writer "./out_order_record.csv" :append true))
-    (.write wrtr "date,ticker,quantity\n")
+    (.write wrtr "date,ticker,quantity,price\n")
     ;; output portfolio value record to csv file
     (check-filepath "./out_portfolio_value_record.csv")
     (def portvalue-wrtr (io/writer "./out_portfolio_value_record.csv" :append true))
@@ -121,11 +122,12 @@
     ;;   ;; (lazy-init date)
     ;;   )
     (init-date date)
+    (reset-indicator-maps)
 
     ;; ============ Global switches for internal use ============
     (def LOAN-EXIST (atom false)) ; global swtich for storing whether loan exists
     (def TERMINATED (atom false)) ; global switch for storing whether user has lost all cash
-    true
+    (str "Date: " (get-date) " Cash: $" (get (get (deref portfolio) :cash) :tot-val))
     )
 
   

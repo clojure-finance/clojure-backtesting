@@ -3,10 +3,11 @@
  ;; [clojure.math.numeric-tower :as math]
             [clojure-backtesting.counter :refer :all] ;; [clojure.pprint :as pprint]
             [clojure-backtesting.data :refer :all]
-            [clojure-backtesting.data-management :refer [get-info-map]]
+            [clojure-backtesting.data-management :refer :all]
             [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.portfolio :refer :all]
+   [clojure-backtesting.indicators :refer :all]
             [java-time :as jt] ;; [clojure.java.io :as io]
 )
     )
@@ -163,7 +164,7 @@
   (if print
     (println (format "Order: %s | %s | %f." date tic (double quantity))))
   (if direct
-    (.write wrtr (format "%s,%s,%f\n" date tic (double quantity))))
+    (.write wrtr (format "%s,%s,%f,%f\n" date tic (double quantity) price)))
   (swap! order-record conj {:date date :tic tic :price price :aprc (format "%.2f" adj-price) :quantity quantity})
 )
 
@@ -222,10 +223,11 @@
 (defn order
 ;;  ([quantity & {:keys [remaining leverage print direct] :or {remaining false leverage LEVERAGE print false direct true}}]
 ;;   (order-lazy (curr-tic) quantity :remaining remaining :leverage leverage :print print :direct direct))
-  ([tic quantity & {:keys [expiration remaining leverage print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE print false direct true}}]
-   (let [place-date (get-date)
-         expire-date (jt/format "yyyy-MM-dd" (jt/plus (jt/local-date "yyyy-MM-dd" place-date) (jt/days expiration)))]
-     (swap! pending-order assoc [expire-date tic] {:place (get-date) :expire expire-date :tic tic :quantity quantity :remaining remaining :leverage leverage :print print :direct direct}))))
+  ([tic quantity & {:keys [expiration remaining leverage print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE print PRINT direct DIRECT}}]
+   (if (= (deref TERMINATED) false)
+     (let [place-date (get-date)
+           expire-date (jt/format "yyyy-MM-dd" (jt/plus (jt/local-date "yyyy-MM-dd" place-date) (jt/days expiration)))]
+       (swap! pending-order assoc [expire-date tic] {:place (get-date) :expire expire-date :tic tic :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))))
 
 (defn check-order
   [date info-map]
@@ -266,6 +268,7 @@
       (.close wrtr)
       (.close portvalue-wrtr)
       (.close evalreport-wrtr)
+      (reset! pending-order (sorted-map))
       (reset! TERMINATED true)
 
       ;; reject any more orders unless user call load data again and call init-portfolio
@@ -289,27 +292,30 @@
       ;; original inequality: value of stocks (excl. shorted stocks) - net cash > 0
       ;; rearranging, equivalent to checking value of stocks (incld. shorted stocks) - cash > 0
       ;; where LHS = net worth
-      (when (or (< (compare tot-value 0) 0) (and (< port-margin MAINTENANCE-MARGIN) (= LOAN-EXIST true)))  ; if net worth < 0
-        (println (str (get-date) ": You have lost all cash. Closing all positions."))
-        (println "Please reset the dataset and call init-portfolio again.")
+      (when (or (= (get-next-date) nil) (< (compare tot-value 0) 0) (and (< port-margin MAINTENANCE-MARGIN) (= LOAN-EXIST true)))  ; if net worth < 0
+        (cond
+          (= (get-next-date) nil) (println "You have reached the end of the dataset. No more orders are allowed.")
+          (or (< (compare tot-value 0) 0) (and (< port-margin MAINTENANCE-MARGIN) (= LOAN-EXIST true))) (println (str (get-date) ": You have lost all cash. Closing all positions.")))
+        (println "To restart. Please call init-portfolio again.")
         (end-order)))))
 
 (defn next-date
   []
-  (if-let [_date (get-next-date)]
+  (if (= (deref TERMINATED) false)
+   (if-let [_date (get-next-date)]
     (do
       (reset! date _date)
-      (check-order _date (get-info-map))
       ;; maintain tics
-      (if (= (deref tics-tomorrow) nil)
-        (reset! tics-today nil)
-        (do
-          (reset! tics-today (deref tics-tomorrow))
-          (reset! tics-tomorrow nil)))
+      ;; (if (= (deref tics-tomorrow) nil)
+      ;;   (reset! tics-today nil)
+      ;;   (do
+      (reset-daily-var)
+      (update-daily-indicators)
+      (check-terminating-condition)
+      (check-order _date (get-info-map))
       _date)
     (do
-      (reset! tics-today nil)
-      (reset! tics-tomorrow nil)
-      nil))
-  ;; todo
+      (throw (Exception. "Reach unexpected code branch 1."))
+      ;; (reset-daily-var)
+      nil)))
   )
