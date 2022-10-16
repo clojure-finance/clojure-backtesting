@@ -104,16 +104,16 @@
       tmp
       (reset! tics-map-today (zipmap (map :TICKER (get-info)) (get-info))))))
 
-(defn get-info-tomorrow
-  "Returns the whole information for the all the tics today.\n
-   A sequence of maps."
-  []
-  (if-let [info (deref tics-tomorrow)]
-    info
-    (let [info (get-info-by-date (get-next-date))]
-      (reset! tics-tomorrow info)
-      info))
-  )
+;; (defn get-info-tomorrow
+;;   "Returns the whole information for the all the tics today.\n
+;;    A sequence of maps."
+;;   []
+;;   (if-let [info (deref tics-tomorrow)]
+;;     info
+;;     (let [info (get-info-by-date (get-next-date))]
+;;       (reset! tics-tomorrow info)
+;;       info))
+;;   )
 
 (defn get-tic-info
   "Returns the information for the specified tic today.\n
@@ -165,7 +165,7 @@
          dates (take n (map first (rsubseq data-files < date)))]
      (map get-info-by-date dates))))
 
-(defn get-tic-prev-n-records
+(defn get-tic-prev-n-days
   "This function returns a sequence of vector of the previous n records of a specific ticker (not including today).\n
    Date in descending order, ie from the most recent to the oldest.\n
    Note that the returned length may be smaller than n, if the ticker is missing on some days.\n

@@ -31,14 +31,14 @@
   [tic n]
     ;(println (get-prev-n-days :PRC days tic))
     ;(println (map :PRC (get-prev-n-days :PRC days tic)))
-  (sd (conj (map :PRC (get-tic-prev-n-records tic (- n 1))) (get-tic-price tic))))
+  (sd (conj (map :PRC (get-tic-prev-n-days tic (- n 1))) (get-tic-price tic))))
 
 (defn moving-avg
   "Returns volatility of a stock for the last n days."
   [tic n]
     ;(println (get-prev-n-days :PRC days tic))
     ;(println (map :PRC (get-prev-n-days :PRC days tic)))
-  (avg (conj (map :PRC (get-tic-prev-n-records tic (- n 1))) (get-tic-price tic))))
+  (avg (conj (map :PRC (get-tic-prev-n-days tic (- n 1))) (get-tic-price tic))))
   
 ;; (defn tic-EMA
 ;;     "This function is a wrapper of EMA()."
@@ -71,7 +71,7 @@
         (def EMA-map (assoc! EMA-map tic [(get-date) ema]))
         ema)
       (nth prev-ema 1))
-    ;; (let [prev-data (conj (get-tic-prev-n-records tic (dec EMA-CYCLE)) (get-tic-info tic))]
+    ;; (let [prev-data (conj (get-tic-prev-n-days tic (dec EMA-CYCLE)) (get-tic-info tic))]
     ;;   (let [ema (reduce _EMA nil (map :PRC (reverse prev-data)))]
     ;;     (def EMA-map (assoc! EMA-map tic [(get-date) ema]))
     ;;     (swap! EMA-keys conj tic)
@@ -215,7 +215,7 @@
   "Returns the relative strength index (RSI) value.\n
    @n should be greater than 0"
   [tic n] ; time window
-  (let [data (get-tic-prev-n-records tic n)
+  (let [data (get-tic-prev-n-days tic n)
         prices (reverse (conj (map :PRC data) (get-tic-price tic)))]
     (loop [prices prices avg-gain 0 avg-loss 0]
       (if (<= (count prices) 1)

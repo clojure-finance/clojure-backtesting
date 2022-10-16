@@ -310,6 +310,7 @@
       ;;   (do
       (reset-daily-var)
       (update-daily-indicators)
+      (incur-interest-cost)
       (check-terminating-condition)
       (check-order)
       (check-automation)
