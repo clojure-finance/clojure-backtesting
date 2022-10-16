@@ -45,8 +45,8 @@
   (next-date)
 
   (pprint/print-table (deref order-record))
-  (view-portfolio)
-  (view-portfolio-record -1)
+  (print-portfolio)
+  (print-portfolio-record -1)
   (eval-report -1)
 
   ;; (println (sd-last-n-days "OMFGA" 10))

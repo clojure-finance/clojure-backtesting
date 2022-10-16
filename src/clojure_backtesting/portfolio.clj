@@ -95,6 +95,8 @@
     ;; example: portfolio -> {:cash {:tot-val 10000} :"AAPL" {:price 400 :aprc adj-price :quantity 100 :tot-val 40000}}
     ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
     ;; todo: implement case when standard is false
+  
+  (assert (< (init-date date) (first (last data-files))) "Please do not start from the last date. Init portfolio fails.")
 
     ;; output order record to csv file
   (check-filepath "./out_order_record.csv")
@@ -114,7 +116,7 @@
   (def eval-report-data (atom [])) ; to store evaluation report (in string format, for printing)
   (def eval-record (atom [])) ; to store evaluation report (in number format)
   (def portfolio (atom {:cash {:tot-val capital}}))
-  (def portfolio-value (atom [{:date date :tot-value capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0 :margin 0.0}]))
+  (def portfolio-value (atom [{:date (get-date) :tot-value capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0 :margin 0.0}]))
 
     ;; (if (not (deref lazy-mode))
     ;;   (do
@@ -122,7 +124,6 @@
     ;;     (maintain-tics true))
     ;;   ;; (lazy-init date)
     ;;   )
-  (init-date date)
   (reset-indicator-maps)
   (reset-automation)
 
