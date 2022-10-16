@@ -17,7 +17,7 @@
                  [com.github.clojure-finance/clojask-io "1.0.2"]
                  ]
   :aliases			{"clojupyter"			["run" "-m" "clojupyter.cmdline"]}
-  :main clojure-backtesting.user
+  :main clojure-backtesting.user/-main
   :aot [clojure-backtesting.user]
   :repl-options {:init-ns clojure-backtesting.user
                  :timeout 180000}

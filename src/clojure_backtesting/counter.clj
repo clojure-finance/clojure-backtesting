@@ -40,6 +40,16 @@
       nil))
   )
 
+;; (defn get-prev-n-dates
+;;   "Returns the dates of the previous n valid days (in descending order, including today).\n
+;;    E.g. prev 3 of 1973-02-04 are 1973-02-03, 1973-02-02, and 1973-02-01."
+;;   [n]
+;;   (assert (> n 0) "n should be larger than 0.")
+;;   (let [tmp (take n (rsubseq data-files < (get-date)))]
+;;     (if (= n (count tmp))
+;;       (first (last tmp))
+;;       nil)))
+
 ;; (defn next-date
 ;;   []
 ;;   (if-let [_date (get-next-date)]

@@ -246,7 +246,8 @@
     (cond
       (= name "main") (do
                         (def headers (mapv keyword header))
-                        (def data-files (into (sorted-map) (zipmap file-date files))))
+                        (def data-files (into (sorted-map) (zipmap file-date files)))
+                        (str "Date range: " (first (first data-files)) " ~ " (first (last data-files))))
       (= name "compustat") (do
                              (def headers2 (mapv keyword header))
                              (def data-files2 (into (sorted-map) (zipmap file-date files)))))))

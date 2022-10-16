@@ -151,31 +151,31 @@
    (get (get-tic-info date tic) key)))
 
 (defn get-prev-n-days
-  "Returns a sequence of sequence of maps that contains data of the previous n days (including today).\n
+  "Returns a sequence of sequence of maps that contains data of the previous n days (not including today).\n
    Date in descending order, ie from the most recent to the oldest.\n
    If no n, return a lazy sequence of all prev days.
    "
   ;n  number of counting ahead
   ([]
    (let [date (get-date)
-         dates (map first (rsubseq data-files <= date))]
+         dates (map first (rsubseq data-files < date))]
      (map get-info-by-date dates)))
   ([n]
    (let [date (get-date)
-         dates (take n (map first (rsubseq data-files <= date)))]
+         dates (take n (map first (rsubseq data-files < date)))]
      (map get-info-by-date dates))))
 
 (defn get-tic-prev-n-records
-  "This function returns a sequence of vector of the previous n records of a specific ticker (including today).\n
+  "This function returns a sequence of vector of the previous n records of a specific ticker (not including today).\n
    Date in descending order, ie from the most recent to the oldest.\n
-   Note that the time span can be greater than n days"
-  ;n  number of counting ahead
-  ;tic name of the stock
-  [n tic]
+   Note that the returned length may be smaller than n, if the ticker is missing on some days.\n
+   @tic: name of the stock\n
+   @n: number of counting ahead"
+  [tic n]
   (let []
-    (loop [res [] data (get-prev-n-days)]
+    (loop [res (transient []) data (get-prev-n-days n)]
       (if (or (= (count data) 0) (>= (count res) n))
-        res
+        (persistent! res)
         (let [curr (first data)
               data (rest data)]
           ;; (doseq [row curr]
@@ -194,7 +194,7 @@
                 ]
             (if (not= index -1)
             ;; (if (not= row nil)
-              (recur (conj res (nth curr index)) data)
+              (recur (conj! res (nth curr index)) data)
               ;; (recur (conj res row) data)
               (recur res data))))))
     )

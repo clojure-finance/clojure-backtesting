@@ -1,15 +1,14 @@
 (ns clojure-backtesting.order
-  (:require ;; [clojure.java.io :as io]
- ;; [clojure.math.numeric-tower :as math]
-            [clojure-backtesting.counter :refer :all] ;; [clojure.pprint :as pprint]
+  (:require [clojure-backtesting.counter :refer :all] ;; [clojure.pprint :as pprint]
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.data-management :refer :all]
             [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.portfolio :refer :all]
-   [clojure-backtesting.indicators :refer :all]
+            [clojure-backtesting.automation :refer :all]
+            [clojure-backtesting.indicators :refer :all]
             [java-time :as jt] ;; [clojure.java.io :as io]
-)
+            )
     )
 
 ;; ================ Deprecated Codes =================
@@ -198,7 +197,7 @@
                             :else (- (* quantity adj-price) cash))]
                   (if (or (= INITIAL-MARGIN nil) (>= cash (* INITIAL-MARGIN (+ loan cash))))
                     (place-order date tic quantity price adj-price loan print direct)
-                    (if print
+                    (if (or true print)
                       (println (format "Order request %s | %s | %d fails due to initial margin requirement." order-date tic quantity)))))) ;This is the buy on margin case
               (do
                 (println (format "Order request %s | %s | %d fails." order-date tic quantity))
@@ -230,21 +229,21 @@
        (swap! pending-order assoc [expire-date tic] {:place (get-date) :expire expire-date :tic tic :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))))
 
 (defn check-order
-  [date info-map]
+  []
   ;; delete the expired orders
-  (reset! pending-order (into (sorted-map) (subseq (deref pending-order) >= [date ""])))
+  ;; (reset! pending-order (subseq (deref pending-order) >= [(get-date) ""]))
 
   ;; traverse pending order for potential placing
-  (loop [new-order (sorted-map) pending (deref pending-order)]
+  (loop [new-order (sorted-map) pending (subseq (deref pending-order) >= [(get-date) ""])]
     (if (= (count pending) 0)
       (reset! pending-order new-order)
       (let [pair (first pending)
             tic (nth (first pair) 1)
             arg (nth pair 1)
             remain (rest pending)]
-        (if (contains? info-map tic)
+        (if (get-tic-info tic)
           (do
-            (order-internal date tic (:quantity arg) (:remaining arg) (:leverage arg) (:print arg) (:direct arg) (get info-map tic))
+            (order-internal (get-date) tic (:quantity arg) (:remaining arg) (:leverage arg) (:print arg) (:direct arg) (get-tic-info tic))
             (recur new-order remain))
           (recur (assoc new-order (first pair) arg) remain)))))
   )
@@ -312,7 +311,8 @@
       (reset-daily-var)
       (update-daily-indicators)
       (check-terminating-condition)
-      (check-order _date (get-info-map))
+      (check-order)
+      (check-automation)
       _date)
     (do
       (throw (Exception. "Reach unexpected code branch 1."))

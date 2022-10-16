@@ -6,16 +6,18 @@
             [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.plot :refer :all]
             [clojure-backtesting.counter :refer :all]
-            ;; [clojure-backtesting.large-data :refer :all]
+            [clojure-backtesting.automation :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.indicators :refer :all]
+            [clojure-backtesting.direct :refer :all]
             [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.pprint :as pprint]
-            [clj-time.core :as clj-t]
-            [clojure.edn :as edn]
-            [java-time :as t]
-            [clojupyter.kernel.version :as ver])(:gen-class))
+            ;; [clj-time.core :as clj-t]
+            ;; [clojure.edn :as edn]
+            ;; [java-time :as jt]
+            ;; [clojupyter.kernel.version :as ver]
+            )(:gen-class))
 
 (defn -main
   "Write your code here"
