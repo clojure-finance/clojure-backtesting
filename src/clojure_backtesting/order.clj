@@ -252,7 +252,9 @@
   "Update all the tickers in terms of portfolio"
   []
   (doseq [tic (rest (keys (deref portfolio)))]
-    (order-internal (get-date) tic "special" false true (deref data-set) false false)))
+    ;; (order-internal (get-date) tic "special" false true (deref data-set) false false)
+    (when (contains? (get-info-map) tic) (update-portfolio (get-date) tic 0 (get-tic-price tic) (get-tic-by-key tic :APRC) 0))
+    ))
 
 (defn end-order
   "Call this function at the end of the strategy."
@@ -310,7 +312,8 @@
       ;;   (do
       (reset-daily-var)
       (update-daily-indicators)
-      (incur-interest-cost)
+      (incur-interest-cost) ;; 
+      (update-holding-tickers) ;; todo: order of these two
       (check-terminating-condition)
       (check-order)
       (check-automation)
