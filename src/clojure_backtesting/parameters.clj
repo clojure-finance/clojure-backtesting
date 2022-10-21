@@ -13,7 +13,14 @@
 (def PRICE-KEY :PRC) ;; trade at closing price
 ;; (def PRICE-KEY :OPENPRC) uncomment this if you want to trade at opening price instead
 
-;; =============== Indicator Parameters ===============
+;; ============== Cache =================
+
+(def CACHE-SIZE 30)
+(defn CHANGE-CACHE-SIZE
+  [size]
+  (def CACHE-SIZE size))
+
+;; =============== Indicator ===============
 (def EMA-CYCLE 20)
 (def MACD-SIGNAL 9)
 (def MACD-SHORT 12)
@@ -98,3 +105,5 @@
 (def MACD-SIGNAL-K (/ 2 (+ MACD-SIGNAL 1)))
 (def MACD-SHORT-K (/ 2 (+ MACD-SHORT 1)))
 (def MACD-LONG-K (/ 2 (+ MACD-LONG 1)))
+
+(def TICKE-KEY :PERMNO)

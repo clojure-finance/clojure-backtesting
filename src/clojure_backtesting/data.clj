@@ -5,13 +5,13 @@
             [clj-time.core :as t]
             [clj-time.format :as f]
             [clojure-backtesting.parameters :refer :all]
-            [clojure.pprint :as pprint] 
+            [clojure.pprint :as pprint]
             [clojure.string :as str])  ;; For input-output handling
-     )
+  (:import [java.util PriorityQueue]))
 
 ;; This file is to construct the basic data structure for backtesting 
 
-(def data-set (atom [])) ;; main dataset (to be changed by the user)
+;; (def data-set (atom [])) ;; main dataset (to be changed by the user)
 
 (defn csv->map
   "Convert parsed CSV vectors into maps with headers as keys, by row"
@@ -51,79 +51,79 @@
          doall)))
 
 ; Returns a map, e.g. {:col1 [1 3], :col2 [2 4]}
-(defn read-csv-col
-  "Read CSV data into memory by column"
-  [filename]
-  (with-open [reader (io/reader filename)]
-    (->> (csv/read-csv reader)
-         csv->map-col
-         doall)))
+;; (defn read-csv-col
+;;   "Read CSV data into memory by column"
+;;   [filename]
+;;   (with-open [reader (io/reader filename)]
+;;     (->> (csv/read-csv reader)
+;;          csv->map-col
+;;          doall)))
 
-;; Here, I want to define a function that can convert between the column based
-;; dataset and the row based dataset
-(defn row->col
-  "This function can parse the seq like ({}{}{}) to {: [] : []}"
-  [row-based]
-    (-> (keys (first row-based))
-    (zipmap (apply map vector (map vals (rest row-based))))))
+;; ;; Here, I want to define a function that can convert between the column based
+;; ;; dataset and the row based dataset
+;; (defn row->col
+;;   "This function can parse the seq like ({}{}{}) to {: [] : []}"
+;;   [row-based]
+;;     (-> (keys (first row-based))
+;;     (zipmap (apply map vector (map vals (rest row-based))))))
 
-;; filter the data by security and date
-; (defn data-filter
-;   ([sec data]
-;     (->> data
-;     (filter #(= (:tic %) sec))))
-;   ([sec year month day data]
-;    (->> data
-;   (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day))true))))))
+;; ;; filter the data by security and date
+;; ; (defn data-filter
+;; ;   ([sec data]
+;; ;     (->> data
+;; ;     (filter #(= (:tic %) sec))))
+;; ;   ([sec year month day data]
+;; ;    (->> data
+;; ;   (filter #(and (= (:tic %) sec) (= (t/before? (:datadate %) (t/date-time year month day))true))))))
 
-(defn- count-days
-  [row-data]
-  (count row-data))
+;; (defn- count-days
+;;   [row-data]
+;;   (count row-data))
 
-(defn average
- "This function returns the average value of a vector."
-  [vec]
-  (/ (reduce + vec) (count vec)))
+;; (defn average
+;;  "This function returns the average value of a vector."
+;;   [vec]
+;;   (/ (reduce + vec) (count vec)))
 
-;; (defn- moving-average
-;;  "This function returns the moving average of len(window) days. 
-;;  The first len(window) days are recorded as 0."
-;;   [window vec]
-;;   (concat (repeat (- window 1) 0) (map average (partition window 1 vec))))
+;; ;; (defn- moving-average
+;; ;;  "This function returns the moving average of len(window) days. 
+;; ;;  The first len(window) days are recorded as 0."
+;; ;;   [window vec]
+;; ;;   (concat (repeat (- window 1) 0) (map average (partition window 1 vec))))
 
-(defn left-join
-  "When passed 2 rels, returns the rel corresponding to the natural
-  left-join. When passed an additional keymap, joins on the corresponding
-  keys. (Deprecated: should use join instead)"
-  ([xrel yrel]
-   (if (and (seq xrel) (seq yrel))
-     (let [ks (set/intersection (set (keys (first xrel)))
-                                (set (keys (first yrel))))
-           idx (set/index yrel ks)]
-       (reduce (fn [ret x]
-                 (if-let [found (idx (select-keys x ks))]
-                   (reduce #(conj %1 (merge %2 x)) ret found)
-                   (conj ret x)))
-               #{} xrel))
-     xrel))
-  ([xrel yrel km]
-   (let [idx (set/index yrel (vals km))]
-     (reduce (fn [ret x]
-               (if-let [found (idx (set/rename-keys (select-keys x (keys km)) km))]
-                 (reduce #(conj %1 (merge %2 x)) ret found)
-                 (conj ret x)))
-             #{} xrel))))
+;; (defn left-join
+;;   "When passed 2 rels, returns the rel corresponding to the natural
+;;   left-join. When passed an additional keymap, joins on the corresponding
+;;   keys. (Deprecated: should use join instead)"
+;;   ([xrel yrel]
+;;    (if (and (seq xrel) (seq yrel))
+;;      (let [ks (set/intersection (set (keys (first xrel)))
+;;                                 (set (keys (first yrel))))
+;;            idx (set/index yrel ks)]
+;;        (reduce (fn [ret x]
+;;                  (if-let [found (idx (select-keys x ks))]
+;;                    (reduce #(conj %1 (merge %2 x)) ret found)
+;;                    (conj ret x)))
+;;                #{} xrel))
+;;      xrel))
+;;   ([xrel yrel km]
+;;    (let [idx (set/index yrel (vals km))]
+;;      (reduce (fn [ret x]
+;;                (if-let [found (idx (set/rename-keys (select-keys x (keys km)) km))]
+;;                  (reduce #(conj %1 (merge %2 x)) ret found)
+;;                  (conj ret x)))
+;;              #{} xrel))))
 
-; (def file1 "./resources/CRSP-extract_test.csv")
-; (def file2 "./resources/Compustat-extract_test.csv")
+;; ; (def file1 "./resources/CRSP-extract_test.csv")
+;; ; (def file2 "./resources/Compustat-extract_test.csv")
 
-;;file 1 and 2 directories
-(comment
-  (def file1 "./resources/CRSP-extract.csv")
-  (def file2 "./resources/Compustat-extract.csv")
+;; ;;file 1 and 2 directories
+;; (comment
+;;   (def file1 "./resources/CRSP-extract.csv")
+;;   (def file2 "./resources/Compustat-extract.csv")
 
-  (def c (first (read-csv-row file1)))
-  (def d (first (read-csv-row file2))))
+;;   (def c (first (read-csv-row file1)))
+;;   (def d (first (read-csv-row file2))))
 
 ;; helper function, natural logarithm
 (defn log-10 [n]
@@ -210,6 +210,10 @@
 ;; =========== below is Leo's refactoring using Clojask ==========
 ;; 2022/10/6
 
+;; cache
+(def data-cache nil)
+(def cache-queue (PriorityQueue.))
+
 ;; Global Variables for the dataset
 (def data-files {})
 (def data-files2 {})
@@ -236,21 +240,27 @@
     (first tmp)))
 
 (defn load-dataset
-  [dir name]
+  [dir name & [func]]
   (let [dir (if (str/ends-with? dir "/") dir (str dir "/"))
-        header (read-string (slurp (str dir "header")))
         file-dir (io/file (str dir "grouped"))
         files (rest (vec (file-seq file-dir)))
         file-date (mapv get-file-date files)
-        ]
+        header (read-string (slurp (str dir "header")))
+        _headers (mapv keyword header)
+        _data-files (into (sorted-map) (zipmap file-date files))
+        tmp (if func (func dir _headers _data-files)) ;; change the file by the function
+        header (read-string (slurp (str dir "header")))
+        _headers (mapv keyword header)
+        _data-files (into (sorted-map) (zipmap file-date files))]
     (cond
       (= name "main") (do
-                        (def headers (mapv keyword header))
-                        (def data-files (into (sorted-map) (zipmap file-date files)))
+                        (def headers _headers)
+                        (def data-files _data-files)
+                        (def data-cache (into (sorted-map) (zipmap file-date (map (fn [_] [(atom nil) (atom nil)]) file-date))))
                         (str "Date range: " (first (first data-files)) " ~ " (first (last data-files))))
       (= name "compustat") (do
-                             (def headers2 (mapv keyword header))
-                             (def data-files2 (into (sorted-map) (zipmap file-date files)))))))
+                             (def headers2 _headers)
+                             (def data-files2 _data-files)))))
 
 ;; for each security:
 ;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
@@ -299,14 +309,19 @@
 (defn add-aprc
   "Data augmentation of adding aprc to each file"
   [dir headers data-files]
-  (for [[date file] data-files]
-    (let [rdr (io/reader file)
-          data (map read-string (line-seq rdr))
-          price-index (.indexOf headers :PRC)
+  (if (and (.contains headers :INIT-PRICE) (.contains headers :APRC) (.contains headers :CUM-RET))
+    (println "The dataset is already furnished by add-aprc. No more modification is needed.")
+    (let [price-index (.indexOf headers :PRC)
           ret-index (.indexOf headers :RET)
-          ticker-index (.indexOf headers :TICKER)
-          new-data (add-aprc-file data price-index ret-index ticker-index)
-          new-data (str/join "\n" (mapv str new-data))]
-      (spit file new-data)
-      (println date)))
-  (spit (str dir "header") (str (vec (concat headers [:INIT-PRICE :APRC :CUM-RET])))))
+          ticker-index (.indexOf headers TICKE-KEY)]
+      (println "The below process will take a few hours.")
+      (doseq [[date file] data-files]
+        (let [rdr (io/reader file)
+              data (map read-string (line-seq rdr))
+              data (set data)
+              new-data (add-aprc-file data price-index ret-index ticker-index)
+              new-data (str/join "\n" (mapv str new-data))]
+          (spit file new-data)
+          (println date)))
+      (spit (str dir "header") (str (vec (concat headers [:INIT-PRICE :APRC :CUM-RET])))))
+    ))

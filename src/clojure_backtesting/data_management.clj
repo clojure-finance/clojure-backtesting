@@ -5,63 +5,29 @@
             [clojure.core.matrix.stats :as stat] ;; For the standard deviation formula
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [clojure.test :refer :all]))
+            [clojure.test :refer :all])
+  (:import [java.util PriorityQueue]))
 
-;; ================ Deprecated =================
+;; cache management
+(defn- cache-pop
+  "reset information of the oldest date"
+  []
+  (let [date (.poll cache-queue)]
+    (reset! (nth (get data-cache date) 0) nil)
+    (reset! (nth (get data-cache date) 1) nil))
+  )
 
-;; (defn- get-set
-;;     "return a set of maps of tickers and datadate" ;;{:tic "AAPL", :datadate "1981/3/31"}
-;;     [file2]
-;;     (loop [remaining file2
-;;             result-set []]
-;;         (if (empty? remaining)
-;;             (into #{} result-set)
-;;             (let [first-line (first remaining)
-;;                 next-remaining (rest remaining)
-;;                 ;;next-result-set (conj result-set (get first-line :datadate)
-;;                 next-result-set (conj result-set {:tic (get first-line :TICKER) :datadate (get first-line :date)})
-;;                 ]
-;;             (recur next-remaining next-result-set)
-;;             )
-;;         )
-;;     )
-;; )
+(defn- cache-add-info
+  [date info]
+  (while (>= (.size cache-queue) CACHE-SIZE) (cache-pop))
+  (.add cache-queue date)
+  (reset! (nth (get data-cache date) 0) info)
+  )
 
-;; (defn get-tickers 
-;;   "return a set of tickers"
-;;   [file]
-;;   (get-set file)
-;; )
-
-;; (defn insert-col
-;;   "insert the date col from COMPUSTAT into CRSP"
-;;     [file1 set] 
-;;     ;; key: before the insert col; file1: insert into this file; set: col to be inserted
-;;     ;;add a thing in each map using key and value
-;;     ;;run loop, length of the loop = length of the list
-;;     (for [row file1] (assoc row :datadate (condp contains? (last-quar row) set (get (last-quar row) :datadate) "")))
-;; )
-
-;; (defn merge-data-row
-;;     "merge 2 csv files "
-;;     [file1 file2]
-    
-;;     (def f1 (read-csv-row file1)) ;;file 1 is CRSP
-;;     (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
-    
-;;     (def f0 (insert-col f1 (get-set f2))) ;;insert datadate to file 1
-
-;;     ;(left-join f0 f2 {:datadate :datadate :tic :TICKER})
-
-;;     ;;(def file0 (insert-col file1 set))
-;;     ;; need to parse-int later
-;; )
-
-;; (defn merge-data-col
-;;     "merge 2 csv files based on the column model"
-;;     [file1 file2]
-;;     (row->col (merge-data-row file1 file2))
-;; )
+(defn- cache-add-map
+  [date info]
+  ;; (when (>= (.size data-cache) CACHE-SIZE) (cache-pop))
+  (reset! (nth (get data-cache date) 1) info))
 
 (defn- last-quar
   "Returns the last quarter date of a given row."
@@ -80,18 +46,35 @@
   ;; to do join the compustat
   [date]
   (if-let [file (get data-files date)]
-    (let [data (line-seq (io/reader file))
-          data (map read-string data)]
-      (map zipmap (repeat headers) data))))
+    (if-let [ret (deref (nth (get data-cache date) 0))]
+      ;; cache hit
+      ret
+      ;; cache miss
+      (let [data (line-seq (io/reader file))
+            data (map read-string data)]
+        (cache-add-info date (map zipmap (repeat headers) data))))
+    nil))
+
+(defn- get-info-map-by-date
+  [date]
+  (if-let [ret (deref (nth (get data-cache date) 1))]
+    ;; cache hit
+    ret
+    ;; cache miss
+    (if-let [info (get-info-by-date date)]
+      (cache-add-map date (zipmap (map :TICKER info) info))
+      nil)))
 
 (defn get-info
   "Returns the whole information for the all the tics today.\n
    A sequence of maps."
   []
-  (if-let [info (deref tics-today)]
-    info
-    (let []
-      (reset! tics-today (get-info-by-date (get-date))))))
+  ;; (if-let [info (deref tics-today)]
+  ;;   info
+  ;;   (let []
+  ;;     (reset! tics-today (get-info-by-date (get-date)))))
+  (get-info-by-date (get-date))
+  )
 
 (defn get-info-map
   "Returns the whole information for the all the tics today.\n
@@ -99,10 +82,12 @@
   [& [info]]
 
   (if info
-    (zipmap (map :TICKER (get-info)) info)
-    (if-let [tmp (deref tics-map-today)]
-      tmp
-      (reset! tics-map-today (zipmap (map :TICKER (get-info)) (get-info))))))
+    (zipmap (map :TICKER info) info)
+    ;; (if-let [tmp (deref tics-map-today)]
+    ;;   tmp
+    ;;   (reset! tics-map-today (zipmap (map :TICKER (get-info)) (get-info))))
+    (get-info-map-by-date (get-date))
+    ))
 
 ;; (defn get-info-tomorrow
 ;;   "Returns the whole information for the all the tics today.\n
@@ -134,7 +119,9 @@
   ;; method 2
    (get (get-info-map) tic))
   ([date tic]
-   (get (get-info-map (get-info-by-date date)) tic)))
+  ;;  (get (get-info-map (get-info-by-date date)) tic)
+   (get (get-info-map-by-date date) tic)
+   ))
 
 (defn get-tic-price
   "Returns the price of a given ticker today, otherwise nil."
@@ -199,6 +186,62 @@
               (recur res data))))))
     )
   )
+
+;; ================ Deprecated =================
+
+;; (defn- get-set
+;;     "return a set of maps of tickers and datadate" ;;{:tic "AAPL", :datadate "1981/3/31"}
+;;     [file2]
+;;     (loop [remaining file2
+;;             result-set []]
+;;         (if (empty? remaining)
+;;             (into #{} result-set)
+;;             (let [first-line (first remaining)
+;;                 next-remaining (rest remaining)
+;;                 ;;next-result-set (conj result-set (get first-line :datadate)
+;;                 next-result-set (conj result-set {:tic (get first-line :TICKER) :datadate (get first-line :date)})
+;;                 ]
+;;             (recur next-remaining next-result-set)
+;;             )
+;;         )
+;;     )
+;; )
+
+;; (defn get-tickers 
+;;   "return a set of tickers"
+;;   [file]
+;;   (get-set file)
+;; )
+
+;; (defn insert-col
+;;   "insert the date col from COMPUSTAT into CRSP"
+;;     [file1 set] 
+;;     ;; key: before the insert col; file1: insert into this file; set: col to be inserted
+;;     ;;add a thing in each map using key and value
+;;     ;;run loop, length of the loop = length of the list
+;;     (for [row file1] (assoc row :datadate (condp contains? (last-quar row) set (get (last-quar row) :datadate) "")))
+;; )
+
+;; (defn merge-data-row
+;;     "merge 2 csv files "
+;;     [file1 file2]
+
+;;     (def f1 (read-csv-row file1)) ;;file 1 is CRSP
+;;     (def f2 (read-csv-row file2)) ;;file 2 Is COMPUSTAT
+
+;;     (def f0 (insert-col f1 (get-set f2))) ;;insert datadate to file 1
+
+;;     ;(left-join f0 f2 {:datadate :datadate :tic :TICKER})
+
+;;     ;;(def file0 (insert-col file1 set))
+;;     ;; need to parse-int later
+;; )
+
+;; (defn merge-data-col
+;;     "merge 2 csv files based on the column model"
+;;     [file1 file2]
+;;     (row->col (merge-data-row file1 file2))
+;; )
 
 ;; ========== deprecated codes ===========
 
