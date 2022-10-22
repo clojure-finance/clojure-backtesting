@@ -145,11 +145,11 @@
 ;;          (deref tics-info))
 ;;        (let [first-line (first remaining)
 ;;              next-remaining (rest remaining)]
-;;          (if (not= cur-tic (get first-line :TICKER))
+;;          (if (not= cur-tic (get first-line TICKER-KEY))
 ;;            (do
 ;;              (if (not= cur-tic nil)
 ;;                (swap! tics-info assoc cur-tic {:start-date start-date :end-date end-date :pointer (atom {:num num :reference reference})}))
-;;              (let [cur-tic (get first-line :TICKER) start-date (get first-line :date) end-date (get first-line :date) num count reference remaining]
+;;              (let [cur-tic (get first-line TICKER-KEY) start-date (get first-line :date) end-date (get first-line :date) num count reference remaining]
 ;;                (recur (inc count) next-remaining cur-tic start-date end-date num reference)))
 ;;            (if (= (get (first remaining) :date) (get-date))
 ;;              (recur (inc count) next-remaining cur-tic start-date (get first-line :date) count remaining)

@@ -142,10 +142,10 @@
 ;;   (def curr-ticker "DEFAULT")
 ;;  ; traverse row by row in dataset
 ;;   (map (fn [line]
-;;         (let [;line-new (select-keys line [:date :TICKER PRICE-KEY :RET])
+;;         (let [;line-new (select-keys line [:date TICKER-KEY PRICE-KEY :RET])
 ;;               price (Double/parseDouble (get line PRICE-KEY))
 ;;               ret (Double/parseDouble (get line :RET))
-;;               ticker (get line :TICKER)]
+;;               ticker (get line TICKER-KEY)]
 ;;           (if (not= curr-ticker ticker)
 ;;               (do
 ;;                 (def curr-ticker ticker)
@@ -181,7 +181,7 @@
 ;;         (let [date (get line :date)
 ;;               price (Double/parseDouble (get line PRICE-KEY))
 ;;               ret (Double/parseDouble (get line :RET))
-;;               ticker (get line :TICKER)]
+;;               ticker (get line TICKER-KEY)]
 ;;           ;; check whether the initial-price map already has the ticker
 ;;           (if-not (contains? (deref initial-price) ticker)
 ;;             (do ;; ticker appears the first time 
@@ -313,8 +313,8 @@
     (println "The dataset is already furnished by add-aprc. No more modification is needed.")
     (let [price-index (.indexOf headers :PRC)
           ret-index (.indexOf headers :RET)
-          ticker-index (.indexOf headers TICKE-KEY)]
-      (println "The below process will take a few hours.")
+          ticker-index (.indexOf headers TICKER-KEY)]
+      (println "The below process will take a few hours to run for the first time.")
       (doseq [[date file] data-files]
         (let [rdr (io/reader file)
               data (map read-string (line-seq rdr))

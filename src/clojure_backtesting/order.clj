@@ -30,7 +30,7 @@
 ;;       (let [first-line (first remaining)
 ;;             next-remaining (rest remaining)]
 ;;         (if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys (using the keys in CRSP now)
-;;                  (= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys(using the keys in CRSP now)
+;;                  (= (get first-line TICKER-KEY) tic) ;;amend later if the merge data-set has different keys(using the keys in CRSP now)
 ;;                  )
 ;;           (let [price (get first-line PRICE-KEY)
 ;;                 aprc (get first-line :APRC)] ;;amend later if you want to use the adjusted price instead of the closing price

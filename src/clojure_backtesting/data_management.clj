@@ -32,7 +32,7 @@
 (defn- last-quar
   "Returns the last quarter date of a given row."
   [row]
-  (let [date (get row :date) tic (get row :TICKER)]
+  (let [date (get row :date) tic (get row TICKER-KEY)]
     (let [[year month day] (map parse-int (str/split date #"-"))]
       {:tic tic :datadate (cond
                             (or (and (= month 12) (= day 31)) (= month 1) (= month 2) (and (= month 3) (<= day 30))) (str (- year 1) "-" 12 "-" 31)
@@ -62,7 +62,7 @@
     ret
     ;; cache miss
     (if-let [info (get-info-by-date date)]
-      (cache-add-map date (zipmap (map :TICKER info) info))
+      (cache-add-map date (zipmap (map TICKER-KEY info) info))
       nil)))
 
 (defn get-info
@@ -82,10 +82,10 @@
   [& [info]]
 
   (if info
-    (zipmap (map :TICKER info) info)
+    (zipmap (map TICKER-KEY info) info)
     ;; (if-let [tmp (deref tics-map-today)]
     ;;   tmp
-    ;;   (reset! tics-map-today (zipmap (map :TICKER (get-info)) (get-info))))
+    ;;   (reset! tics-map-today (zipmap (map TICKER-KEY (get-info)) (get-info))))
     (get-info-map-by-date (get-date))
     ))
 
@@ -105,7 +105,7 @@
    A map if any, otherwise nil."
   ([tic]
   ;; (doseq [row (get-info)]
-  ;;   (if (= tic (:TICKER row))
+  ;;   (if (= tic (TICKER-KEY row))
   ;;     row))
   ;; ;; method 1
   ;; (loop [info (or info (get-info))]
@@ -113,7 +113,7 @@
   ;;         info (rest info)]
   ;;     (if (= row nil)
   ;;       nil
-  ;;       (if (= tic (:TICKER row))
+  ;;       (if (= tic (TICKER-KEY row))
   ;;         row
   ;;         (recur info)))))
   ;; method 2
@@ -166,16 +166,16 @@
         (let [curr (first data)
               data (rest data)]
           ;; (doseq [row curr]
-          ;;   (if (= tic (get row :TICKER))
+          ;;   (if (= tic (get row TICKER-KEY))
           ;;     (recur (conj res row) data)))
           (let [
-                index (.indexOf (mapv :TICKER curr) tic)
+                index (.indexOf (mapv TICKER-KEY curr) tic)
                 ;; row (loop [daily-data curr]
                 ;;       (if (= 0 (count daily-data))
                 ;;         nil
                 ;;         (let [row (first daily-data)
                 ;;               remain (rest daily-data)]
-                ;;           (if (= tic (:TICKER row))
+                ;;           (if (= tic (TICKER-KEY row))
                 ;;             row
                 ;;             (recur remain)))))
                 ]
@@ -199,7 +199,7 @@
 ;;             (let [first-line (first remaining)
 ;;                 next-remaining (rest remaining)
 ;;                 ;;next-result-set (conj result-set (get first-line :datadate)
-;;                 next-result-set (conj result-set {:tic (get first-line :TICKER) :datadate (get first-line :date)})
+;;                 next-result-set (conj result-set {:tic (get first-line TICKER-KEY) :datadate (get first-line :date)})
 ;;                 ]
 ;;             (recur next-remaining next-result-set)
 ;;             )
@@ -231,7 +231,7 @@
 
 ;;     (def f0 (insert-col f1 (get-set f2))) ;;insert datadate to file 1
 
-;;     ;(left-join f0 f2 {:datadate :datadate :tic :TICKER})
+;;     ;(left-join f0 f2 {:datadate :datadate :tic TICKER-KEY})
 
 ;;     ;;(def file0 (insert-col file1 set))
 ;;     ;; need to parse-int later
@@ -255,7 +255,7 @@
 ;;       (let [first-line (first remaining)
 ;;             next-remaining (rest remaining)]
 ;;         (if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys (using the keys in CRSP now)
-;;                  (= (get first-line :TICKER) tic) ;;amend later if the merge data-set has different keys(using the keys in CRSP now)
+;;                  (= (get first-line TICKER-KEY) tic) ;;amend later if the merge data-set has different keys(using the keys in CRSP now)
 ;;                  )
 ;;           (get first-line key)
 ;;           (recur (inc count) next-remaining)))))
@@ -304,7 +304,7 @@
 ;;          (let [line (get (get (deref available-tics) tic) :reference)] (conj result-tmp {:date (get line :date) key (get line key)}))
 ;;          (loop [count count-tmp result result-tmp num line-num]
 ;;            (if (and (< count n) (>= num 0))
-;;              (let [line (nth ref num) [date content ticker] [(get line :date) (get line key) (get line :TICKER)]]
+;;              (let [line (nth ref num) [date content ticker] [(get line :date) (get line key) (get line TICKER-KEY)]]
 ;;                (if (= ticker tic) ; has date, has content
 ;;                  (do
 ;;                    (recur (+ count 1) (conj result {:date date key content}) (- num 1)))

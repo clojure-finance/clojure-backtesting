@@ -24,7 +24,7 @@
 (defn valid-line
   "Check if a line is valid in format"
   [line]
-  (if (not= (get line :TICKER) "")
+  (if (not= (get line TICKER-KEY) "")
     true
     false))
 
@@ -60,7 +60,7 @@
 ;;                   (let [first-line (first remaining)
 ;;                         next-remaining (rest remaining)
 ;;                         cur-date (get first-line :date)
-;;                         ticker (get first-line :TICKER)]
+;;                         ticker (get first-line TICKER-KEY)]
 ;;          ;(println first-line)        
 ;;                     (if (and (not= cur-date date) (valid-line first-line))
 ;;              ;(reset! data-set remaining)

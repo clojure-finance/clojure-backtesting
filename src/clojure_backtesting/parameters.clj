@@ -106,4 +106,4 @@
 (def MACD-SHORT-K (/ 2 (+ MACD-SHORT 1)))
 (def MACD-LONG-K (/ 2 (+ MACD-LONG 1)))
 
-(def TICKE-KEY :PERMNO)
+(def TICKER-KEY :PERMNO)
