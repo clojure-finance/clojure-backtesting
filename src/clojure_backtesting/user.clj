@@ -33,9 +33,9 @@
   ;(order "OMFGA" 10)
   (next-date)
 
-  (update-eval-report (get-date))
+  (update-eval-report)
   (next-date)
-  (update-eval-report (get-date))
+  (update-eval-report)
 
   (println (portfolio-daily-ret))
   (next-date)
@@ -47,7 +47,7 @@
   (pprint/print-table (deref order-record))
   (print-portfolio)
   (print-portfolio-record -1)
-  (eval-report -1)
+  (print-eval-report -1)
 
   ;; (println (sd-last-n-days "OMFGA" 10))
   ;; (let [prev-close (Double/parseDouble (get (first (get-prev-n-days :PRC 1 "OMFGA")) :PRC))]

@@ -1,5 +1,6 @@
 (ns clojure-backtesting.evaluate
   (:require [clojure-backtesting.data :refer :all]
+            [clojure-backtesting.counter :refer :all]
             [clojure-backtesting.portfolio :refer :all]
             [clj-time.core :as clj-t]
             [clojure.pprint :as pprint]
@@ -119,7 +120,7 @@
 ;; Update evaluation report
 (defn update-eval-report
   "This function updates the evaluation report."
-  [date]
+  []
   (when (and (not= (count (deref order-record)) 0) (not (deref TERMINATED))) ; check that order record is not empty
     (let [total-val-data (portfolio-total)
           volatility-data (volatility)
@@ -128,6 +129,7 @@
           rolling-sharpe-ratio-data (rolling-sharpe-ratio)
           pnl-per-trade-data (pnl-per-trade)
           max-drawdown-data (max-drawdown)
+          date (get-date)
          ]
        ; numerical values
         (swap! eval-record conj {:date date
@@ -152,14 +154,3 @@
         ; output to file
         (.write evalreport-wrtr (format "%s,%f,%f,%f,%f,%f,%f,%f\n" date (double total-val-data) (double volatility-data) (double rolling-volatility-data) (double sharpe-ratio-data) (double rolling-sharpe-ratio-data) (double pnl-per-trade-data) (double max-drawdown-data)))
       )))
-
-
-;; ============ Record inspection ============
-
-;; Print evaluation report
-(defn eval-report
-  "This function prints the first n rows of the evaluation report, pass a -ve number to print full report."
-  [& [n]]
-  (if (> n 0)
-    (pprint/print-table (take n (deref eval-report-data))) ;; only print first n rows
-    (pprint/print-table (deref eval-report-data))))

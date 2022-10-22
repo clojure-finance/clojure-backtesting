@@ -84,3 +84,13 @@
                     :tot-val tot-val}))))))
 
   (pp/print-table (deref portfolio-table)))
+
+;; ============ Record inspection ============
+
+;; Print evaluation report
+(defn print-eval-report
+  "This function prints the first n rows of the evaluation report, pass a -ve number to print full report."
+  [& [n]]
+  (if n
+    (pp/print-table (take n (deref eval-report-data))) ;; only print first n rows
+    (pp/print-table (deref eval-report-data))))

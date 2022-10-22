@@ -265,7 +265,7 @@
       (doseq [[ticker] (deref portfolio)]
         (if (not= ticker :cash)
           (order-internal (get-date) ticker 0 true false false false (get (get-info-map) ticker))))
-      (update-eval-report (get-date))
+      (update-eval-report)
       (.close wrtr)
       (.close portvalue-wrtr)
       (.close evalreport-wrtr)
