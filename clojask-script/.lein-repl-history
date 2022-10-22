@@ -1,0 +1,9 @@
+(str ["adsf" "]
+"])
+(str ["adsf" "asdf" "ad"]
+)
+(ck/compute)
+(require '[clojask.dataframe :as ck])
+(take (count headers) (iterate inc 0))
+(take 3 (iterate inc 0))
+(slurp "/Users/lyc/Desktop/RA clojure/clojure-backtesting/resources/CRSP/header")
