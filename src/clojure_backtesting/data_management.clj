@@ -29,16 +29,32 @@
   ;; (when (>= (.size data-cache) CACHE-SIZE) (cache-pop))
   (reset! (nth (get data-cache date) 1) info))
 
-(defn- last-quar
-  "Returns the last quarter date of a given row."
-  [row]
-  (let [date (get row :date) tic (get row TICKER-KEY)]
-    (let [[year month day] (map parse-int (str/split date #"-"))]
-      {:tic tic :datadate (cond
-                            (or (and (= month 12) (= day 31)) (= month 1) (= month 2) (and (= month 3) (<= day 30))) (str (- year 1) "-" 12 "-" 31)
-                            (or (and (= month 3) (= day 31)) (= month 4) (= month 5) (and (= month 6) (<= day 29))) (str year "-3-" 31)
-                            (or (and (= month 6) (= day 30)) (= month 7) (= month 8) (and (= month 9) (<= day 30))) (str year "-6-" 30)
-                            (or (and (= month 9) (= day 31)) (= month 10) (= month 11) (and (= month 12) (<= day 30))) (str year "-" 9 "-" 30))})))
+;; (defn- last-quar
+;;   "Returns the last quarter date of a given row."
+;;   [row]
+;;   (let [date (get row :date) tic (get row TICKER-KEY)]
+;;     (let [[year month day] (map parse-int (str/split date #"-"))]
+;;       {:tic tic :datadate (cond
+;;                             (or (and (= month 12) (= day 31)) (= month 1) (= month 2) (and (= month 3) (<= day 30))) (str (- year 1) "-" 12 "-" 31)
+;;                             (or (and (= month 3) (= day 31)) (= month 4) (= month 5) (and (= month 6) (<= day 29))) (str year "-3-" 31)
+;;                             (or (and (= month 6) (= day 30)) (= month 7) (= month 8) (and (= month 9) (<= day 30))) (str year "-6-" 30)
+;;                             (or (and (= month 9) (= day 31)) (= month 10) (= month 11) (and (= month 12) (<= day 30))) (str year "-" 9 "-" 30))})))
+
+(defn get-compustat-data
+  [date]
+  (let [comp-file (get data-files2 date)
+        comp (line-seq (io/reader comp-file))
+        comp (map read-string comp)
+        comp (map zipmap (repeat headers2) comp)]
+    comp))
+
+(defn merge-data
+  [crsp date]
+  (let [comp-date (first (first (rsubseq data-files2 <= date)))
+        comp (get-compustat-data comp-date)]
+    (map (fn [row] (let [tic (:TICKER row)
+                         comp-row (first (filter #(= tic (:tic %)) comp))]
+                     (merge row comp-row))) crsp)))
 
 (defn- get-info-by-date
   "Get the full tics info.\n
@@ -51,7 +67,8 @@
       ret
       ;; cache miss
       (let [data (line-seq (io/reader file))
-            data (map read-string data)]
+            data (map read-string data)
+            data (if headers2 (merge-data data date) data)]
         (cache-add-info date (map zipmap (repeat headers) data))))
     nil))
 
@@ -75,6 +92,14 @@
   ;;     (reset! tics-today (get-info-by-date (get-date)))))
   (get-info-by-date (get-date))
   )
+
+(defn permno-tic
+  [permno]
+  (mapv :TICKER (filter #(= permno (:PERMNO %)) (get-info))))
+
+(defn tic-permno
+  [tic]
+  (mapv :PERMNO (filter #(= tic (:TICKER %)) (get-info))))
 
 (defn get-info-map
   "Returns the whole information for the all the tics today.\n
@@ -152,6 +177,21 @@
          dates (take n (map first (rsubseq data-files < date)))]
      (map get-info-by-date dates))))
 
+(defn get-prev-n-days-map
+  "Returns a sequence of maps (ticker: info) of maps that contains data of the previous n days (not including today).\n
+   Date in descending order, ie from the most recent to the oldest.\n
+   If no n, return a lazy sequence of all prev days.
+   "
+  ;n  number of counting ahead
+  ([]
+   (let [date (get-date)
+         dates (map first (rsubseq data-files < date))]
+     (map get-info-map-by-date dates)))
+  ([n]
+   (let [date (get-date)
+         dates (take n (map first (rsubseq data-files < date)))]
+     (map get-info-map-by-date dates))))
+
 (defn get-tic-prev-n-days
   "This function returns a sequence of vector of the previous n records of a specific ticker (not including today).\n
    Date in descending order, ie from the most recent to the oldest.\n
@@ -159,31 +199,34 @@
    @tic: name of the stock\n
    @n: number of counting ahead"
   [tic n]
-  (let []
-    (loop [res (transient []) data (get-prev-n-days n)]
-      (if (or (= (count data) 0) (>= (count res) n))
-        (persistent! res)
-        (let [curr (first data)
-              data (rest data)]
-          ;; (doseq [row curr]
-          ;;   (if (= tic (get row TICKER-KEY))
-          ;;     (recur (conj res row) data)))
-          (let [
-                index (.indexOf (mapv TICKER-KEY curr) tic)
-                ;; row (loop [daily-data curr]
-                ;;       (if (= 0 (count daily-data))
-                ;;         nil
-                ;;         (let [row (first daily-data)
-                ;;               remain (rest daily-data)]
-                ;;           (if (= tic (TICKER-KEY row))
-                ;;             row
-                ;;             (recur remain)))))
-                ]
-            (if (not= index -1)
-            ;; (if (not= row nil)
-              (recur (conj! res (nth curr index)) data)
-              ;; (recur (conj res row) data)
-              (recur res data))))))
+  (let [data (get-prev-n-days-map n)]
+    ;; (map (fn [daily-data] (filter #(= (:TICKER %) tic) daily-data)) data)
+    (filter #(not= % nil) (map #(get % tic) data))
+    ;; method 1
+    ;; (loop [res (transient []) data (get-prev-n-days n)]
+    ;;   (if (or (= (count data) 0) (>= (count res) n))
+    ;;     (persistent! res)
+    ;;     (let [curr (first data)
+    ;;           data (rest data)]
+    ;;       ;; (doseq [row curr]
+    ;;       ;;   (if (= tic (get row TICKER-KEY))
+    ;;       ;;     (recur (conj res row) data)))
+    ;;       (let [
+    ;;             index (.indexOf (mapv TICKER-KEY curr) tic)
+    ;;             ;; row (loop [daily-data curr]
+    ;;             ;;       (if (= 0 (count daily-data))
+    ;;             ;;         nil
+    ;;             ;;         (let [row (first daily-data)
+    ;;             ;;               remain (rest daily-data)]
+    ;;             ;;           (if (= tic (TICKER-KEY row))
+    ;;             ;;             row
+    ;;             ;;             (recur remain)))))
+    ;;             ]
+    ;;         (if (not= index -1)
+    ;;         ;; (if (not= row nil)
+    ;;           (recur (conj! res (nth curr index)) data)
+    ;;           ;; (recur (conj res row) data)
+    ;;           (recur res data))))))
     )
   )
 

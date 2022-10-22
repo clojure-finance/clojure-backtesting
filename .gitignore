@@ -34,5 +34,6 @@ out_portfolio_value_record.csv
 Rplots.pdf
 
 # Clojask scipt
-clojask-script/
+clojask-script/.*
 resources/
+!clojupyter/resources/

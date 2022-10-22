@@ -260,7 +260,8 @@
                         (str "Date range: " (first (first data-files)) " ~ " (first (last data-files))))
       (= name "compustat") (do
                              (def headers2 _headers)
-                             (def data-files2 _data-files)))))
+                             (def data-files2 _data-files)
+                             (str "Date range: " (first (first data-files2)) " ~ " (first (last data-files2)))))))
 
 ;; for each security:
 ;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
@@ -324,4 +325,18 @@
           (spit file new-data)
           (println date)))
       (spit (str dir "header") (str (vec (concat headers [:INIT-PRICE :APRC :CUM-RET])))))
+    ))
+
+(defn delete-dup
+  "Delete the duplicated row of each file"
+  [dir headers data-files]
+  (let []
+    (doseq [[date file] data-files]
+      (let [rdr (io/reader file)
+            data (map read-string (line-seq rdr))
+            new-data (set data)
+            new-data (str/join "\n" (mapv str new-data))]
+        (spit file new-data)
+        (println date)))
+    ;; (spit (str dir "header") (str (vec (concat headers [:INIT-PRICE :APRC :CUM-RET]))))
     ))
