@@ -14,8 +14,8 @@
 ;;   (pp/print-table dir))
 
 (defn print-order-record
-  []
-  (pp/print-table (deref order-record)))
+  [& [n]]
+  (pp/print-table (if n (take n (deref order-record)) (deref order-record))))
 
 (defn print-automation-list
   []
