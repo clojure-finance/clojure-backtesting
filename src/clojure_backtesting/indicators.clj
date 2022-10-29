@@ -29,16 +29,16 @@
 (defn moving-sd
   "Returns volatility of a stock for the last n days."
   [tic n]
-    ;(println (get-prev-n-days :PRC days tic))
-    ;(println (map :PRC (get-prev-n-days :PRC days tic)))
-  (sd (conj (map :PRC (get-tic-prev-n-days tic (- n 1))) (get-tic-price tic))))
+    ;(println (get-prev-n-days PRICE-KEY days tic))
+    ;(println (map PRICE-KEY (get-prev-n-days PRICE-KEY days tic)))
+  (sd (conj (map PRICE-KEY (get-tic-prev-n-days tic (- n 1))) (get-tic-price tic))))
 
 (defn moving-avg
   "Returns volatility of a stock for the last n days."
   [tic n]
-    ;(println (get-prev-n-days :PRC days tic))
-    ;(println (map :PRC (get-prev-n-days :PRC days tic)))
-  (avg (conj (map :PRC (get-tic-prev-n-days tic (- n 1))) (get-tic-price tic))))
+    ;(println (get-prev-n-days PRICE-KEY days tic))
+    ;(println (map PRICE-KEY (get-prev-n-days PRICE-KEY days tic)))
+  (avg (conj (map PRICE-KEY (get-tic-prev-n-days tic (- n 1))) (get-tic-price tic))))
   
 ;; (defn tic-EMA
 ;;     "This function is a wrapper of EMA()."
@@ -72,7 +72,7 @@
         ema)
       (nth prev-ema 1))
     ;; (let [prev-data (conj (get-tic-prev-n-days tic (dec EMA-CYCLE)) (get-tic-info tic))]
-    ;;   (let [ema (reduce _EMA nil (map :PRC (reverse prev-data)))]
+    ;;   (let [ema (reduce _EMA nil (map PRICE-KEY (reverse prev-data)))]
     ;;     (def EMA-map (assoc! EMA-map tic [(get-date) ema]))
     ;;     (swap! EMA-keys conj tic)
     ;;     ema))
@@ -113,7 +113,7 @@
      (+ (* MACD-LONG-K price) (* (- 1 MACD-LONG-K) prev-ema))
      price)))
 
-(defn- MACD-singal
+(defn- MACD-signal
   "compute EMA in MACD"
   [tic]
   (let [key :MACD-sig
@@ -179,25 +179,11 @@
   [tic]
   (if (and (get-tic-info tic) (= nil (get (get MACD :MACD-long) tic)))
     (swap! MACD-keys conj tic))
-  (let [signal (MACD-singal tic)
+  (let [signal (MACD-signal tic)
         short (MACD-short tic)
         long (MACD-long tic)]
     [(- short long) signal short long])
   )
-
-(defn reset-indicator-maps
-  []
-  (def EMA-map (transient {}))
-  (reset! EMA-keys [])
-  (def MACD-map (transient {:MACD-sig (transient {}) :MACD-short (transient {}) :MACD-long (transient {})}))
-  (reset! MACD-keys []))
-
-(defn update-daily-indicators
-  []
-  (doseq [tic (deref EMA-keys)]
-    (EMA tic))
-  (doseq [tic (deref MACD-keys)]
-    (MACD tic)))
 
 
 (defn ROC
@@ -211,31 +197,64 @@
            (/ (- curr-price old-price) old-price) ; calculate ROC
            )))
 
-(defn RSI
-  "Returns the relative strength index (RSI) value.\n
+(defn RS
+  "Returns the average gain and average loss of past n days.
    @n should be greater than 0"
   [tic n] ; time window
-  (let [data (get-tic-prev-n-days tic n)
-        prices (reverse (conj (map :PRC data) (get-tic-price tic)))]
-    (loop [prices prices avg-gain 0 avg-loss 0]
-      (if (<= (count prices) 1)
-        (if (= avg-loss 0)
-          nil
-          (/  avg-gain avg-loss))
-        (let [prev-price (first prices)
-              remain (rest prices)
-              curr-price (first remain)
-              price-diff (- curr-price prev-price)]
-          (if (> price-diff 0)
-            (recur remain (+ avg-gain price-diff) avg-loss)
-            (recur remain avg-gain (+ avg-loss price-diff)))
-          ))))
+  (let [data (get-tic-prev-n-days tic (- n 1))
+        prices (reverse (conj (map PRICE-KEY data) (get-tic-price tic)))]
+    (if (= (count prices) n)
+     (loop [prices prices avg-gain 0 avg-loss 0]
+       (if (<= (count prices) 1)
+        ;; (if (= avg-loss 0)
+        ;;   nil
+        ;;   (- 100 (/ 100 (+ 1 (/  avg-gain avg-loss)))))
+         [avg-gain avg-loss]
+         (let [prev-price (first prices)
+               remain (rest prices)
+               curr-price (first remain)
+               price-diff (- curr-price prev-price)]
+           (if (> price-diff 0)
+             (recur remain (+ avg-gain price-diff) avg-loss)
+             (recur remain avg-gain (- avg-loss price-diff))))))
+      ;; (let [avg-gain-func (fn [prev new])
+      ;;       avg-gain (reduce avg-gain-func prices)])
+      nil)))
+
+(def RS-map (transient {}))
+(def RS-keys (atom []))
+
+(defn RSI
+  "Returns the Relative Strength Index (RSI)."
+  [permno]
+  (try
+    (if-let [prev-RS (get RS-map permno)]
+  ;; [(previous Average Gain) x 13 + current Gain] / 14
+      (if (= (first prev-RS) (get-date))
+        (- 100 (/ 100 (+ 1 (/ (nth (last prev-RS) 0) (nth (last prev-RS) 1)))))
+        (let [curr-price (get-tic-price permno)
+              last-price (PRICE-KEY (first (get-tic-prev-n-days permno 1)))
+              curr-change (- curr-price last-price)
+              prev-RS (nth prev-RS 1)
+              avg-gain (/ (+ (* (- RSI-CYCLE 1) (nth prev-RS 0)) (if (> curr-change 0) curr-change 0)) RSI-CYCLE)
+              avg-loss (/ (+ (* (- RSI-CYCLE 1) (nth prev-RS 1)) (if (< curr-change 0) curr-change 0)) RSI-CYCLE)]
+          (def RS-map (assoc! RS-map permno [(get-date) [avg-gain avg-loss]]))
+          (if (= avg-loss 0) 100 (- 100 (/ 100 (+ 1 (/ avg-gain avg-loss)))))))
+      (let [tmp (RS permno RSI-CYCLE)]
+        (if tmp
+          (do
+            (swap! RS-keys conj permno)
+            (def RS-map (assoc! RS-map permno [(get-date) tmp]))
+            (if (= (nth tmp 1) 0) 100 (- 100 (/ 100 (+ 1 (/ (nth tmp 0) (nth tmp 1)))))))
+          nil)
+        ))
+    (catch Exception e nil)))
   ;; (let [num-of-days (atom n)
   ;;       avg-gain (atom 0.0)
   ;;       avg-loss (atom 0.0)]
   ;;   (while (> @num-of-days 1) ;; check if counter is > 0
-  ;;     (let [prev-price (Double/parseDouble (get (first (get-prev-n-days :PRC (deref num-of-days) tic)) :PRC))
-  ;;           curr-price (Double/parseDouble (get (first (get-prev-n-days :PRC (- (deref num-of-days) 1) tic)) :PRC))
+  ;;     (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY (deref num-of-days) tic)) PRICE-KEY))
+  ;;           curr-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY (- (deref num-of-days) 1) tic)) PRICE-KEY))
   ;;           price-diff (- curr-price prev-price)]
   ;;       (if (pos? price-diff)
   ;;         (swap! avg-gain (partial + price-diff)) ;; add to 1st average gain
@@ -244,7 +263,7 @@
   ;;     (swap! num-of-days dec))
   ;;   (/ (deref avg-gain) (deref avg-loss)) ; calculate RSI
   ;;   )
-  )
+
 
 (defn parabolic-SAR
   "Additional columns needed: BIDLO, ASKHI"
@@ -276,13 +295,32 @@
         )
     )
 
+
+(defn reset-indicator-maps
+  []
+  (def EMA-map (transient {}))
+  (reset! EMA-keys [])
+  (def MACD-map (transient {:MACD-sig (transient {}) :MACD-short (transient {}) :MACD-long (transient {})}))
+  (reset! MACD-keys [])
+  (def RS-map (transient {}))
+  (reset! RS-keys []))
+
+(defn update-daily-indicators
+  []
+  (doseq [tic (deref EMA-keys)]
+    (EMA tic))
+  (doseq [tic (deref MACD-keys)]
+    (MACD tic))
+  (doseq [tic (deref RS-keys)]
+    (RSI tic)))
+
 ;; ;; need to double-check
 ;; (defn force-index
 ;;     [tic mode window]
 ;;     (if (= window 1)
 ;;         ;; calculate force index for window = 1
-;;         (let [prev-price (Double/parseDouble (get (first (get-prev-n-days :PRC 1 tic)) :PRC))
-;;               curr-price (Double/parseDouble (get-price tic :PRC mode))
+;;         (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY 1 tic)) PRICE-KEY))
+;;               curr-price (Double/parseDouble (get-price tic PRICE-KEY mode))
 ;;               curr-volume (Double/parseDouble (get-by-key tic :VOL mode))]
 ;;               (* (- curr-price prev-price) curr-volume)
 ;;                 )
@@ -292,12 +330,12 @@
 ;;             (if (not= EMA-CYCLE window)
 ;;                 (CHANGE-EMA-CYCLE window))
 ;;             ;; get EMA of force index(1)
-;;             (let [prev-price (Double/parseDouble (get (first (get-prev-n-days :PRC 1 tic)) :PRC))
+;;             (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY 1 tic)) PRICE-KEY))
 ;;                   prev-fi (atom prev-price)
 ;;                   ema-value (atom 0)]
-;;                   (doseq [prev-n-prices (get-prev-n-days :PRC window tic)]
+;;                   (doseq [prev-n-prices (get-prev-n-days PRICE-KEY window tic)]
 ;;                     (do
-;;                         (let [curr-price (Double/parseDouble (get prev-n-prices :PRC))
+;;                         (let [curr-price (Double/parseDouble (get prev-n-prices PRICE-KEY))
 ;;                               curr-fi (force-index tic mode 1)]
 ;;                               (println (EMA curr-fi (deref prev-fi)))
 ;;                               (reset! ema-value (EMA curr-fi (deref prev-fi)))

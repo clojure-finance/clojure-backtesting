@@ -25,6 +25,7 @@
 (def MACD-SIGNAL 9)
 (def MACD-SHORT 12)
 (def MACD-LONG 26)
+(def RSI-CYCLE 14)
 
 (defn CHANGE-EMA-CYCLE
   [int]

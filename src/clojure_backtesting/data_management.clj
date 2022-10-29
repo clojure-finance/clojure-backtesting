@@ -114,6 +114,11 @@
     (get-info-map-by-date (get-date))
     ))
 
+(defn available-permnos
+  "Gets all available permnos today in a sequence"
+  []
+  (keys (get-info-map)))
+
 ;; (defn get-info-tomorrow
 ;;   "Returns the whole information for the all the tics today.\n
 ;;    A sequence of maps."
@@ -151,9 +156,9 @@
 (defn get-tic-price
   "Returns the price of a given ticker today, otherwise nil."
   ([tic]
-   (:PRC (get-tic-info tic)))
+   (PRICE-KEY (get-tic-info tic)))
   ([date tic]
-   (:PRC (get-tic-info date tic))))
+   (PRICE-KEY (get-tic-info date tic))))
 
 (defn get-tic-by-key
   "Returns the value of the key of a given ticker today, otherwise nil."
@@ -372,8 +377,8 @@
 ;;   ([tic mode]
 ;;     (if (= "lazy" mode)
 ;;       ;(deref lazy-mode)
-;;         (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) :PRC))
-;;         (get (first (get (get (deref available-tics) tic) :reference)) :PRC)
+;;         (Double/parseDouble (get (get (get (deref available-tics) tic) :reference) PRICE-KEY))
+;;         (get (first (get (get (deref available-tics) tic) :reference)) PRICE-KEY)
 ;;       ))
 ;;   ([tic key mode]
 ;;     (if (= "lazy" mode)

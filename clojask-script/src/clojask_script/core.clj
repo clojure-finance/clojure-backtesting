@@ -101,21 +101,29 @@
 ;;           (println "Dataset grouped successfully.")))))
   
 ;;   )
+;; (defn -main
+;;   "Main function"
+;;   []
+;;   (println (str "Input file: " input-file))
+;;   (println (str "Output dir: " output-dir))
+;;   (let [df (ck/dataframe input-file)
+;;         headers (mapv keyword (ck/get-col-names df))]
+;;     ;; (ck/set-type df "PRC" "double")
+;;     ;; (ck/set-type df "RET" "double")
+;;     (ck/group-by df "datadate")
+;;     (io/make-parents (str output-dir "grouped/" "header"))
+;;     (spit (str output-dir "header") (str headers))
+;;     (let [groupby-keys (.getGroupbyKeys (:row-info df))
+;;           groupby-index (vec (take (count headers) (iterate inc 0)))
+;;           res (start-onyx-groupby 8 300 df (str output-dir "grouped/") groupby-keys groupby-index false)]
+;;       (if (= res "success")
+;;         (do
+;;           (println "Dataset grouped successfully."))))))
+
 (defn -main
-  "Main function"
   []
-  (println (str "Input file: " input-file))
-  (println (str "Output dir: " output-dir))
-  (let [df (ck/dataframe input-file)
-        headers (mapv keyword (ck/get-col-names df))]
-    ;; (ck/set-type df "PRC" "double")
-    ;; (ck/set-type df "RET" "double")
-    (ck/group-by df "datadate")
-    (io/make-parents (str output-dir "grouped/" "header"))
-    (spit (str output-dir "header") (str headers))
-    (let [groupby-keys (.getGroupbyKeys (:row-info df))
-          groupby-index (vec (take (count headers) (iterate inc 0)))
-          res (start-onyx-groupby 8 300 df (str output-dir "grouped/") groupby-keys groupby-index false)]
-      (if (= res "success")
-        (do
-          (println "Dataset grouped successfully."))))))
+  (let [df1 (ck/dataframe "/Volumes/T7/data-sorted-cleaned/data-Compustat.csv")
+        df2 (ck/dataframe "/Users/lyc/Downloads/data-to-Leo.csv")
+        df-join (ck/inner-join df1 df2 ["gvkey" "tic" "datadate"] ["gvkey" "tic" "datadate"])]
+    (ck/compute df-join 8 "../resources/Compustat.csv")
+    ))

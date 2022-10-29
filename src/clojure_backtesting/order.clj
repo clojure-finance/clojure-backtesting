@@ -175,7 +175,7 @@
 	;; @tic  trading ticker
 	;; @quantity exact number to buy(+) or sell(-)
   (let [date order-date
-        price (:PRC info)
+        price (PRICE-KEY info)
         adj-price (:APRC info)]
     (let [total (cond
                   (= (get (get (deref portfolio) tic) :quantity) nil) 0

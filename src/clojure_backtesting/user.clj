@@ -50,7 +50,7 @@
   (print-eval-report -1)
 
   ;; (println (sd-last-n-days "OMFGA" 10))
-  ;; (let [prev-close (Double/parseDouble (get (first (get-prev-n-days :PRC 1 "OMFGA")) :PRC))]
+  ;; (let [prev-close (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY 1 "OMFGA")) PRICE-KEY))]
   ;;   (println (parabolic-SAR "OMFGA" "non-lazy" 0.2 prev-close))
   ;;   )
 
