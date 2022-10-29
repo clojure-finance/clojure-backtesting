@@ -115,7 +115,7 @@
     ))
 
 (defn available-permnos
-  "Gets all available permnos today in a sequence"
+  "Gets all available permnos today in a sequence."
   []
   (keys (get-info-map)))
 
