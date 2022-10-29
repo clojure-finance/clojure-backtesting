@@ -21,16 +21,16 @@
   (def CACHE-SIZE size))
 
 ;; =============== Indicator ===============
-(def EMA-CYCLE 20)
+(def ^:dynamic EMA-CYCLE 20)
 (def MACD-SIGNAL 9)
 (def MACD-SHORT 12)
 (def MACD-LONG 26)
-(def RSI-CYCLE 14)
+(def ^:dynamic RSI-CYCLE 14)
 
 (defn CHANGE-EMA-CYCLE
   [int]
-  (def EMA-CYCLE int)
-  (def EMA-K (/ 2 (+ EMA-CYCLE 1)))
+  (def ^:dynamic EMA-CYCLE int)
+  (def ^:dynamic EMA-K (/ 2 (+ EMA-CYCLE 1)))
   )
 
 (defn CHANGE-MACD-SIGNAL
@@ -47,6 +47,10 @@
   [int]
   (def MACD-LONG int)
   (def MACD-LONG-K (/ 2 (+ MACD-LONG 1))))
+
+(defn CHANGE-RSI-CYCLE
+  [int]
+  (def ^:dynamic RSI-CYCLE int))
 
 ;; ============ Parameters for margin requirements ============
 
@@ -102,7 +106,7 @@
 ;; ============ FIXED PARAMETERS ============
 
 ;; (def NOMATCH "2oif94ksdajf09934")
-(def EMA-K (/ 2 (+ EMA-CYCLE 1)))
+(def ^:dynamic EMA-K (/ 2 (+ EMA-CYCLE 1)))
 (def MACD-SIGNAL-K (/ 2 (+ MACD-SIGNAL 1)))
 (def MACD-SHORT-K (/ 2 (+ MACD-SHORT 1)))
 (def MACD-LONG-K (/ 2 (+ MACD-LONG 1)))

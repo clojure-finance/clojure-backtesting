@@ -47,10 +47,10 @@
 ;;     ([permno key prev-ema mode]
 ;;         (EMA (get-price permno key mode) prev-ema)))
 
-(def EMA-map (transient {}))
-(def EMA-keys (atom []))
-(def MACD-map (transient {:MACD-sig (transient {}) :MACD-short (transient {}) :MACD-long (transient {})}))
-(def MACD-keys (atom []))
+(def ^:dynamic EMA-map (transient {}))
+(def ^:dynamic EMA-keys (atom []))
+(def ^:dynamic MACD-map (transient {:MACD-sig (transient {}) :MACD-short (transient {}) :MACD-long (transient {})}))
+(def ^:dynamic MACD-keys (atom []))
 
 (defn- _EMA
   "Returns the exponential moving average (EMA) using the recursion formula."
@@ -67,7 +67,7 @@
   [permno]
   (if-let  [prev-ema (get EMA-map permno)]
     (if (< (compare (first prev-ema) (get-date)) 0)
-      (let [ema (_EMA (get-permno-price permno) (nth prev-ema 1))]
+      (let [ema (_EMA (nth prev-ema 1) (get-permno-price permno))]
         (def EMA-map (assoc! EMA-map permno [(get-date) ema]))
         ema)
       (nth prev-ema 1))
@@ -78,10 +78,46 @@
     ;;     ema))
     (if-let [avg (moving-avg permno EMA-CYCLE)]
       (do
+        (swap! EMA-keys conj permno)
         (def EMA-map (assoc! EMA-map permno [(get-date) avg]))
         avg)
       nil)
     ))
+
+(def EMA-gen-map (atom {}))
+(def EMA-gen-keys (atom {}))
+(def EMA-gen-funcs (atom {}))
+(def EMA-gen-sizes (atom []))
+
+(defn EMA-generator
+  [size]
+  (if-let [func (get (deref EMA-gen-funcs) size)]
+    func
+    (let [id size
+          k (/ 2 (+ size 1))
+          func (fn [permno]
+                 (binding [EMA-CYCLE size
+                           EMA-K k
+                           EMA-map (get (deref EMA-gen-map) id)
+                           EMA-keys (get (deref EMA-gen-keys) id)]
+                   (if-let  [prev-ema (get EMA-map permno)]
+                     (if (< (compare (first prev-ema) (get-date)) 0)
+                       (let [ema (_EMA (nth prev-ema 1) (get-permno-price permno))]
+                         (swap! EMA-gen-map assoc id (assoc! EMA-map permno [(get-date) ema]))
+                         ema)
+                       (nth prev-ema 1))
+                     (if-let [avg (moving-avg permno EMA-CYCLE)]
+                       (do
+              ;; (println (get EMA-gen-keys id))
+                         (swap! EMA-keys conj permno)
+                         (swap! EMA-gen-map assoc id (assoc! EMA-map permno [(get-date) avg]))
+                         avg)
+                       nil))))]
+      (swap! EMA-gen-map assoc id (transient {}))
+      (swap! EMA-gen-keys assoc id (atom []))
+      (swap! EMA-gen-funcs assoc id func)
+      (swap! EMA-gen-sizes conj size)
+      func)))
 
 (defn- _MACD-signal
   "Returns the exponential moving average (EMA) using the recursion formula."
@@ -164,16 +200,6 @@
           avg)
         nil))))
 
-;; todo
-;; (defn MACD
-;;     "Returns a vector: (MACD, 12-day EMA, 26-day EMA)"
-;;     ([price ema-12 ema-26 ema-9]
-;;         (let [ema-12-new (/ (+ (* price 2) (* (- MACD-SHORT 1) ema-12)) (+ MACD-SHORT 1))
-;;               ema-26-new (/ (+ (* price 2) (* (- MACD-LONG 1) ema-26)) (+ MACD-LONG 1))
-;;               ema-9-new (/ (+ (* price 2) (* (- MACD-SIGNAL 1) ema-9)) (+ MACD-SIGNAL 1))] 
-;;         [(- ema-12-new ema-26-new) ema-12-new ema-26-new ema-9-new]))
-;;     ([price vector]
-;;         (MACD price (nth vector 1) (nth vector 2) (nth vector 3))))
 (defn MACD
   "Returns a vector: (MACD, 9-day EMA (signal), 12-day EMA (short), 26-day EMA (long))"
   [permno]
@@ -185,6 +211,24 @@
     [(- short long) signal short long])
   )
 
+;; (def MACD-gen-map (atom {}))
+;; (def MACD-gen-keys (atom {}))
+;; (def MACD-gen-funcs (atom {}))
+
+(defn MACD-generator
+  [signal short long]
+  (let [MACD-signal (EMA-generator signal)
+        MACD-short (EMA-generator short)
+        MACD-long (EMA-generator long)
+        func (fn [permno]
+              ;;  (if (and (get-permno-info permno) (= nil (get (get MACD :MACD-long) permno)))
+              ;;    (swap! MACD-keys conj permno))
+               (let [signal (MACD-signal permno)
+                     short (MACD-short permno)
+                     long (MACD-long permno)]
+                 [(- short long) signal short long]))]
+    func)
+  )
 
 (defn ROC
     "Returns the rate of change (ROC) value, decimal format.\n
@@ -221,8 +265,8 @@
       ;;       avg-gain (reduce avg-gain-func prices)])
       nil)))
 
-(def RS-map (transient {}))
-(def RS-keys (atom []))
+(def ^:dynamic RS-map (transient {}))
+(def ^:dynamic RS-keys (atom []))
 
 (defn RSI
   "Returns the Relative Strength Index (RSI)."
@@ -249,20 +293,47 @@
           nil)
         ))
     (catch Exception e nil)))
-  ;; (let [num-of-days (atom n)
-  ;;       avg-gain (atom 0.0)
-  ;;       avg-loss (atom 0.0)]
-  ;;   (while (> @num-of-days 1) ;; check if counter is > 0
-  ;;     (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY (deref num-of-days) permno)) PRICE-KEY))
-  ;;           curr-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY (- (deref num-of-days) 1) permno)) PRICE-KEY))
-  ;;           price-diff (- curr-price prev-price)]
-  ;;       (if (pos? price-diff)
-  ;;         (swap! avg-gain (partial + price-diff)) ;; add to 1st average gain
-  ;;         (swap! avg-loss (partial + price-diff)) ;; add to 1st average loss
-  ;;         ))
-  ;;     (swap! num-of-days dec))
-  ;;   (/ (deref avg-gain) (deref avg-loss)) ; calculate RSI
-  ;;   )
+
+(def RSI-gen-map (atom {}))
+(def RSI-gen-keys (atom {}))
+(def RSI-gen-funcs (atom {}))
+(def RSI-gen-sizes (atom []))
+
+(defn RSI-generator
+  [size]
+  (if-let [func (get (deref RSI-gen-funcs) size)]
+    func
+    (let [id size
+          func (fn [permno]
+                 (binding [RSI-CYCLE size
+                           RS-map (get (deref RSI-gen-map) id)
+                           RS-keys (get (deref RSI-gen-keys) id)]
+                   (try
+                     (if-let [prev-RS (get RS-map permno)]
+                       ;; [(previous Average Gain) x 13 + current Gain] / 14
+                       (if (= (first prev-RS) (get-date))
+                         (- 100 (/ 100 (+ 1 (/ (nth (last prev-RS) 0) (nth (last prev-RS) 1)))))
+                         (let [curr-price (get-permno-price permno)
+                               last-price (PRICE-KEY (first (get-permno-prev-n-days permno 1)))
+                               curr-change (- curr-price last-price)
+                               prev-RS (nth prev-RS 1)
+                               avg-gain (/ (+ (* (- RSI-CYCLE 1) (nth prev-RS 0)) (if (> curr-change 0) curr-change 0)) RSI-CYCLE)
+                               avg-loss (/ (+ (* (- RSI-CYCLE 1) (nth prev-RS 1)) (if (< curr-change 0) curr-change 0)) RSI-CYCLE)]
+                           (swap! RSI-gen-map assoc id (assoc! RS-map permno [(get-date) [avg-gain avg-loss]]))
+                           (if (= avg-loss 0) 100 (- 100 (/ 100 (+ 1 (/ avg-gain avg-loss)))))))
+                       (let [tmp (RS permno RSI-CYCLE)]
+                         (if tmp
+                           (do
+                             (swap! RS-keys conj permno)
+                             (swap! RSI-gen-map assoc id (assoc! RS-map permno [(get-date) tmp]))
+                             (if (= (nth tmp 1) 0) 100 (- 100 (/ 100 (+ 1 (/ (nth tmp 0) (nth tmp 1)))))))
+                           nil)))
+                     (catch Exception e nil))))]
+      (swap! RSI-gen-map assoc id (transient {}))
+      (swap! RSI-gen-keys assoc id (atom []))
+      (swap! RSI-gen-funcs assoc id func)
+      (swap! RSI-gen-sizes conj size)
+      func)))
 
 
 (defn parabolic-SAR
@@ -298,21 +369,39 @@
 
 (defn reset-indicator-maps
   []
-  (def EMA-map (transient {}))
+  (def ^:dynamic EMA-map (transient {}))
   (reset! EMA-keys [])
+  (doseq [id (deref EMA-gen-sizes)]
+    (swap! EMA-gen-map assoc id (transient {}))
+    (swap! EMA-gen-keys assoc id (atom []))
+    ;; (swap! EMA-gen-funcs assoc id func)
+    ;; (swap! EMA-gen-sizes conj size)
+    )
   (def MACD-map (transient {:MACD-sig (transient {}) :MACD-short (transient {}) :MACD-long (transient {})}))
   (reset! MACD-keys [])
-  (def RS-map (transient {}))
-  (reset! RS-keys []))
+  (def ^:dynamic RS-map (transient {}))
+  (reset! RS-keys [])
+  (doseq [id (deref RSI-gen-sizes)]
+    (swap! RSI-gen-map assoc id (transient {}))
+    (swap! RSI-gen-keys assoc id (atom []))
+    ;; (swap! RSI-gen-funcs assoc id func)
+    ;; (swap! RSI-gen-sizes conj size)
+    ))
 
 (defn update-daily-indicators
   []
   (doseq [permno (deref EMA-keys)]
     (EMA permno))
+  (doseq [size (deref EMA-gen-sizes)]
+    (doseq [permno (deref (get (deref EMA-gen-keys) size))]
+      ((get (deref EMA-gen-funcs) size) permno)))
   (doseq [permno (deref MACD-keys)]
     (MACD permno))
   (doseq [permno (deref RS-keys)]
-    (RSI permno)))
+    (RSI permno))
+  (doseq [size (deref RSI-gen-sizes)]
+    (doseq [permno (deref (get (deref RSI-gen-keys) size))]
+      ((get (deref RSI-gen-funcs) size) permno))))
 
 ;; ;; need to double-check
 ;; (defn force-index
