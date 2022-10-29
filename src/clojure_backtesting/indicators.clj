@@ -28,24 +28,24 @@
 
 (defn moving-sd
   "Returns volatility of a stock for the last n days."
-  [tic n]
-    ;(println (get-prev-n-days PRICE-KEY days tic))
-    ;(println (map PRICE-KEY (get-prev-n-days PRICE-KEY days tic)))
-  (sd (conj (map PRICE-KEY (get-tic-prev-n-days tic (- n 1))) (get-tic-price tic))))
+  [permno n]
+    ;(println (get-prev-n-days PRICE-KEY days permno))
+    ;(println (map PRICE-KEY (get-prev-n-days PRICE-KEY days permno)))
+  (sd (conj (map PRICE-KEY (get-permno-prev-n-days permno (- n 1))) (get-permno-price permno))))
 
 (defn moving-avg
   "Returns volatility of a stock for the last n days."
-  [tic n]
-    ;(println (get-prev-n-days PRICE-KEY days tic))
-    ;(println (map PRICE-KEY (get-prev-n-days PRICE-KEY days tic)))
-  (avg (conj (map PRICE-KEY (get-tic-prev-n-days tic (- n 1))) (get-tic-price tic))))
+  [permno n]
+    ;(println (get-prev-n-days PRICE-KEY days permno))
+    ;(println (map PRICE-KEY (get-prev-n-days PRICE-KEY days permno)))
+  (avg (conj (map PRICE-KEY (get-permno-prev-n-days permno (- n 1))) (get-permno-price permno))))
   
-;; (defn tic-EMA
+;; (defn permno-EMA
 ;;     "This function is a wrapper of EMA()."
-;;     ([tic key mode]
-;;         (EMA (get-price tic key mode)))
-;;     ([tic key prev-ema mode]
-;;         (EMA (get-price tic key mode) prev-ema)))
+;;     ([permno key mode]
+;;         (EMA (get-price permno key mode)))
+;;     ([permno key prev-ema mode]
+;;         (EMA (get-price permno key mode) prev-ema)))
 
 (def EMA-map (transient {}))
 (def EMA-keys (atom []))
@@ -64,21 +64,21 @@
 
 (defn EMA
   "Get stable EMA of a ticker today."
-  [tic]
-  (if-let  [prev-ema (get EMA-map tic)]
+  [permno]
+  (if-let  [prev-ema (get EMA-map permno)]
     (if (< (compare (first prev-ema) (get-date)) 0)
-      (let [ema (_EMA (get-tic-price tic) (nth prev-ema 1))]
-        (def EMA-map (assoc! EMA-map tic [(get-date) ema]))
+      (let [ema (_EMA (get-permno-price permno) (nth prev-ema 1))]
+        (def EMA-map (assoc! EMA-map permno [(get-date) ema]))
         ema)
       (nth prev-ema 1))
-    ;; (let [prev-data (conj (get-tic-prev-n-days tic (dec EMA-CYCLE)) (get-tic-info tic))]
+    ;; (let [prev-data (conj (get-permno-prev-n-days permno (dec EMA-CYCLE)) (get-permno-info permno))]
     ;;   (let [ema (reduce _EMA nil (map PRICE-KEY (reverse prev-data)))]
-    ;;     (def EMA-map (assoc! EMA-map tic [(get-date) ema]))
-    ;;     (swap! EMA-keys conj tic)
+    ;;     (def EMA-map (assoc! EMA-map permno [(get-date) ema]))
+    ;;     (swap! EMA-keys conj permno)
     ;;     ema))
-    (if-let [avg (moving-avg tic EMA-CYCLE)]
+    (if-let [avg (moving-avg permno EMA-CYCLE)]
       (do
-        (def EMA-map (assoc! EMA-map tic [(get-date) avg]))
+        (def EMA-map (assoc! EMA-map permno [(get-date) avg]))
         avg)
       nil)
     ))
@@ -115,52 +115,52 @@
 
 (defn- MACD-signal
   "compute EMA in MACD"
-  [tic]
+  [permno]
   (let [key :MACD-sig
         EMA-map (get MACD-map key)]
-    (if-let  [prev-ema (get EMA-map tic)]
+    (if-let  [prev-ema (get EMA-map permno)]
       (if (< (compare (first prev-ema) (get-date)) 0)
-        (let [ema (_MACD-signal (nth prev-ema 1) (get-tic-price tic))]
-          (def MACD-map (assoc! MACD-map key (assoc! EMA-map tic [(get-date) ema])))
+        (let [ema (_MACD-signal (nth prev-ema 1) (get-permno-price permno))]
+          (def MACD-map (assoc! MACD-map key (assoc! EMA-map permno [(get-date) ema])))
           ema)
         (nth prev-ema 1))
-      (if-let [avg (moving-avg tic MACD-SIGNAL)]
+      (if-let [avg (moving-avg permno MACD-SIGNAL)]
         (do
-          (def MACD-map (assoc! MACD-map key (assoc! EMA-map tic [(get-date) avg])))
+          (def MACD-map (assoc! MACD-map key (assoc! EMA-map permno [(get-date) avg])))
           avg)
         nil))))
 
 (defn- MACD-short
   "compute EMA in MACD"
-  [tic]
+  [permno]
   (let [key :MACD-short
         EMA-map (get MACD-map key)]
-    (if-let  [prev-ema (get EMA-map tic)]
+    (if-let  [prev-ema (get EMA-map permno)]
       (if (< (compare (first prev-ema) (get-date)) 0)
-        (let [ema (_MACD-short (nth prev-ema 1) (get-tic-price tic))]
-          (def MACD-map (assoc! MACD-map key (assoc! EMA-map tic [(get-date) ema])))
+        (let [ema (_MACD-short (nth prev-ema 1) (get-permno-price permno))]
+          (def MACD-map (assoc! MACD-map key (assoc! EMA-map permno [(get-date) ema])))
           ema)
         (nth prev-ema 1))
-      (if-let [avg (moving-avg tic MACD-SHORT)]
+      (if-let [avg (moving-avg permno MACD-SHORT)]
         (do
-          (def MACD-map (assoc! MACD-map key (assoc! EMA-map tic [(get-date) avg])))
+          (def MACD-map (assoc! MACD-map key (assoc! EMA-map permno [(get-date) avg])))
           avg)
         nil))))
 
 (defn- MACD-long
   "compute EMA in MACD"
-  [tic]
+  [permno]
   (let [key :MACD-long
         EMA-map (get MACD-map key)]
-    (if-let  [prev-ema (get EMA-map tic)]
+    (if-let  [prev-ema (get EMA-map permno)]
       (if (< (compare (first prev-ema) (get-date)) 0)
-        (let [ema (_MACD-long (nth prev-ema 1) (get-tic-price tic))]
-          (def MACD-map (assoc! MACD-map key (assoc! EMA-map tic [(get-date) ema])))
+        (let [ema (_MACD-long (nth prev-ema 1) (get-permno-price permno))]
+          (def MACD-map (assoc! MACD-map key (assoc! EMA-map permno [(get-date) ema])))
           ema)
         (nth prev-ema 1))
-      (if-let [avg (moving-avg tic MACD-LONG)]
+      (if-let [avg (moving-avg permno MACD-LONG)]
         (do
-          (def MACD-map (assoc! MACD-map key (assoc! EMA-map tic [(get-date) avg])))
+          (def MACD-map (assoc! MACD-map key (assoc! EMA-map permno [(get-date) avg])))
           avg)
         nil))))
 
@@ -176,12 +176,12 @@
 ;;         (MACD price (nth vector 1) (nth vector 2) (nth vector 3))))
 (defn MACD
   "Returns a vector: (MACD, 9-day EMA (signal), 12-day EMA (short), 26-day EMA (long))"
-  [tic]
-  (if (and (get-tic-info tic) (= nil (get (get MACD :MACD-long) tic)))
-    (swap! MACD-keys conj tic))
-  (let [signal (MACD-signal tic)
-        short (MACD-short tic)
-        long (MACD-long tic)]
+  [permno]
+  (if (and (get-permno-info permno) (= nil (get (get MACD :MACD-long) permno)))
+    (swap! MACD-keys conj permno))
+  (let [signal (MACD-signal permno)
+        short (MACD-short permno)
+        long (MACD-long permno)]
     [(- short long) signal short long])
   )
 
@@ -189,10 +189,10 @@
 (defn ROC
     "Returns the rate of change (ROC) value, decimal format.\n
      @n should be greater than 0"
-    [tic n] ; time window
+    [permno n] ; time window
     (let [prev-n-date (get-prev-n-date n)
-          old-price (get-tic-price prev-n-date tic) ;; get price n days ago
-          curr-price (get-tic-price tic)] ;; get today's price
+          old-price (get-permno-price prev-n-date permno) ;; get price n days ago
+          curr-price (get-permno-price permno)] ;; get today's price
        (if (and (not= old-price nil) (not= curr-price nil) (not= old-price 0))
            (/ (- curr-price old-price) old-price) ; calculate ROC
            )))
@@ -200,9 +200,9 @@
 (defn RS
   "Returns the average gain and average loss of past n days.
    @n should be greater than 0"
-  [tic n] ; time window
-  (let [data (get-tic-prev-n-days tic (- n 1))
-        prices (reverse (conj (map PRICE-KEY data) (get-tic-price tic)))]
+  [permno n] ; time window
+  (let [data (get-permno-prev-n-days permno (- n 1))
+        prices (reverse (conj (map PRICE-KEY data) (get-permno-price permno)))]
     (if (= (count prices) n)
      (loop [prices prices avg-gain 0 avg-loss 0]
        (if (<= (count prices) 1)
@@ -232,8 +232,8 @@
   ;; [(previous Average Gain) x 13 + current Gain] / 14
       (if (= (first prev-RS) (get-date))
         (- 100 (/ 100 (+ 1 (/ (nth (last prev-RS) 0) (nth (last prev-RS) 1)))))
-        (let [curr-price (get-tic-price permno)
-              last-price (PRICE-KEY (first (get-tic-prev-n-days permno 1)))
+        (let [curr-price (get-permno-price permno)
+              last-price (PRICE-KEY (first (get-permno-prev-n-days permno 1)))
               curr-change (- curr-price last-price)
               prev-RS (nth prev-RS 1)
               avg-gain (/ (+ (* (- RSI-CYCLE 1) (nth prev-RS 0)) (if (> curr-change 0) curr-change 0)) RSI-CYCLE)
@@ -253,8 +253,8 @@
   ;;       avg-gain (atom 0.0)
   ;;       avg-loss (atom 0.0)]
   ;;   (while (> @num-of-days 1) ;; check if counter is > 0
-  ;;     (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY (deref num-of-days) tic)) PRICE-KEY))
-  ;;           curr-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY (- (deref num-of-days) 1) tic)) PRICE-KEY))
+  ;;     (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY (deref num-of-days) permno)) PRICE-KEY))
+  ;;           curr-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY (- (deref num-of-days) 1) permno)) PRICE-KEY))
   ;;           price-diff (- curr-price prev-price)]
   ;;       (if (pos? price-diff)
   ;;         (swap! avg-gain (partial + price-diff)) ;; add to 1st average gain
@@ -267,30 +267,30 @@
 
 (defn parabolic-SAR
   "Additional columns needed: BIDLO, ASKHI"
-  [tic af prev-psar]
-  (let [low-price (Double/parseDouble (get-tic-by-key tic :BIDLO))
-        high-price (Double/parseDouble (get-tic-by-key tic :ASKHI))
+  [permno af prev-psar]
+  (let [low-price (Double/parseDouble (get-permno-by-key permno :BIDLO))
+        high-price (Double/parseDouble (get-permno-by-key permno :ASKHI))
         rising-sar (+ prev-psar (* af (- high-price prev-psar)))
         falling-sar (+ prev-psar (* af (- low-price prev-psar)))]
     (vector rising-sar falling-sar)))
 
 (defn ATR
   "Additional columns needed: BIDLO, ASKHI"
-  [tic n prev-atr]
-  (let [low-price (Double/parseDouble (get-tic-by-key tic :BIDLO))
-        high-price (Double/parseDouble (get-tic-by-key tic :ASKHI))
+  [permno n prev-atr]
+  (let [low-price (Double/parseDouble (get-permno-by-key permno :BIDLO))
+        high-price (Double/parseDouble (get-permno-by-key permno :ASKHI))
         current-tr (- high-price low-price)]
     (/ (+ (* prev-atr 13) current-tr) n)))
 
 (defn keltner-channel
-    [tic window prev-atr]
+    [permno window prev-atr]
     ; set window for EMA
     ;; (if (not= EMA-CYCLE 20)
     ;;     (CHANGE-EMA-CYCLE 20)
     ;;     )
-    (let [middle-line (EMA tic)
-          upper-channel (+ middle-line (* 2 (ATR tic window prev-atr)))
-          lower-channel (- middle-line (* 2 (ATR tic window prev-atr)))]
+    (let [middle-line (EMA permno)
+          upper-channel (+ middle-line (* 2 (ATR permno window prev-atr)))
+          lower-channel (- middle-line (* 2 (ATR permno window prev-atr)))]
         (vector middle-line upper-channel lower-channel)
         )
     )
@@ -307,21 +307,21 @@
 
 (defn update-daily-indicators
   []
-  (doseq [tic (deref EMA-keys)]
-    (EMA tic))
-  (doseq [tic (deref MACD-keys)]
-    (MACD tic))
-  (doseq [tic (deref RS-keys)]
-    (RSI tic)))
+  (doseq [permno (deref EMA-keys)]
+    (EMA permno))
+  (doseq [permno (deref MACD-keys)]
+    (MACD permno))
+  (doseq [permno (deref RS-keys)]
+    (RSI permno)))
 
 ;; ;; need to double-check
 ;; (defn force-index
-;;     [tic mode window]
+;;     [permno mode window]
 ;;     (if (= window 1)
 ;;         ;; calculate force index for window = 1
-;;         (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY 1 tic)) PRICE-KEY))
-;;               curr-price (Double/parseDouble (get-price tic PRICE-KEY mode))
-;;               curr-volume (Double/parseDouble (get-by-key tic :VOL mode))]
+;;         (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY 1 permno)) PRICE-KEY))
+;;               curr-price (Double/parseDouble (get-price permno PRICE-KEY mode))
+;;               curr-volume (Double/parseDouble (get-by-key permno :VOL mode))]
 ;;               (* (- curr-price prev-price) curr-volume)
 ;;                 )
 ;;         ;; calculate force index for window > 1
@@ -330,13 +330,13 @@
 ;;             (if (not= EMA-CYCLE window)
 ;;                 (CHANGE-EMA-CYCLE window))
 ;;             ;; get EMA of force index(1)
-;;             (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY 1 tic)) PRICE-KEY))
+;;             (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY 1 permno)) PRICE-KEY))
 ;;                   prev-fi (atom prev-price)
 ;;                   ema-value (atom 0)]
-;;                   (doseq [prev-n-prices (get-prev-n-days PRICE-KEY window tic)]
+;;                   (doseq [prev-n-prices (get-prev-n-days PRICE-KEY window permno)]
 ;;                     (do
 ;;                         (let [curr-price (Double/parseDouble (get prev-n-prices PRICE-KEY))
-;;                               curr-fi (force-index tic mode 1)]
+;;                               curr-fi (force-index permno mode 1)]
 ;;                               (println (EMA curr-fi (deref prev-fi)))
 ;;                               (reset! ema-value (EMA curr-fi (deref prev-fi)))
 ;;                               (reset! prev-fi curr-fi))

@@ -75,72 +75,72 @@
 ;; limit order wrappers
 ;; (defn stop-buy
 ;;   "This function executes a stop buy order."
-;;   [tic prc qty mode & [expiration]]
+;;   [permno prc qty mode & [expiration]]
 ;;   (if (= mode "non-lazy")
 ;;     (set-automation
 ;;       ; check if ticker adjusted price is greater than prc
-;;      #(and  (> (get-in (deref portfolio) [tic :aprc]) prc))
-;;      #(order tic qty)
+;;      #(and  (> (get-in (deref portfolio) [permno :aprc]) prc))
+;;      #(order permno qty)
 ;;      :max-dispatch 1))
 ;;   (if (= mode "lazy")
 ;;     (set-automation
 ;;       ; check if ticker adjusted price is greater than prc
-;;      #(> (get-in (deref portfolio) [tic :aprc]) prc)
-;;      #(order tic qty)
+;;      #(> (get-in (deref portfolio) [permno :aprc]) prc)
+;;      #(order permno qty)
 ;;      :max-dispatch 1))
 ;;   (if (and (not= mode "lazy") (not= mode "non-lazy"))
 ;;     (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")))
 
 ;; (defn limit-buy
 ;;   "This function executes a limit buy order."
-;;   [tic prc qty mode]
+;;   [permno prc qty mode]
 ;;   (if (= mode "non-lazy")
 ;;     (set-automation
 ;;       ; check if ticker adjusted price is smaller than prc
-;;      #(< (get-in (deref portfolio) [tic :aprc]) prc)
-;;      #(order tic qty)
+;;      #(< (get-in (deref portfolio) [permno :aprc]) prc)
+;;      #(order permno qty)
 ;;      :max-dispatch 1))
 ;;   (if (= mode "lazy")
 ;;     (set-automation
 ;;       ; check if ticker adjusted price is smaller than prc
-;;      #(< (get-in (deref portfolio) [tic :aprc]) prc)
-;;      #(order tic qty)
+;;      #(< (get-in (deref portfolio) [permno :aprc]) prc)
+;;      #(order permno qty)
 ;;      :max-dispatch 1))
 ;;   (if (and (not= mode "lazy") (not= mode "non-lazy"))
 ;;     (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")))
 
 ;; (defn stop-sell
 ;;   "This function executes a stop sell order."
-;;   [tic prc qty mode]
+;;   [permno prc qty mode]
 ;;   (if (= mode "non-lazy")
 ;;     (set-automation
 ;;       ; check if ticker adjusted price is smaller than prc
-;;      #(< (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
-;;      #(order tic (* qty -1))
+;;      #(< (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
+;;      #(order permno (* qty -1))
 ;;      :max-dispatch 1))
 ;;   (if (= mode "lazy")
 ;;     (set-automation
 ;;       ; check if ticker adjusted price is greater than prc
-;;      #(< (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
-;;      #(order tic (* qty -1))
+;;      #(< (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
+;;      #(order permno (* qty -1))
 ;;      :max-dispatch 1))
 ;;   (if (and (not= mode "lazy") (not= mode "non-lazy"))
 ;;     (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")))
 
 ;; (defn limit-sell
 ;;   "This function executes a limit sell order."
-;;   [tic prc qty mode]
+;;   [permno prc qty mode]
 ;;   (if (= mode "non-lazy")
 ;;     (set-automation
 ;;       ; check if ticker adjusted price is smaller than prc
-;;      #(> (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
-;;      #(order tic (* qty -1))
+;;      #(> (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
+;;      #(order permno (* qty -1))
 ;;      :max-dispatch 1))
 ;;   (if (= mode "lazy")
 ;;     (set-automation
 ;;       ; check if ticker adjusted price is greater than prc
-;;      #(> (or (get-in (deref portfolio) [tic :aprc]) prc) prc)
-;;      #(order tic (* qty -1))
+;;      #(> (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
+;;      #(order permno (* qty -1))
 ;;      :max-dispatch 1))
 ;;   (if (and (not= mode "lazy") (not= mode "non-lazy"))
 ;;     (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")))

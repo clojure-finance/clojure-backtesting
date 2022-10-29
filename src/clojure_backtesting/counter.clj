@@ -137,37 +137,37 @@
 ;;   ([initial]
 ;;   ;traverse the whole dataset
 ;;    (def tics-info (atom {}))
-;;    (loop [count 0 remaining (deref data-set) cur-tic nil start-date nil end-date nil num 0 reference nil]
+;;    (loop [count 0 remaining (deref data-set) cur-permno nil start-date nil end-date nil num 0 reference nil]
 ;;      (if (empty? remaining)
 ;;        (do
-;;          (if (not= cur-tic nil)
-;;            (swap! tics-info assoc cur-tic {:start-date start-date :end-date end-date :pointer (atom {:num num :reference reference})}))
+;;          (if (not= cur-permno nil)
+;;            (swap! tics-info assoc cur-permno {:start-date start-date :end-date end-date :pointer (atom {:num num :reference reference})}))
 ;;          (deref tics-info))
 ;;        (let [first-line (first remaining)
 ;;              next-remaining (rest remaining)]
-;;          (if (not= cur-tic (get first-line TICKER-KEY))
+;;          (if (not= cur-permno (get first-line TICKER-KEY))
 ;;            (do
-;;              (if (not= cur-tic nil)
-;;                (swap! tics-info assoc cur-tic {:start-date start-date :end-date end-date :pointer (atom {:num num :reference reference})}))
-;;              (let [cur-tic (get first-line TICKER-KEY) start-date (get first-line :date) end-date (get first-line :date) num count reference remaining]
-;;                (recur (inc count) next-remaining cur-tic start-date end-date num reference)))
+;;              (if (not= cur-permno nil)
+;;                (swap! tics-info assoc cur-permno {:start-date start-date :end-date end-date :pointer (atom {:num num :reference reference})}))
+;;              (let [cur-permno (get first-line TICKER-KEY) start-date (get first-line :date) end-date (get first-line :date) num count reference remaining]
+;;                (recur (inc count) next-remaining cur-permno start-date end-date num reference)))
 ;;            (if (= (get (first remaining) :date) (get-date))
-;;              (recur (inc count) next-remaining cur-tic start-date (get first-line :date) count remaining)
-;;              (recur (inc count) next-remaining cur-tic start-date (get first-line :date) num reference))))))
+;;              (recur (inc count) next-remaining cur-permno start-date (get first-line :date) count remaining)
+;;              (recur (inc count) next-remaining cur-permno start-date (get first-line :date) num reference))))))
 ;;    (maintain-tics))
 ;;   ([]
 ;;    (reset! available-tics {})
 ;;    (loop [tics (keys (deref tics-info))]
 ;;      (if (empty? tics)
 ;;        nil
-;;        (let [cur-tic (first tics) remaining (rest tics) cur-pointer (get  (get (deref tics-info) cur-tic) :pointer) cur-reference (get (deref cur-pointer) :reference) cur-num (get (deref cur-pointer) :num)]
+;;        (let [cur-permno (first tics) remaining (rest tics) cur-pointer (get  (get (deref tics-info) cur-permno) :pointer) cur-reference (get (deref cur-pointer) :reference) cur-num (get (deref cur-pointer) :num)]
 ;;        (if (= (get (first (rest cur-reference)) :date) (get-date))
 ;;          (do
-;;            (swap! available-tics assoc cur-tic {:num (inc cur-num) :reference (rest cur-reference)})
+;;            (swap! available-tics assoc cur-permno {:num (inc cur-num) :reference (rest cur-reference)})
 ;;            (reset! cur-pointer {:num (inc cur-num) :reference (rest cur-reference)}))
 ;;          (if (= (get (first cur-reference) :date) (get-date))
 ;;            (do
-;;              (swap! available-tics assoc cur-tic (deref cur-pointer))
+;;              (swap! available-tics assoc cur-permno (deref cur-pointer))
 ;;              )))
 ;;        (recur remaining))))))
 
@@ -184,8 +184,8 @@
 ;;             (reset! date date_)
 ;;             (maintain-tics)
 ;;             (get-date))
-;;           (let [cur-tic (first tics) remaining (rest tics) cur-reference (get (deref (get  (get (deref tics-info) cur-tic) :pointer)) :reference)]
-;;             ;(println cur-tic)
+;;           (let [cur-permno (first tics) remaining (rest tics) cur-reference (get (deref (get  (get (deref tics-info) cur-permno) :pointer)) :reference)]
+;;             ;(println cur-permno)
 ;;             (if (= (get (first cur-reference) :date) (get-date))
 ;;               (if (= date_ nil)
 ;;                 (recur (t/local-date "yyyy-MM-dd" (get (first (rest cur-reference)) :date)) remaining)

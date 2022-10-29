@@ -15,9 +15,9 @@
 
 ;; (defn search-date
 ;;   "This function tries to retrieve the matching entry from the dataset."
-;;   [date tic dataset]
+;;   [date permno dataset]
 ;;   ;; date e.g. "DD/MM/YYYY"
-;;   ;; tic e.g. "AAPL"
+;;   ;; permno e.g. "AAPL"
 ;;   ;; dataset
 
 ;;   ;; return [false 0 0] if no match
@@ -30,7 +30,7 @@
 ;;       (let [first-line (first remaining)
 ;;             next-remaining (rest remaining)]
 ;;         (if (and (= (get first-line :date) date) ;;amend later if the merge data-set has different keys (using the keys in CRSP now)
-;;                  (= (get first-line TICKER-KEY) tic) ;;amend later if the merge data-set has different keys(using the keys in CRSP now)
+;;                  (= (get first-line TICKER-KEY) permno) ;;amend later if the merge data-set has different keys(using the keys in CRSP now)
 ;;                  )
 ;;           (let [price (get first-line PRICE-KEY)
 ;;                 aprc (get first-line :APRC)] ;;amend later if you want to use the adjusted price instead of the closing price
@@ -41,22 +41,22 @@
 
 ;; (defn search-in-order
 ;;   "This function turns the order processed date"
-;;   [date tic dataset]
+;;   [date permno dataset]
 ;;   ;; @date e.g. "DD/MM/YYYY"
-;;   ;; @tic e.g. "AAPL"
+;;   ;; @permno e.g. "AAPL"
 ;;   ;; @dataset
 
 ;;   ;; return [false "No match date" 0 0 0] if no match
 ;;   ;; return [true T+1-date price aprc reference] otherwise
 
 ;;   (if (and (not (deref lazy-mode)) (not= (count (deref available-tics)) 0))
-;;     (if (and (not= -1 (.indexOf (keys (deref available-tics)) tic)) (not= (get (get (get (deref available-tics) tic) :reference) :date) (get (get (deref tics-info) tic) :end-date)))
-;;       (let [t-1-date (get (first (rest (get (get (deref available-tics) tic) :reference))) :date)
-;;             [b p aprc r] (search-date t-1-date tic (get (get (deref available-tics) tic) :reference))]
+;;     (if (and (not= -1 (.indexOf (keys (deref available-tics)) permno)) (not= (get (get (get (deref available-tics) permno) :reference) :date) (get (get (deref tics-info) permno) :end-date)))
+;;       (let [t-1-date (get (first (rest (get (get (deref available-tics) permno) :reference))) :date)
+;;             [b p aprc r] (search-date t-1-date permno (get (get (deref available-tics) permno) :reference))]
 ;;         (if b
 ;;           [b t-1-date (Double/parseDouble p) aprc r]))
 ;;       [false "No such date or ticker in the dataset or the dataset has reached the end" 0 0 0])
-;;     (let [[match price aprc reference] (search-date date tic dataset)]
+;;     (let [[match price aprc reference] (search-date date permno dataset)]
 ;; 		;;(let [[match price reference] [true "10" 348]]
 ;;       (if match
 ;;         (if (deref lazy-mode) 
@@ -64,7 +64,7 @@
 ;;             (loop [i 1]
 ;;               (if (<= i MAXLOOKAHEAD)
 ;;                 (let [t-1-date (look-ahead-i-days date i)
-;;                       [b p aprc r] (search-date t-1-date tic dataset)]
+;;                       [b p aprc r] (search-date t-1-date permno dataset)]
 ;;                   (if b
 ;;                     [b t-1-date (Double/parseDouble p) aprc r]
 ;;                     (recur (inc i))))
@@ -74,55 +74,55 @@
 
 ;; (defn order-internal
 ;;   "This is the main order function"
-;;   [order-date tic quan remaining leverage dataset print direct]
+;;   [order-date permno quan remaining leverage dataset print direct]
 ;; 	;; @date date-and-time trading date
-;; 	;; @tic  trading ticker
+;; 	;; @permno  trading ticker
 ;; 	;; @quantity exact number to buy(+) or sell(-)
-;;   (let [[match date price adj-price reference] (search-in-order order-date tic dataset)]
+;;   (let [[match date price adj-price reference] (search-in-order order-date permno dataset)]
 ;;    ; Note that the date here may contain error information
 ;;     (if match
 ;;       (do
 ;;         (let [total (cond
-;;                       (= (get (get (deref portfolio) tic) :quantity) nil) 0
-;;                       :else (get (get (deref portfolio) tic) :quantity))
+;;                       (= (get (get (deref portfolio) permno) :quantity) nil) 0
+;;                       :else (get (get (deref portfolio) permno) :quantity))
 ;;               cash (get (get (deref portfolio) :cash) :tot-val)
 ;;               quantity (cond
 ;;                          remaining (- quan total)
 ;;                          :else quan)]
 ;;           (if (and (and (not= quantity 0) (not= quantity 0.0)) (not= quantity "special")) ;; ignore the empty order case
 ;;             (if (and (and (>= (+ total quantity) 0) (or (<= quantity 0) (>= cash (* adj-price quantity)))))
-;;               (place-order date tic quantity price adj-price 0 reference print direct) ;loan is 0 here
+;;               (place-order date permno quantity price adj-price 0 reference print direct) ;loan is 0 here
 ;;               (do
 ;;                 (if leverage
 ;;                   (if (< (+ total quantity) 0)
-;;                     (place-order date tic quantity price adj-price 0 reference print direct) ;This is the sell on margin case
+;;                     (place-order date permno quantity price adj-price 0 reference print direct) ;This is the sell on margin case
 ;;                     (let [loan
 ;;                           (cond (<= cash 0)
 ;;                                 (* quantity adj-price)
 ;;                                 :else (- (* quantity adj-price) cash))]
 ;;                       (if (or (= INITIAL-MARGIN nil) (>= cash (* INITIAL-MARGIN (+ loan cash))))
-;;                         (place-order date tic quantity price adj-price loan reference print direct)
+;;                         (place-order date permno quantity price adj-price loan reference print direct)
 ;;                         (if print
-;;                           (println (format "Order request %s | %s | %d fails due to initial margin requirement." order-date tic quantity)))))) ;This is the buy on margin case
+;;                           (println (format "Order request %s | %s | %d fails due to initial margin requirement." order-date permno quantity)))))) ;This is the buy on margin case
 ;;                   (do
-;;                     (println (format "Order request %s | %s | %d fails." order-date tic quantity))
+;;                     (println (format "Order request %s | %s | %d fails." order-date permno quantity))
 ;;                     (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell. Try to solve by enabling leverage."))))))
 ;;             (if (= quantity "special")
-;;               (update-portfolio date tic 0 price adj-price 0)
+;;               (update-portfolio date permno 0 price adj-price 0)
 ;;               nil))))
 ;;       (do
 ;;         (if (not= quan "special")
 ;;           (do
-;;             (println (format "The order request %s | %s | %d fails." order-date tic quan))
+;;             (println (format "The order request %s | %s | %d fails." order-date permno quan))
 ;;             (println (format "Failure reason: %s." date))))))))
 
 ;; ==========================================================
 
 (defn search-in-order
   "This function turns the order processed date"
-  [tic dataset]
+  [permno dataset]
   ;; @date e.g. "DD/MM/YYYY" = (get-date)
-  ;; @tic e.g. "AAPL"
+  ;; @permno e.g. "AAPL"
   ;; @dataset = nil
 
   ;; return [false "No match date" 0 0 0] if no match
@@ -152,63 +152,63 @@
 
 (defn- place-order
   "This private function does the basic routine for an ordering - update portfolio and return record."
-  [date tic quantity price adj-price loan print direct]
+  [date permno quantity price adj-price loan print direct]
   ;; (println loan)
   (if (not (deref TERMINATED))
     (do
       (incur-transaction-cost quantity price adj-price)
-      (update-portfolio date tic quantity price adj-price loan) ; w/o loan interest
+      (update-portfolio date permno quantity price adj-price loan) ; w/o loan interest
     )
   )
   (if print
-    (println (format "Order: %s | %s | %f." date tic (double quantity))))
+    (println (format "Order: %s | %s | %f." date permno (double quantity))))
   (if direct
-    (.write wrtr (format "%s,%s,%f,%f\n" date tic (double quantity) price)))
-  (swap! order-record conj {:date date :tic tic :price price :aprc (format "%.2f" adj-price) :quantity quantity})
+    (.write wrtr (format "%s,%s,%f,%f\n" date permno (double quantity) price)))
+  (swap! order-record conj {:date date :permno permno :price price :aprc (format "%.2f" adj-price) :quantity quantity})
 )
 
 
 (defn order-internal
   "This is the main order function"
-  [order-date tic quan remaining leverage print direct info]
+  [order-date permno quan remaining leverage print direct info]
 	;; @date date-and-time trading date
-	;; @tic  trading ticker
+	;; @permno  trading ticker
 	;; @quantity exact number to buy(+) or sell(-)
   (let [date order-date
         price (PRICE-KEY info)
         adj-price (:APRC info)]
     (let [total (cond
-                  (= (get (get (deref portfolio) tic) :quantity) nil) 0
-                  :else (get (get (deref portfolio) tic) :quantity))
+                  (= (get (get (deref portfolio) permno) :quantity) nil) 0
+                  :else (get (get (deref portfolio) permno) :quantity))
           cash (get (get (deref portfolio) :cash) :tot-val)
           quantity (cond
                      remaining (- quan total)
                      :else quan)]
       (if (and (not= quantity 0) (not= quantity 0.0) (not= quantity "special")) ;; ignore the empty order case
         (if (and (and (>= (+ total quantity) 0) (or (<= quantity 0) (>= cash (* adj-price quantity)))))
-          (place-order date tic quantity price adj-price 0 print direct) ;loan is 0 here
+          (place-order date permno quantity price adj-price 0 print direct) ;loan is 0 here
           (do
             (if leverage
               (if (< (+ total quantity) 0)
-                (place-order date tic quantity price adj-price 0 print direct) ;This is the sell on margin case
+                (place-order date permno quantity price adj-price 0 print direct) ;This is the sell on margin case
                 (let [loan
                       (cond (<= cash 0)
                             (* quantity adj-price)
                             :else (- (* quantity adj-price) cash))]
                   (if (or (= INITIAL-MARGIN nil) (>= cash (* INITIAL-MARGIN (+ loan cash))))
-                    (place-order date tic quantity price adj-price loan print direct)
+                    (place-order date permno quantity price adj-price loan print direct)
                     (if (or true print)
-                      (println (format "Order request %s | %s | %d fails due to initial margin requirement." order-date tic quantity)))))) ;This is the buy on margin case
+                      (println (format "Order request %s | %s | %d fails due to initial margin requirement." order-date permno quantity)))))) ;This is the buy on margin case
               (do
-                (println (format "Order request %s | %s | %d fails." order-date tic quantity))
+                (println (format "Order request %s | %s | %d fails." order-date permno quantity))
                 (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell. Try to solve by enabling leverage."))))))
         (if (= quantity "special")
-          (update-portfolio date tic 0 price adj-price 0)
+          (update-portfolio date permno 0 price adj-price 0)
           nil)))))
 
 ;; (defn order
-;;   ([tic quantity & {:keys [remaining leverage dataset print direct] :or {remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
-;;    (let [record (order-internal (get-date) tic quantity remaining leverage dataset print direct)]
+;;   ([permno quantity & {:keys [remaining leverage dataset print direct] :or {remaining false leverage LEVERAGE dataset (deref data-set) print false direct true}}]
+;;    (let [record (order-internal (get-date) permno quantity remaining leverage dataset print direct)]
 ;;      (if record
 ;;      (swap! order-record conj record)
 ;;        ) ;else
@@ -221,12 +221,12 @@
 
 (defn order
 ;;  ([quantity & {:keys [remaining leverage print direct] :or {remaining false leverage LEVERAGE print false direct true}}]
-;;   (order-lazy (curr-tic) quantity :remaining remaining :leverage leverage :print print :direct direct))
-  ([tic quantity & {:keys [expiration remaining leverage print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE print PRINT direct DIRECT}}]
+;;   (order-lazy (curr-permno) quantity :remaining remaining :leverage leverage :print print :direct direct))
+  ([permno quantity & {:keys [expiration remaining leverage print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE print PRINT direct DIRECT}}]
    (if (= (deref TERMINATED) false)
      (let [place-date (get-date)
            expire-date (jt/format "yyyy-MM-dd" (jt/plus (jt/local-date "yyyy-MM-dd" place-date) (jt/days expiration)))]
-       (swap! pending-order assoc [expire-date tic] {:place (get-date) :expire expire-date :tic tic :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))))
+       (swap! pending-order assoc [expire-date permno] {:place (get-date) :expire expire-date :permno permno :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))))
 
 (defn check-order
   []
@@ -238,12 +238,12 @@
     (if (= (count pending) 0)
       (reset! pending-order new-order)
       (let [pair (first pending)
-            tic (nth (first pair) 1)
+            permno (nth (first pair) 1)
             arg (nth pair 1)
             remain (rest pending)]
-        (if (get-tic-info tic)
+        (if (get-permno-info permno)
           (do
-            (order-internal (get-date) tic (:quantity arg) (:remaining arg) (:leverage arg) (:print arg) (:direct arg) (get-tic-info tic))
+            (order-internal (get-date) permno (:quantity arg) (:remaining arg) (:leverage arg) (:print arg) (:direct arg) (get-permno-info permno))
             (recur new-order remain))
           (recur (assoc new-order (first pair) arg) remain)))))
   )
@@ -251,9 +251,9 @@
 (defn update-holding-tickers
   "Update all the tickers in terms of portfolio"
   []
-  (doseq [tic (rest (keys (deref portfolio)))]
-    ;; (order-internal (get-date) tic "special" false true (deref data-set) false false)
-    (when (contains? (get-info-map) tic) (update-portfolio (get-date) tic 0 (get-tic-price tic) (get-tic-by-key tic :APRC) 0))
+  (doseq [permno (rest (keys (deref portfolio)))]
+    ;; (order-internal (get-date) permno "special" false true (deref data-set) false false)
+    (when (contains? (get-info-map) permno) (update-portfolio (get-date) permno 0 (get-permno-price permno) (get-permno-by-key permno :APRC) 0))
     ))
 
 (defn end-order

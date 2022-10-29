@@ -162,24 +162,24 @@
 
   ;; Update the portfolio map
 (defn update-portfolio-map
-  [date tic quantity price aprc loan]
+  [date permno quantity price aprc loan]
 
     ;; check whether the portfolio already has the security
-  (if-not (contains? (deref portfolio) tic)
+  (if-not (contains? (deref portfolio) permno)
     (let [tot-val (* aprc quantity)
           tot-val-real (* price quantity)]
       (do
-        (swap! portfolio (fn [curr-port] (conj curr-port [tic {:price price :aprc aprc :quantity quantity :tot-val tot-val}])))
+        (swap! portfolio (fn [curr-port] (conj curr-port [permno {:price price :aprc aprc :quantity quantity :tot-val tot-val}])))
         (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) tot-val)})))
       ;; if already has it, just update the quantity
-    (let [[tot-val qty] [(* aprc quantity) (get-in (deref portfolio) [tic :quantity])] tot-val-real (* price quantity)]
+    (let [[tot-val qty] [(* aprc quantity) (get-in (deref portfolio) [permno :quantity])] tot-val-real (* price quantity)]
       (do
-        (swap! portfolio assoc tic {:quantity (+ qty quantity) :tot-val (* aprc (+ qty quantity))})
+        (swap! portfolio assoc permno {:quantity (+ qty quantity) :tot-val (* aprc (+ qty quantity))})
         (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) tot-val)}))))
 
     ;; then update the price & aprc of the securities in the portfolio
   (doseq [[ticker -] (deref portfolio)]
-    (if (= ticker tic)
+    (if (= ticker permno)
       (let [qty-ticker (get-in (deref portfolio) [ticker :quantity])]
         (if (or (= qty-ticker 0) (= qty-ticker 0.0))
           (swap! portfolio dissoc ticker) ; remove ticker from portfolio if qty = 0
@@ -187,7 +187,7 @@
 
   ;; Update the portfolio-value vector which records the daily portfolio value
 (defn update-portfolio-value-vector
-  [date tic quantity price aprc loan]
+  [date permno quantity price aprc loan]
   (let [[tot-value prev-value] ;; get portfolio total
         [(reduce + (map :tot-val (vals (deref portfolio)))) (:tot-value (last (deref portfolio-value)))]]
 
@@ -217,9 +217,9 @@
 
   ;; Main function to update portfolio map + portfolio-value record when placing an order
 (defn update-portfolio
-  [date tic quantity price aprc loan]
-  (update-portfolio-map date tic quantity price aprc loan)
-  (update-portfolio-value-vector date tic quantity price aprc loan))
+  [date permno quantity price aprc loan]
+  (update-portfolio-map date permno quantity price aprc loan)
+  (update-portfolio-value-vector date permno quantity price aprc loan))
 
 (defn total-value
   "This function returns the remaining total value including the cash and stock value"
