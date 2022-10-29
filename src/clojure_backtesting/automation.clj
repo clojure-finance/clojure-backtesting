@@ -78,13 +78,13 @@
 ;;   [permno prc qty mode & [expiration]]
 ;;   (if (= mode "non-lazy")
 ;;     (set-automation
-;;       ; check if ticker adjusted price is greater than prc
+;;       ; check if security adjusted price is greater than prc
 ;;      #(and  (> (get-in (deref portfolio) [permno :aprc]) prc))
 ;;      #(order permno qty)
 ;;      :max-dispatch 1))
 ;;   (if (= mode "lazy")
 ;;     (set-automation
-;;       ; check if ticker adjusted price is greater than prc
+;;       ; check if security adjusted price is greater than prc
 ;;      #(> (get-in (deref portfolio) [permno :aprc]) prc)
 ;;      #(order permno qty)
 ;;      :max-dispatch 1))
@@ -96,13 +96,13 @@
 ;;   [permno prc qty mode]
 ;;   (if (= mode "non-lazy")
 ;;     (set-automation
-;;       ; check if ticker adjusted price is smaller than prc
+;;       ; check if security adjusted price is smaller than prc
 ;;      #(< (get-in (deref portfolio) [permno :aprc]) prc)
 ;;      #(order permno qty)
 ;;      :max-dispatch 1))
 ;;   (if (= mode "lazy")
 ;;     (set-automation
-;;       ; check if ticker adjusted price is smaller than prc
+;;       ; check if security adjusted price is smaller than prc
 ;;      #(< (get-in (deref portfolio) [permno :aprc]) prc)
 ;;      #(order permno qty)
 ;;      :max-dispatch 1))
@@ -114,13 +114,13 @@
 ;;   [permno prc qty mode]
 ;;   (if (= mode "non-lazy")
 ;;     (set-automation
-;;       ; check if ticker adjusted price is smaller than prc
+;;       ; check if security adjusted price is smaller than prc
 ;;      #(< (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
 ;;      #(order permno (* qty -1))
 ;;      :max-dispatch 1))
 ;;   (if (= mode "lazy")
 ;;     (set-automation
-;;       ; check if ticker adjusted price is greater than prc
+;;       ; check if security adjusted price is greater than prc
 ;;      #(< (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
 ;;      #(order permno (* qty -1))
 ;;      :max-dispatch 1))
@@ -132,13 +132,13 @@
 ;;   [permno prc qty mode]
 ;;   (if (= mode "non-lazy")
 ;;     (set-automation
-;;       ; check if ticker adjusted price is smaller than prc
+;;       ; check if security adjusted price is smaller than prc
 ;;      #(> (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
 ;;      #(order permno (* qty -1))
 ;;      :max-dispatch 1))
 ;;   (if (= mode "lazy")
 ;;     (set-automation
-;;       ; check if ticker adjusted price is greater than prc
+;;       ; check if security adjusted price is greater than prc
 ;;      #(> (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
 ;;      #(order permno (* qty -1))
 ;;      :max-dispatch 1))

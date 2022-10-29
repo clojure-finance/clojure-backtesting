@@ -63,7 +63,7 @@
      price)))
 
 (defn EMA
-  "Get stable EMA of a ticker today."
+  "Get stable EMA of a security today."
   [permno]
   (if-let  [prev-ema (get EMA-map permno)]
     (if (< (compare (first prev-ema) (get-date)) 0)

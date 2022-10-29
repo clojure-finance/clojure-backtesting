@@ -55,7 +55,7 @@
 ;;             [b p aprc r] (search-date t-1-date permno (get (get (deref available-tics) permno) :reference))]
 ;;         (if b
 ;;           [b t-1-date (Double/parseDouble p) aprc r]))
-;;       [false "No such date or ticker in the dataset or the dataset has reached the end" 0 0 0])
+;;       [false "No such date or security in the dataset or the dataset has reached the end" 0 0 0])
 ;;     (let [[match price aprc reference] (search-date date permno dataset)]
 ;; 		;;(let [[match price reference] [true "10" 348]]
 ;;       (if match
@@ -69,14 +69,14 @@
 ;;                     [b t-1-date (Double/parseDouble p) aprc r]
 ;;                     (recur (inc i))))
 ;;                 [false (str "No appropriate order date after looking ahead " MAXLOOKAHEAD " days") 0 0 0])))
-;;         [false "No such date or ticker in the dataset" 0 0 0])))
+;;         [false "No such date or security in the dataset" 0 0 0])))
 ;; )
 
 ;; (defn order-internal
 ;;   "This is the main order function"
 ;;   [order-date permno quan remaining leverage dataset print direct]
 ;; 	;; @date date-and-time trading date
-;; 	;; @permno  trading ticker
+;; 	;; @permno  trading security
 ;; 	;; @quantity exact number to buy(+) or sell(-)
 ;;   (let [[match date price adj-price reference] (search-in-order order-date permno dataset)]
 ;;    ; Note that the date here may contain error information
@@ -172,7 +172,7 @@
   "This is the main order function"
   [order-date permno quan remaining leverage print direct info]
 	;; @date date-and-time trading date
-	;; @permno  trading ticker
+	;; @permno  trading security
 	;; @quantity exact number to buy(+) or sell(-)
   (let [date order-date
         price (PRICE-KEY info)
@@ -262,9 +262,9 @@
   ;; close all positions
   (if (not (deref TERMINATED))
     (do
-      (doseq [[ticker] (deref portfolio)]
-        (if (not= ticker :cash)
-          (order-internal (get-date) ticker 0 true false false false (get (get-info-map) ticker))))
+      (doseq [[security] (deref portfolio)]
+        (if (not= security :cash)
+          (order-internal (get-date) security 0 true false false false (get (get-info-map) security))))
       (update-eval-report)
       (.close wrtr)
       (.close portvalue-wrtr)

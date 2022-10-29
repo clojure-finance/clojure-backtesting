@@ -60,9 +60,9 @@
   "This function prints portfolio map in a table format."
   []
   (def portfolio-table (atom [])) ; temporarily stores record for view
-  (doseq [[ticker row] (deref portfolio)]
+  (doseq [[security row] (deref portfolio)]
     (do
-      (if (= ticker :cash)
+      (if (= security :cash)
         (do ;; cash
           (let [tot-val (format "%.2f" (float (get row :tot-val)))]
             (swap! portfolio-table conj
@@ -71,13 +71,13 @@
                     :aprc "N/A"
                     :quantity "N/A"
                     :tot-val tot-val})))
-        (do ;; ticker
+        (do ;; security
           (let [price (get row :price)
                 aprc (format "%.4f" (get row :aprc))
                 quantity (get row :quantity)
                 tot-val (format "%.2f" (get row :tot-val))]
             (swap! portfolio-table conj
-                   {:asset ticker
+                   {:asset security
                     :price price
                     :aprc aprc
                     :quantity quantity

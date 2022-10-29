@@ -129,7 +129,7 @@
 (defn log-10 [n]
   (/ (Math/log n) (Math/log 10)))
 
-;; extract dataset: sorted by ticker, then by date
+;; extract dataset: sorted by security, then by date
 ;; for each security:
 ;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
@@ -139,16 +139,16 @@
 ;;   ; get price on 1st day
 ;;   (def initial-price 0)
 ;;   (def cum-ret 0)
-;;   (def curr-ticker "DEFAULT")
+;;   (def curr-security "DEFAULT")
 ;;  ; traverse row by row in dataset
 ;;   (map (fn [line]
 ;;         (let [;line-new (select-keys line [:date TICKER-KEY PRICE-KEY :RET])
 ;;               price (Double/parseDouble (get line PRICE-KEY))
 ;;               ret (Double/parseDouble (get line :RET))
-;;               ticker (get line TICKER-KEY)]
-;;           (if (not= curr-ticker ticker)
+;;               security (get line TICKER-KEY)]
+;;           (if (not= curr-security security)
 ;;               (do
-;;                 (def curr-ticker ticker)
+;;                 (def curr-security security)
 ;;                 (def initial-price price)
 ;;                 (def cum-ret 0)
 ;;               )
@@ -165,42 +165,42 @@
 ;;   )
 ;; )
 
-;; large dataset: sorted by date, then by ticker
+;; large dataset: sorted by date, then by security
 ;; for each security:
 ;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
 ;; (defn add-aprc-by-date
 ;;   "This function adds the adjusted price column to the dataset (data-CRSP-sorted-cleaned)."
 ;;   [data]
-;;   ; get price on 1st day for each ticker
+;;   ; get price on 1st day for each security
 ;;   (def initial-price (atom {}))
-;;   ; record cumulative return for each ticker
+;;   ; record cumulative return for each security
 ;;   (def cum-ret (atom {}))
 ;;  ; traverse row by row in dataset
 ;;   (map (fn [line]
 ;;         (let [date (get line :date)
 ;;               price (Double/parseDouble (get line PRICE-KEY))
 ;;               ret (Double/parseDouble (get line :RET))
-;;               ticker (get line TICKER-KEY)]
-;;           ;; check whether the initial-price map already has the ticker
-;;           (if-not (contains? (deref initial-price) ticker)
-;;             (do ;; ticker appears the first time 
-;;               (swap! initial-price (fn [ticker-map] (conj ticker-map [ticker {:price price}])))
-;;               (swap! cum-ret (fn [ticker-map] (conj ticker-map [ticker {:cumret ret}])))
+;;               security (get line TICKER-KEY)]
+;;           ;; check whether the initial-price map already has the security
+;;           (if-not (contains? (deref initial-price) security)
+;;             (do ;; security appears the first time 
+;;               (swap! initial-price (fn [security-map] (conj security-map [security {:price price}])))
+;;               (swap! cum-ret (fn [security-map] (conj security-map [security {:cumret ret}])))
 ;;             )
-;;             ;; ticker does not appear the first time
-;;             (let [prev-cumret (get-in (deref cum-ret) [ticker :cumret])
+;;             ;; security does not appear the first time
+;;             (let [prev-cumret (get-in (deref cum-ret) [security :cumret])
 ;;                   log-ret (log-10 (+ 1 ret)) ; log base 10 
 ;;                  ] 
-;;               (swap! cum-ret (fn [ticker-map] (conj ticker-map [ticker {:cumret (+ log-ret prev-cumret)}])))
+;;               (swap! cum-ret (fn [security-map] (conj security-map [security {:cumret (+ log-ret prev-cumret)}])))
 ;;             )
 ;;           )
           
-;;           (def ticker-initial-price (get-in (deref initial-price) [ticker :price]))
-;;           (def curr-cumret (get-in (deref cum-ret) [ticker :cumret]))
-;;           (def aprc (* ticker-initial-price (Math/pow Math/E curr-cumret)))
+;;           (def security-initial-price (get-in (deref initial-price) [security :price]))
+;;           (def curr-cumret (get-in (deref cum-ret) [security :cumret]))
+;;           (def aprc (* security-initial-price (Math/pow Math/E curr-cumret)))
 
-;;           (assoc line :INIT-PRICE ticker-initial-price :APRC aprc :CUM-RET curr-cumret)
+;;           (assoc line :INIT-PRICE security-initial-price :APRC aprc :CUM-RET curr-cumret)
 ;;         )
 ;;       )
 ;;     data
@@ -267,39 +267,39 @@
 ;; add col 'cum-ret' -> cumulative return = log(1+RET) (sum this every day)
 ;; add col ' aprc' -> adjusted price = stock price on 1st day of given time period * exp(cum-ret)
 (def initial-price (atom {}))
-  ; record cumulative return for each ticker
+  ; record cumulative return for each security
 (def cum-ret (atom {}))
 
 (defn add-aprc-file
   "This function adds the adjusted price column to the dataset (data-CRSP-sorted-cleaned)."
-  [data price-index ret-index ticker-index]
-  ; get price on 1st day for each ticker
+  [data price-index ret-index security-index]
+  ; get price on 1st day for each security
  ; traverse row by row in dataset
   (mapv (fn [line]
         (let [
               ;; date (nth line date-index)
               price (get line price-index)
               ret (get line ret-index)
-              ticker (get line ticker-index)]
-          ;; check whether the initial-price map already has the ticker
-          (if-not (contains? (deref initial-price) ticker)
-            (do ;; ticker appears the first time 
-              (swap! initial-price (fn [ticker-map] (conj ticker-map [ticker {:price price}])))
-              (swap! cum-ret (fn [ticker-map] (conj ticker-map [ticker {:cumret ret}])))
+              security (get line security-index)]
+          ;; check whether the initial-price map already has the security
+          (if-not (contains? (deref initial-price) security)
+            (do ;; security appears the first time 
+              (swap! initial-price (fn [security-map] (conj security-map [security {:price price}])))
+              (swap! cum-ret (fn [security-map] (conj security-map [security {:cumret ret}])))
             )
-            ;; ticker does not appear the first time
-            (let [prev-cumret (get-in (deref cum-ret) [ticker :cumret])
+            ;; security does not appear the first time
+            (let [prev-cumret (get-in (deref cum-ret) [security :cumret])
                   log-ret (log-10 (+ 1 ret)) ; log base 10 
                  ] 
-              (swap! cum-ret (fn [ticker-map] (conj ticker-map [ticker {:cumret (+ log-ret prev-cumret)}])))
+              (swap! cum-ret (fn [security-map] (conj security-map [security {:cumret (+ log-ret prev-cumret)}])))
             )
           )
 
-          (def ticker-initial-price (get-in (deref initial-price) [ticker :price]))
-          (def curr-cumret (get-in (deref cum-ret) [ticker :cumret]))
-          (def aprc (* ticker-initial-price (Math/pow Math/E curr-cumret)))
+          (def security-initial-price (get-in (deref initial-price) [security :price]))
+          (def curr-cumret (get-in (deref cum-ret) [security :cumret]))
+          (def aprc (* security-initial-price (Math/pow Math/E curr-cumret)))
 
-          (vec (concat line [ticker-initial-price aprc curr-cumret]))
+          (vec (concat line [security-initial-price aprc curr-cumret]))
         )
       )
     data
@@ -314,13 +314,13 @@
     (println "The dataset is already furnished by add-aprc. No more modification is needed.")
     (let [price-index (.indexOf headers :PRC)
           ret-index (.indexOf headers :RET)
-          ticker-index (.indexOf headers TICKER-KEY)]
+          security-index (.indexOf headers TICKER-KEY)]
       (println "The below process will take a few hours to run for the first time.")
       (doseq [[date file] data-files]
         (let [rdr (io/reader file)
               data (map read-string (line-seq rdr))
               data (set data)
-              new-data (add-aprc-file data price-index ret-index ticker-index)
+              new-data (add-aprc-file data price-index ret-index security-index)
               new-data (str/join "\n" (mapv str new-data))]
           (spit file new-data)
           (println date)))

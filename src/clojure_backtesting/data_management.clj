@@ -154,14 +154,14 @@
    ))
 
 (defn get-permno-price
-  "Returns the price of a given ticker today, otherwise nil."
+  "Returns the price of a given security today, otherwise nil."
   ([permno]
    (PRICE-KEY (get-permno-info permno)))
   ([date permno]
    (PRICE-KEY (get-permno-info date permno))))
 
 (defn get-permno-by-key
-  "Returns the value of the key of a given ticker today, otherwise nil."
+  "Returns the value of the key of a given security today, otherwise nil."
   ([permno key]
    (get (get-permno-info permno) key))
   ([date permno key]
@@ -183,7 +183,7 @@
      (map get-info-by-date dates))))
 
 (defn get-prev-n-days-map
-  "Returns a sequence of maps (ticker: info) of maps that contains data of the previous n days (not including today).\n
+  "Returns a sequence of maps (security: info) of maps that contains data of the previous n days (not including today).\n
    Date in descending order, ie from the most recent to the oldest.\n
    If no n, return a lazy sequence of all prev days.
    "
@@ -198,9 +198,9 @@
      (map get-info-map-by-date dates))))
 
 (defn get-permno-prev-n-days
-  "This function returns a sequence of vector of the previous n records of a specific ticker (not including today).\n
+  "This function returns a sequence of vector of the previous n records of a specific security (not including today).\n
    Date in descending order, ie from the most recent to the oldest.\n
-   Note that the returned length may be smaller than n, if the ticker is missing on some days.\n
+   Note that the returned length may be smaller than n, if the security is missing on some days.\n
    @permno: name of the stock\n
    @n: number of counting ahead"
   [permno n]
@@ -352,8 +352,8 @@
 ;;          (let [line (get (get (deref available-tics) permno) :reference)] (conj result-tmp {:date (get line :date) key (get line key)}))
 ;;          (loop [count count-tmp result result-tmp num line-num]
 ;;            (if (and (< count n) (>= num 0))
-;;              (let [line (nth ref num) [date content ticker] [(get line :date) (get line key) (get line TICKER-KEY)]]
-;;                (if (= ticker permno) ; has date, has content
+;;              (let [line (nth ref num) [date content security] [(get line :date) (get line key) (get line TICKER-KEY)]]
+;;                (if (= security permno) ; has date, has content
 ;;                  (do
 ;;                    (recur (+ count 1) (conj result {:date date key content}) (- num 1)))
 ;;                  result))
@@ -373,7 +373,7 @@
 ;;   (stat/sd (map (fn [_] (Double/parseDouble (get _ key))) vec)))
 
 ;; (defn get-price
-;;   "Returns the price of a ticker today"
+;;   "Returns the price of a security today"
 ;;   ([permno mode]
 ;;     (if (= "lazy" mode)
 ;;       ;(deref lazy-mode)
@@ -388,7 +388,7 @@
 ;;   )
 
 ;; (defn get-by-key
-;;   "Returns the [key] of a ticker today"
+;;   "Returns the [key] of a security today"
 ;;   [permno key mode]
 ;;     (if (= "lazy" mode)
 ;;       (Double/parseDouble (get (get (get (deref available-tics) permno) :reference) key))

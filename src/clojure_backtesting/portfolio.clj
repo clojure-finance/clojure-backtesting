@@ -60,7 +60,7 @@
 ;;                   (let [first-line (first remaining)
 ;;                         next-remaining (rest remaining)
 ;;                         cur-date (get first-line :date)
-;;                         ticker (get first-line TICKER-KEY)]
+;;                         security (get first-line TICKER-KEY)]
 ;;          ;(println first-line)        
 ;;                     (if (and (not= cur-date date) (valid-line first-line))
 ;;              ;(reset! data-set remaining)
@@ -70,7 +70,7 @@
 ;;                         (swap! dataset-col assoc (or name main-name) remaining)
 ;;                         )
 ;;                       (do
-;;                         (swap! available-tics assoc ticker {:reference first-line})
+;;                         (swap! available-tics assoc security {:reference first-line})
 ;;                         (recur (inc count) next-remaining)))))))
 ;;             ;; ============= Direct Copy Ends ============
                        
@@ -101,7 +101,7 @@
     ;; output order record to csv file
   (check-filepath "./out_order_record.csv")
   (def wrtr (io/writer "./out_order_record.csv" :append true))
-  (.write wrtr "date,ticker,quantity,price\n")
+  (.write wrtr "date,security,quantity,price\n")
     ;; output portfolio value record to csv file
   (check-filepath "./out_portfolio_value_record.csv")
   (def portvalue-wrtr (io/writer "./out_portfolio_value_record.csv" :append true))
@@ -178,12 +178,12 @@
         (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) tot-val)}))))
 
     ;; then update the price & aprc of the securities in the portfolio
-  (doseq [[ticker -] (deref portfolio)]
-    (if (= ticker permno)
-      (let [qty-ticker (get-in (deref portfolio) [ticker :quantity])]
-        (if (or (= qty-ticker 0) (= qty-ticker 0.0))
-          (swap! portfolio dissoc ticker) ; remove ticker from portfolio if qty = 0
-          (swap! portfolio assoc ticker {:price price :aprc aprc :quantity qty-ticker :tot-val (* aprc qty-ticker)}))))))
+  (doseq [[security -] (deref portfolio)]
+    (if (= security permno)
+      (let [qty-security (get-in (deref portfolio) [security :quantity])]
+        (if (or (= qty-security 0) (= qty-security 0.0))
+          (swap! portfolio dissoc security) ; remove security from portfolio if qty = 0
+          (swap! portfolio assoc security {:price price :aprc aprc :quantity qty-security :tot-val (* aprc qty-security)}))))))
 
   ;; Update the portfolio-value vector which records the daily portfolio value
 (defn update-portfolio-value-vector
