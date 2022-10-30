@@ -15,7 +15,7 @@
 
 (defn print-order-record
   [& [n]]
-  (pp/print-table (if (> n 0) (take n (deref order-record)) (deref order-record))))
+  (pp/print-table (if (and n (> n 0)) (take n (deref order-record)) (deref order-record))))
 
 (defn print-automation-list
   []
@@ -28,7 +28,7 @@
 
 (defn print-automation-history
   [& [n]]
-  (pp/print-table [:date :automation] (if (> n 0) (take n (deref dispatch-history))(deref dispatch-history))))
+  (pp/print-table [:date :automation] (if (and n (> n 0)) (take n (deref dispatch-history))(deref dispatch-history))))
 
 (defn print-portfolio-record
   "This function prints the first n rows of the portfolio value record, pass -ve value to print whole record."
@@ -52,7 +52,7 @@
                 :loan loan
                 :leverage leverage
                 :margin margin}))))
-  (if (> n 0)
+  (if (and n (> n 0))
     (pp/print-table (take n (deref portfolio-record)))
     (pp/print-table (deref portfolio-record))))
 
@@ -91,6 +91,6 @@
 (defn print-eval-report
   "This function prints the first n rows of the evaluation report, pass a -ve number to print full report."
   [& [n]]
-  (if (> n 0)
+  (if (and n (> n 0))
     (pp/print-table (take n (deref eval-report-data))) ;; only print first n rows
     (pp/print-table (deref eval-report-data))))
