@@ -16,6 +16,7 @@ pom.xml.asc
 .hg/
 Debugging/
 
+# project specific
 specs.clj
 huri-test.clj
 
@@ -32,4 +33,8 @@ out_portfolio_value_record.csv
 
 Rplots.pdf
 
+# Clojask scipt
+clojask-script/.*
+resources/
+!clojupyter/resources/
 .clojask/
