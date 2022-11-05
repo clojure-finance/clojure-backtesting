@@ -35,7 +35,7 @@ A good [tutorial](https://ericnormand.me/guide/how-to-install-clojure) about ins
 
    *Can save strategies in notebooks.*
 
-   Detailed installation instructions about running backtester with Jupyter Notebook could be found [here](https://clojure-finance.github.io/clojure-backtesting-website/posts/get-started/https://clojure-finance.github.io/clojure-backtesting-website/).
+   Detailed installation instructions about running backtester with Jupyter Notebook could be found [here](https://clojure-finance.github.io/clojure-backtesting-website/posts/get-started/#setting-up-the-playground).
 
    All Jupyter Notebook examples could be found in the [`/examples`](/examples) folder.
 
