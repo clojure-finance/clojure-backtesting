@@ -52,9 +52,11 @@
   [crsp date]
   (let [comp-date (first (first (rsubseq data-files2 <= date)))
         comp (get-compustat-data comp-date)]
-    (map (fn [row] (let [tic (:TICKER row)
-                         comp-row (first (filter #(= tic (:tic %)) comp))]
-                     (merge row comp-row))) crsp)))
+    (map (fn [row] (let [permno (TICKER-KEY row)
+                          comp-row (first (filter #(= permno (:permno %)) comp))]
+                      ;; (println permno)
+                      ;; (if comp-row (println comp-row))
+                      (merge row comp-row))) crsp)))
 
 (defn- get-info-by-date
   "Get the full tics info.\n
@@ -68,8 +70,9 @@
       ;; cache miss
       (let [data (line-seq (io/reader file))
             data (map read-string data)
+            data (map zipmap (repeat headers) data)
             data (if headers2 (merge-data data date) data)]
-        (cache-add-info date (map zipmap (repeat headers) data))))
+        (cache-add-info date data)))
     nil))
 
 (defn- get-info-map-by-date

@@ -38,3 +38,4 @@ clojask-script/.*
 resources/
 !clojupyter/resources/
 .clojask/
+target/

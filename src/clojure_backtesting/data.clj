@@ -211,7 +211,7 @@
 ;; 2022/10/6
 
 ;; cache
-(def data-cache nil)
+(def data-cache {})
 (def cache-queue (PriorityQueue.))
 
 ;; Global Variables for the dataset
