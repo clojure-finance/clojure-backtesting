@@ -91,10 +91,9 @@
   ;; Backtester initialisation
 (defn init-portfolio
   "This function initialises or restarts the backtester."
-  [date capital & {:keys [standard] :or {standard true}}]
+  [date capital]
     ;; example: portfolio -> {:cash {:tot-val 10000} :"AAPL" {:price 400 :aprc adj-price :quantity 100 :tot-val 40000}}
     ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
-    ;; todo: implement case when standard is false
   
   (assert (< (compare (init-date date) (first (last data-files))) 0) "Please do not start from the last date. Init portfolio fails.")
 

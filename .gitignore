@@ -36,6 +36,9 @@ Rplots.pdf
 # Clojask scipt
 clojask-script/.*
 resources/
+CRSP/
 !clojupyter/resources/
 .clojask/
 target/
+clojask-script/*.log
+
