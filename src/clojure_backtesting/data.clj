@@ -245,7 +245,9 @@
         ;; tmp (read-string file-name)
         tmp (decode-filename file-name)
         ]
-    (first tmp)))
+    ;; (first tmp)
+    tmp
+    ))
 
 (defn load-dataset
   [dir name & [func]]
