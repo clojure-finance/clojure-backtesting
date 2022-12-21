@@ -231,13 +231,20 @@
   (reset! tics-tomorrow nil)
   (reset! tics-map-today nil))
 
+(defn decode-filename
+  [filename]
+  (let [len (count filename)]
+   (subs filename 2 (- len 2))))
+
 ;; Global functions to set the variables
 (defn get-file-date
   [file]
   (let [;; file-name (str file)
         ;; file-name (subs file-name (+ (str/last-index-of file-name "/") 1))
         file-name (.getName file)
-        tmp (read-string file-name)]
+        ;; tmp (read-string file-name)
+        tmp (decode-filename file-name)
+        ]
     (first tmp)))
 
 (defn load-dataset
