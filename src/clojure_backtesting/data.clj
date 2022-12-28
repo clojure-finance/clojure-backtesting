@@ -7,7 +7,8 @@
             [clojure-backtesting.parameters :refer :all]
             [clojure.pprint :as pprint]
             [clojure.string :as str])  ;; For input-output handling
-  (:import [java.util PriorityQueue]))
+  (:import [java.util PriorityQueue]
+           [java.util Base64]))
 
 ;; This file is to construct the basic data structure for backtesting 
 
@@ -231,10 +232,14 @@
   (reset! tics-tomorrow nil)
   (reset! tics-map-today nil))
 
+(def decoder (Base64/getUrlDecoder))
+(defn decode-str
+  [s]
+  (String. (.decode decoder s)))
+
 (defn decode-filename
   [filename]
-  (let [len (count filename)]
-   (subs filename 2 (- len 2))))
+  (first (read-string (decode-str filename))))
 
 ;; Global functions to set the variables
 (defn get-file-date
