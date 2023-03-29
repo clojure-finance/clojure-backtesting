@@ -15,7 +15,7 @@
 
 ;; ============== Cache =================
 
-(def CACHE-SIZE 30)
+(def CACHE-SIZE 60)
 (defn CHANGE-CACHE-SIZE
   [size]
   (def CACHE-SIZE size))

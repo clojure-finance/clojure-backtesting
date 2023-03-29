@@ -6,7 +6,7 @@
 
 ;; @@
 ; import libraries from kernel
-(ns clojure-backtesting.updated_examples.buy-on-margin
+(ns clojure-backtesting.examples.buy-on-margin
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.data-management :refer :all]
             [clojure-backtesting.portfolio :refer :all]
@@ -36,7 +36,7 @@
 ; path to dataset = "/Volumes/T7/CRSP"
 ; change it to the relative path to your own dataset
 ;
-(load-dataset "./CRSP" "main" add-aprc)
+(load-dataset "./Volumes/T7/CRSP" "main" add-aprc)
 ;; @@
 ;; ->
 ;;; The dataset is already furnished by add-aprc. No more modification is needed.

@@ -12,7 +12,7 @@
             [clojure-backtesting.portfolio :refer :all]
             [clojure-backtesting.order :refer :all]
             [clojure-backtesting.evaluate :refer :all]
-            ;[clojure-backtesting.plot :refer :all] ---- NOT WORKING - USING GORILLA PLOT INSTEAD
+            [clojure-backtesting.plot :refer :all]
             [clojure-backtesting.counter :refer :all]
             [clojure-backtesting.automation :refer :all]
             [clojure-backtesting.parameters :refer :all]
@@ -21,7 +21,6 @@
             [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.pprint :as pprint]
-            [gorilla-plot.core :as plot :refer :all]
   ) ;; require all libriaries from core
 )
 ;; @@
@@ -37,7 +36,7 @@
 ; path to dataset = "/Volumes/T7/CRSP"
 ; change it to the relative path to your own dataset
 ;
-(load-dataset "./CRSP" "main" add-aprc)
+(load-dataset "./Volumes/T7/CRSP" "main" add-aprc)
 ;; @@
 ;; ->
 ;;; The dataset is already furnished by add-aprc. No more modification is needed.
@@ -255,27 +254,15 @@
 ;; <=
 
 ;; @@
-(def tempData data-to-plot)
-;(println tempData)
-(def newData (into [] tempData))
-;(println newData)
-(def plotting-data (map (fn [data]  [ (data :tot-value)]) newData))
-(def plotting-data (map #(% :daily-ret) newData) )
-(println plotting-data)
+(plot data-to-plot :plot :date :daily-ret false)
 ;; @@
 ;; ->
-;;; (0.0 0.0 0.0 0.0011560705149500027 0.0 6.285040140810738E-4 0.0 9.382018429125655E-4 -9.643274665532872E-17 -1.3318498492376167E-4 0.0)
+;;; [I 02:14:03.874 Clojupyter] oz.core:273 -- Starting up server on port 10666
+;;; [I 02:14:04.159 Clojupyter] oz.server:142 -- Web server is running at `http://localhost:10666/`
 ;;; 
 ;; <-
 ;; =>
 ;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
-;; <=
-
-;; @@
-(list-plot plotting-data :joined true)
-;; @@
-;; =>
-;;; {"type":"vega","content":{"width":400,"height":247.2188,"padding":{"top":10,"left":55,"bottom":40,"right":10},"data":[{"name":"48611a05-4ce1-4e1c-a380-0e5251d83ac1","values":[{"x":0,"y":0.0},{"x":1,"y":0.0},{"x":2,"y":0.0},{"x":3,"y":0.0011560705149500027},{"x":4,"y":0.0},{"x":5,"y":6.285040140810738E-4},{"x":6,"y":0.0},{"x":7,"y":9.382018429125655E-4},{"x":8,"y":-9.643274665532872E-17},{"x":9,"y":-1.3318498492376167E-4},{"x":10,"y":0.0}]}],"marks":[{"type":"line","from":{"data":"48611a05-4ce1-4e1c-a380-0e5251d83ac1"},"properties":{"enter":{"x":{"scale":"x","field":"data.x"},"y":{"scale":"y","field":"data.y"},"stroke":{"value":"#FF29D2"},"strokeWidth":{"value":2},"strokeOpacity":{"value":1}}}}],"scales":[{"name":"x","type":"linear","range":"width","zero":false,"domain":{"data":"48611a05-4ce1-4e1c-a380-0e5251d83ac1","field":"data.x"}},{"name":"y","type":"linear","range":"height","nice":true,"zero":false,"domain":{"data":"48611a05-4ce1-4e1c-a380-0e5251d83ac1","field":"data.y"}}],"axes":[{"type":"x","scale":"x"},{"type":"y","scale":"y"}]},"value":"#gorilla_repl.vega.VegaView{:content {:width 400, :height 247.2188, :padding {:top 10, :left 55, :bottom 40, :right 10}, :data [{:name \"48611a05-4ce1-4e1c-a380-0e5251d83ac1\", :values ({:x 0, :y 0.0} {:x 1, :y 0.0} {:x 2, :y 0.0} {:x 3, :y 0.0011560705149500027} {:x 4, :y 0.0} {:x 5, :y 6.285040140810738E-4} {:x 6, :y 0.0} {:x 7, :y 9.382018429125655E-4} {:x 8, :y -9.643274665532872E-17} {:x 9, :y -1.3318498492376167E-4} {:x 10, :y 0.0})}], :marks [{:type \"line\", :from {:data \"48611a05-4ce1-4e1c-a380-0e5251d83ac1\"}, :properties {:enter {:x {:scale \"x\", :field \"data.x\"}, :y {:scale \"y\", :field \"data.y\"}, :stroke {:value \"#FF29D2\"}, :strokeWidth {:value 2}, :strokeOpacity {:value 1}}}}], :scales [{:name \"x\", :type \"linear\", :range \"width\", :zero false, :domain {:data \"48611a05-4ce1-4e1c-a380-0e5251d83ac1\", :field \"data.x\"}} {:name \"y\", :type \"linear\", :range \"height\", :nice true, :zero false, :domain {:data \"48611a05-4ce1-4e1c-a380-0e5251d83ac1\", :field \"data.y\"}}], :axes [{:type \"x\", :scale \"x\"} {:type \"y\", :scale \"y\"}]}}"}
 ;; <=
 
 ;; **
@@ -329,16 +316,10 @@
 ;; <=
 
 ;; @@
-(def plotting-data (map #(% :vol) data-to-plot) )
-(println plotting-data)
-(list-plot plotting-data :joined true)
+(plot data-to-plot :plot :date :vol true)
 ;; @@
-;; ->
-;;; (0.0 0.0 5.780352574750012E-4 5.170104516422785E-4 4.900473357357169E-4 4.6125883832293584E-4 4.906337203549679E-4 4.727599239815924E-4 4.665331849973279E-4)
-;;; 
-;; <-
 ;; =>
-;;; {"type":"vega","content":{"width":400,"height":247.2188,"padding":{"top":10,"left":55,"bottom":40,"right":10},"data":[{"name":"87c5cf91-afc9-4f1d-b03b-a4a3f972cc77","values":[{"x":0,"y":0.0},{"x":1,"y":0.0},{"x":2,"y":5.780352574750012E-4},{"x":3,"y":5.170104516422785E-4},{"x":4,"y":4.900473357357169E-4},{"x":5,"y":4.6125883832293584E-4},{"x":6,"y":4.906337203549679E-4},{"x":7,"y":4.727599239815924E-4},{"x":8,"y":4.665331849973279E-4}]}],"marks":[{"type":"line","from":{"data":"87c5cf91-afc9-4f1d-b03b-a4a3f972cc77"},"properties":{"enter":{"x":{"scale":"x","field":"data.x"},"y":{"scale":"y","field":"data.y"},"stroke":{"value":"#FF29D2"},"strokeWidth":{"value":2},"strokeOpacity":{"value":1}}}}],"scales":[{"name":"x","type":"linear","range":"width","zero":false,"domain":{"data":"87c5cf91-afc9-4f1d-b03b-a4a3f972cc77","field":"data.x"}},{"name":"y","type":"linear","range":"height","nice":true,"zero":false,"domain":{"data":"87c5cf91-afc9-4f1d-b03b-a4a3f972cc77","field":"data.y"}}],"axes":[{"type":"x","scale":"x"},{"type":"y","scale":"y"}]},"value":"#gorilla_repl.vega.VegaView{:content {:width 400, :height 247.2188, :padding {:top 10, :left 55, :bottom 40, :right 10}, :data [{:name \"87c5cf91-afc9-4f1d-b03b-a4a3f972cc77\", :values ({:x 0, :y 0.0} {:x 1, :y 0.0} {:x 2, :y 5.780352574750012E-4} {:x 3, :y 5.170104516422785E-4} {:x 4, :y 4.900473357357169E-4} {:x 5, :y 4.6125883832293584E-4} {:x 6, :y 4.906337203549679E-4} {:x 7, :y 4.727599239815924E-4} {:x 8, :y 4.665331849973279E-4})}], :marks [{:type \"line\", :from {:data \"87c5cf91-afc9-4f1d-b03b-a4a3f972cc77\"}, :properties {:enter {:x {:scale \"x\", :field \"data.x\"}, :y {:scale \"y\", :field \"data.y\"}, :stroke {:value \"#FF29D2\"}, :strokeWidth {:value 2}, :strokeOpacity {:value 1}}}}], :scales [{:name \"x\", :type \"linear\", :range \"width\", :zero false, :domain {:data \"87c5cf91-afc9-4f1d-b03b-a4a3f972cc77\", :field \"data.x\"}} {:name \"y\", :type \"linear\", :range \"height\", :nice true, :zero false, :domain {:data \"87c5cf91-afc9-4f1d-b03b-a4a3f972cc77\", :field \"data.y\"}}], :axes [{:type \"x\", :scale \"x\"} {:type \"y\", :scale \"y\"}]}}"}
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
 ;; <=
 
 ;; **
@@ -346,22 +327,14 @@
 ;; **
 
 ;; @@
-; Add rename legend
 (def data-to-plot
  (map #(assoc % :plot "sharpe ratio")
   data))
 
-(def plotting-data (map #(% :sharpe) data-to-plot) )
-(println plotting-data)
-
-(list-plot plotting-data :joined true)
+(plot data-to-plot :plot :date :sharpe true)
 ;; @@
-;; ->
-;;; (0.0 0.0 3.1854276385688904 5.392942911976279 6.972207816523242 9.130133507926402 10.495725028410938 11.21356259850174 11.077750057021882)
-;;; 
-;; <-
 ;; =>
-;;; {"type":"vega","content":{"width":400,"height":247.2188,"padding":{"top":10,"left":55,"bottom":40,"right":10},"data":[{"name":"db1fa45c-c8f6-49a1-9a71-29fa773e8984","values":[{"x":0,"y":0.0},{"x":1,"y":0.0},{"x":2,"y":3.1854276385688904},{"x":3,"y":5.392942911976279},{"x":4,"y":6.972207816523242},{"x":5,"y":9.130133507926402},{"x":6,"y":10.495725028410938},{"x":7,"y":11.21356259850174},{"x":8,"y":11.077750057021882}]}],"marks":[{"type":"line","from":{"data":"db1fa45c-c8f6-49a1-9a71-29fa773e8984"},"properties":{"enter":{"x":{"scale":"x","field":"data.x"},"y":{"scale":"y","field":"data.y"},"stroke":{"value":"#FF29D2"},"strokeWidth":{"value":2},"strokeOpacity":{"value":1}}}}],"scales":[{"name":"x","type":"linear","range":"width","zero":false,"domain":{"data":"db1fa45c-c8f6-49a1-9a71-29fa773e8984","field":"data.x"}},{"name":"y","type":"linear","range":"height","nice":true,"zero":false,"domain":{"data":"db1fa45c-c8f6-49a1-9a71-29fa773e8984","field":"data.y"}}],"axes":[{"type":"x","scale":"x"},{"type":"y","scale":"y"}]},"value":"#gorilla_repl.vega.VegaView{:content {:width 400, :height 247.2188, :padding {:top 10, :left 55, :bottom 40, :right 10}, :data [{:name \"db1fa45c-c8f6-49a1-9a71-29fa773e8984\", :values ({:x 0, :y 0.0} {:x 1, :y 0.0} {:x 2, :y 3.1854276385688904} {:x 3, :y 5.392942911976279} {:x 4, :y 6.972207816523242} {:x 5, :y 9.130133507926402} {:x 6, :y 10.495725028410938} {:x 7, :y 11.21356259850174} {:x 8, :y 11.077750057021882})}], :marks [{:type \"line\", :from {:data \"db1fa45c-c8f6-49a1-9a71-29fa773e8984\"}, :properties {:enter {:x {:scale \"x\", :field \"data.x\"}, :y {:scale \"y\", :field \"data.y\"}, :stroke {:value \"#FF29D2\"}, :strokeWidth {:value 2}, :strokeOpacity {:value 1}}}}], :scales [{:name \"x\", :type \"linear\", :range \"width\", :zero false, :domain {:data \"db1fa45c-c8f6-49a1-9a71-29fa773e8984\", :field \"data.x\"}} {:name \"y\", :type \"linear\", :range \"height\", :nice true, :zero false, :domain {:data \"db1fa45c-c8f6-49a1-9a71-29fa773e8984\", :field \"data.y\"}}], :axes [{:type \"x\", :scale \"x\"} {:type \"y\", :scale \"y\"}]}}"}
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
 ;; <=
 
 ;; **
@@ -383,24 +356,12 @@
 ;; <=
 
 ;; @@
-; Add rename legend
 (def data-to-plot
  (map #(assoc % :plot "price")
   data))
 
-(def plotting-data (map #(% :price) data-to-plot) )
-(println plotting-data)
-
-(list-plot plotting-data :joined true)
+(plot data-to-plot :plot :date :price true)
 ;; @@
-;; ->
-;;; (25.9375 26.6875 29.6875 32.5625 36.0625 34.1875)
-;;; 
-;; <-
 ;; =>
-;;; {"type":"vega","content":{"width":400,"height":247.2188,"padding":{"top":10,"left":55,"bottom":40,"right":10},"data":[{"name":"8e021882-55c2-40c4-89b6-a82966b42afa","values":[{"x":0,"y":25.9375},{"x":1,"y":26.6875},{"x":2,"y":29.6875},{"x":3,"y":32.5625},{"x":4,"y":36.0625},{"x":5,"y":34.1875}]}],"marks":[{"type":"line","from":{"data":"8e021882-55c2-40c4-89b6-a82966b42afa"},"properties":{"enter":{"x":{"scale":"x","field":"data.x"},"y":{"scale":"y","field":"data.y"},"stroke":{"value":"#FF29D2"},"strokeWidth":{"value":2},"strokeOpacity":{"value":1}}}}],"scales":[{"name":"x","type":"linear","range":"width","zero":false,"domain":{"data":"8e021882-55c2-40c4-89b6-a82966b42afa","field":"data.x"}},{"name":"y","type":"linear","range":"height","nice":true,"zero":false,"domain":{"data":"8e021882-55c2-40c4-89b6-a82966b42afa","field":"data.y"}}],"axes":[{"type":"x","scale":"x"},{"type":"y","scale":"y"}]},"value":"#gorilla_repl.vega.VegaView{:content {:width 400, :height 247.2188, :padding {:top 10, :left 55, :bottom 40, :right 10}, :data [{:name \"8e021882-55c2-40c4-89b6-a82966b42afa\", :values ({:x 0, :y 25.9375} {:x 1, :y 26.6875} {:x 2, :y 29.6875} {:x 3, :y 32.5625} {:x 4, :y 36.0625} {:x 5, :y 34.1875})}], :marks [{:type \"line\", :from {:data \"8e021882-55c2-40c4-89b6-a82966b42afa\"}, :properties {:enter {:x {:scale \"x\", :field \"data.x\"}, :y {:scale \"y\", :field \"data.y\"}, :stroke {:value \"#FF29D2\"}, :strokeWidth {:value 2}, :strokeOpacity {:value 1}}}}], :scales [{:name \"x\", :type \"linear\", :range \"width\", :zero false, :domain {:data \"8e021882-55c2-40c4-89b6-a82966b42afa\", :field \"data.x\"}} {:name \"y\", :type \"linear\", :range \"height\", :nice true, :zero false, :domain {:data \"8e021882-55c2-40c4-89b6-a82966b42afa\", :field \"data.y\"}}], :axes [{:type \"x\", :scale \"x\"} {:type \"y\", :scale \"y\"}]}}"}
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
 ;; <=
-
-;; @@
-
-;; @@

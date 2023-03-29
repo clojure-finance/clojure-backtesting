@@ -12,7 +12,7 @@
             [clojure-backtesting.portfolio :refer :all]
             [clojure-backtesting.order :refer :all]
             [clojure-backtesting.evaluate :refer :all]
-            ;[clojure-backtesting.plot :refer :all] - OZ BROKEN (22/03/23)
+            [clojure-backtesting.plot :refer :all]
             [clojure-backtesting.counter :refer :all]
             [clojure-backtesting.automation :refer :all]
             [clojure-backtesting.parameters :refer :all]
@@ -21,7 +21,6 @@
             [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.pprint :as pprint]
-            [gorilla-plot.core :as plot :refer :all]
   ) ;; require all libriaries from core
 )
 ;; @@
@@ -37,7 +36,7 @@
 ; path to dataset = "/Volumes/T7/CRSP"
 ; change it to the relative path to your own dataset
 ;
-(load-dataset "./CRSP" "main" add-aprc)
+(load-dataset "./Volumes/T7/CRSP" "main" add-aprc)
 ;; @@
 ;; ->
 ;;; The dataset is already furnished by add-aprc. No more modification is needed.
@@ -229,26 +228,8 @@
 ;; <=
 
 ;; @@
-; ORIGINAL
-;;(plot data-to-plot :plot :date :daily-ret true)
+(plot data-to-plot :plot :date :daily-ret true)
 ;; @@
-
-;; @@
-; Bootstrapped plotting using gorilla-plot
-(def plotting-data (map #(% :daily-ret) data-to-plot))
-(println plotting-data)
-;; @@
-;; ->
-;;; (0.0 0.0 -4.821637332766435E-17 0.0 0.0 -4.821637332766435E-17 0.0 0.0)
-;;; 
-;; <-
 ;; =>
 ;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
-;; <=
-
-;; @@
-(list-plot plotting-data :joined true)
-;; @@
-;; =>
-;;; {"type":"vega","content":{"width":400,"height":247.2188,"padding":{"top":10,"left":55,"bottom":40,"right":10},"data":[{"name":"e7e6751d-5e27-482c-981b-041bbae4c8aa","values":[{"x":0,"y":0.0},{"x":1,"y":0.0},{"x":2,"y":-4.821637332766435E-17},{"x":3,"y":0.0},{"x":4,"y":0.0},{"x":5,"y":-4.821637332766435E-17},{"x":6,"y":0.0},{"x":7,"y":0.0}]}],"marks":[{"type":"line","from":{"data":"e7e6751d-5e27-482c-981b-041bbae4c8aa"},"properties":{"enter":{"x":{"scale":"x","field":"data.x"},"y":{"scale":"y","field":"data.y"},"stroke":{"value":"#FF29D2"},"strokeWidth":{"value":2},"strokeOpacity":{"value":1}}}}],"scales":[{"name":"x","type":"linear","range":"width","zero":false,"domain":{"data":"e7e6751d-5e27-482c-981b-041bbae4c8aa","field":"data.x"}},{"name":"y","type":"linear","range":"height","nice":true,"zero":false,"domain":{"data":"e7e6751d-5e27-482c-981b-041bbae4c8aa","field":"data.y"}}],"axes":[{"type":"x","scale":"x"},{"type":"y","scale":"y"}]},"value":"#gorilla_repl.vega.VegaView{:content {:width 400, :height 247.2188, :padding {:top 10, :left 55, :bottom 40, :right 10}, :data [{:name \"e7e6751d-5e27-482c-981b-041bbae4c8aa\", :values ({:x 0, :y 0.0} {:x 1, :y 0.0} {:x 2, :y -4.821637332766435E-17} {:x 3, :y 0.0} {:x 4, :y 0.0} {:x 5, :y -4.821637332766435E-17} {:x 6, :y 0.0} {:x 7, :y 0.0})}], :marks [{:type \"line\", :from {:data \"e7e6751d-5e27-482c-981b-041bbae4c8aa\"}, :properties {:enter {:x {:scale \"x\", :field \"data.x\"}, :y {:scale \"y\", :field \"data.y\"}, :stroke {:value \"#FF29D2\"}, :strokeWidth {:value 2}, :strokeOpacity {:value 1}}}}], :scales [{:name \"x\", :type \"linear\", :range \"width\", :zero false, :domain {:data \"e7e6751d-5e27-482c-981b-041bbae4c8aa\", :field \"data.x\"}} {:name \"y\", :type \"linear\", :range \"height\", :nice true, :zero false, :domain {:data \"e7e6751d-5e27-482c-981b-041bbae4c8aa\", :field \"data.y\"}}], :axes [{:type \"x\", :scale \"x\"} {:type \"y\", :scale \"y\"}]}}"}
 ;; <=
