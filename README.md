@@ -28,11 +28,7 @@ A good [tutorial](https://ericnormand.me/guide/how-to-install-clojure) about ins
 
    *Can save strategies in notebooks.*
 
-   For the first time after pull from GitHub, run
-   ```
-   lein uberjar
-   ```
-   and for every time you open Gorilla REPL, run
+   every time you open Gorilla REPL, run
    ```
    lein gorilla
    ```
