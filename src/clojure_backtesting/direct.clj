@@ -32,7 +32,7 @@
 
 (defn print-portfolio-record
   "This function prints the first n rows of the portfolio value record, pass -ve value to print whole record."
-  [n]
+  [& [n]]
   (def portfolio-record (atom [])) ; temporarily stores record for view
   (doseq [row (deref portfolio-value)]
     (do

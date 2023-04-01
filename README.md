@@ -10,13 +10,6 @@ A backtesting framework for quantitative investing and trading.
 
 A good [tutorial](https://ericnormand.me/guide/how-to-install-clojure) about installing the above softwares. **Remember to reboot the system after changing the environment path every time.**
 
-##### Optional:
-
-
-- Jupyter Notebook
-
-[Offical document](https://jupyter.org/install#jupyter-notebook) to install Juputer Notebook. Replace `pip` with `pip3` if the former fails.
-
 ## How to install
 
 1. ### Lein REPL
@@ -31,13 +24,14 @@ A good [tutorial](https://ericnormand.me/guide/how-to-install-clojure) about ins
 
    3. Run the examples in the [`/examples`](/examples) folder line by line in the REPL.
 
-2. ### Juputer Notebook
+2. ### Gorilla REPL
 
    *Can save strategies in notebooks.*
 
-   Detailed installation instructions about running backtester with Jupyter Notebook could be found [here](https://clojure-finance.github.io/clojure-backtesting-website/posts/get-started/#setting-up-the-playground).
-
-   All Jupyter Notebook examples could be found in the [`/examples`](/examples) folder.
+   every time you open Gorilla REPL, run
+   ```
+   lein gorilla
+   ```
 
 3. ### Try it out online
 
