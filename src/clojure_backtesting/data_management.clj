@@ -40,7 +40,7 @@
 ;;                             (or (and (= month 6) (= day 30)) (= month 7) (= month 8) (and (= month 9) (<= day 30))) (str year "-6-" 30)
 ;;                             (or (and (= month 9) (= day 31)) (= month 10) (= month 11) (and (= month 12) (<= day 30))) (str year "-" 9 "-" 30))})))
 
-(defn get-compustat-data
+(defn- get-compustat-data
   [date]
   (let [comp-file (get data-files2 date)
         comp (line-seq (io/reader comp-file))
@@ -48,15 +48,24 @@
         comp (map zipmap (repeat headers2) comp)]
     comp))
 
-(defn merge-data
-  [crsp date]
-  (let [comp-date (first (first (rsubseq data-files2 <= date)))
-        comp (get-compustat-data comp-date)]
-    (map (fn [row] (let [permno (TICKER-KEY row)
-                          comp-row (first (filter #(= permno (:permno %)) comp))]
-                      ;; (println permno)
-                      ;; (if comp-row (println comp-row))
-                      (merge row comp-row))) crsp)))
+(defn- compare-two-date [date1 date2]
+  (let [date1-list (clojure.string/split date1 #"-")
+        date2-list (clojure.string/split date2 #"-")
+        difference (+ (* (- (Integer/parseInt (nth date1-list 0)) (Integer/parseInt (nth date2-list 0))) 12) (- (Integer/parseInt (nth date1-list 1)) (Integer/parseInt (nth date2-list 1))))]
+    (if (and (<= difference 3) (>= difference -3))
+      true
+      false)))
+(defn- merge-data [crsp date]
+  (let [comp-date (first (last (rsubseq data-files2 >= date)))
+        date-difference (compare-two-date date comp-date)]
+    (if date-difference
+      (let [comp (get-compustat-data comp-date)]
+        (map (fn [row] (let [permno (TICKER-KEY row)
+                             comp-row (first (filter #(= permno (:permno %)) comp))]
+                            ;(println permno)
+                            ;; (if comp-row (println comp-row))
+                         (merge row comp-row))) crsp))
+      crsp)))
 
 (defn- get-info-by-date
   "Get the full tics info.\n
