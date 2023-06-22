@@ -37,6 +37,7 @@ Rplots.pdf
 clojask-script/.*
 resources/
 CRSP/
+Compustat/
 !clojupyter/resources/
 .clojask/
 target/
