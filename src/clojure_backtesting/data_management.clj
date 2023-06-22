@@ -55,7 +55,7 @@
     (if (and (<= difference 3) (>= difference -3))
       true
       false)))
-(defn- merge-data [crsp date]
+(defn merge-data [crsp date]
   (let [comp-date (first (last (rsubseq data-files2 >= date)))
         date-difference (compare-two-date date comp-date)]
     (if date-difference
