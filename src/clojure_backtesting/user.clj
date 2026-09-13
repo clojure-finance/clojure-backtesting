@@ -20,47 +20,22 @@
             )(:gen-class))
 
 (defn -main
-  "Write your code here"
-  [& args]
-  (load-dataset "/Volumes/T7/CRSP" "main")
-  ;; (reset! data-set (add-aprc (read-csv-row "./resources/CRSP-extract.csv")))
-  ;(reset! data-set (add-aprc (read-csv-row "./resources/data-CRSP-lohi-extract-1000.csv")))
-  (init-portfolio "1986-01-09" 2000)
-  (let [tot-val (get-in (deref portfolio) [:cash :tot-val])]
-    (println tot-val))
-
-  ;; (order "AAPL" 10)
-  ;(order "OMFGA" 10)
-  (next-date)
-
-  (update-eval-report)
-  (next-date)
-  (update-eval-report)
-
-  (println (portfolio-daily-ret))
-  (next-date)
-  (next-date)
-  (next-date)
-  (next-date)
-  (next-date)
-
-  (pprint/print-table (deref order-record))
+  "A short run against the bundled sample dataset. Pass a directory to use
+   another dataset in the same layout."
+  [& [dir]]
+  (println (load-dataset (or dir "resources/sample-data/main") "main" add-aprc))
+  (init-portfolio "1990-01-02" 100000)
+  (order "10001" 100) ; fills at the next close
+  (order "10002" 50)
+  (dotimes [_ 10]
+    (next-date)
+    (update-eval-report))
+  (order "10001" -50)
+  (dotimes [_ 5]
+    (next-date)
+    (update-eval-report))
+  (end-order)
+  (print-order-record)
   (print-portfolio)
   (print-portfolio-record -1)
-  (print-eval-report -1)
-
-  ;; (println (sd-last-n-days "OMFGA" 10))
-  ;; (let [prev-close (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY 1 "OMFGA")) PRICE-KEY))]
-  ;;   (println (parabolic-SAR "OMFGA" "non-lazy" 0.2 prev-close))
-  ;;   )
-
-  ;; (let [low-price (Double/parseDouble (get-by-key "OMFGA" :BIDLO "non-lazy"))
-  ;;       high-price (Double/parseDouble (get-by-key "OMFGA" :ASKHI "non-lazy"))
-  ;;       prev-atr (- high-price low-price)]
-  ;;   (println (keltner-channel "OMFGA" "non-lazy" 10 prev-atr))
-  ;;   )
-
-  ;; (println (force-index "OMFGA" "non-lazy" 20))
-
-  ;; (end-order)
-  )
+  (print-eval-report -1))
