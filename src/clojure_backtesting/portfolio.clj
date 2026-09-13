@@ -1,16 +1,16 @@
 (ns clojure-backtesting.portfolio
-    (:require [clojure-backtesting.data :refer :all]
-              [clojure-backtesting.data-management :refer :all]
-              [clojure-backtesting.parameters :refer :all]
-              [clojure-backtesting.counter :refer :all]
-              [clojure-backtesting.indicators :refer :all]
-              [clojure-backtesting.automation :refer :all]
-              [clojure.string :as str]
-              [clojure.pprint :as pprint]
-              [java-time :as t]
-              [clojure.java.io :as io]
-              [clojure.math.numeric-tower :as math]))
-  
+  (:require [clojure-backtesting.data :refer :all]
+            [clojure-backtesting.data-management :refer :all]
+            [clojure-backtesting.parameters :refer :all]
+            [clojure-backtesting.counter :refer :all]
+            [clojure-backtesting.indicators :refer :all]
+            [clojure-backtesting.automation :refer :all]
+            [clojure.string :as str]
+            [clojure.pprint :as pprint]
+            [java-time :as t]
+            [clojure.java.io :as io]
+            [clojure.math.numeric-tower :as math]))
+
 ;; (def dataset-col (atom {}))
 ;; (def lazy-mode (atom false))
 
@@ -73,7 +73,7 @@
 ;;                         (swap! available-tics assoc security {:reference first-line})
 ;;                         (recur (inc count) next-remaining)))))))
 ;;             ;; ============= Direct Copy Ends ============
-                       
+
 ;;             cur-date)
 ;;           (if (< count 2000)
 ;;             (recur (inc count) next-remaining)
@@ -94,7 +94,7 @@
   [date capital]
     ;; example: portfolio -> {:cash {:tot-val 10000} :"AAPL" {:price 400 :aprc adj-price :quantity 100 :tot-val 40000}}
     ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
-  
+
   (assert (< (compare (init-date date) (first (last data-files))) 0) "Please do not start from the last date. Init portfolio fails.")
 
     ;; output order record to csv file
@@ -131,21 +131,36 @@
   (def TERMINATED (atom false)) ; global switch for storing whether user has lost all cash
   (str "Date: " (get-date) " Cash: $" (get (get (deref portfolio) :cash) :tot-val)))
 
-  
+(defn log-return
+  "Natural-log return from `prev` to `curr`, or 0.0 when either is not positive."
+  [curr prev]
+  (if (and (pos? curr) (pos? prev))
+    (Math/log (/ (double curr) (double prev)))
+    0.0))
+
   ;; Update loan in portfolio
 (defn update-loan
+  "Appends today's portfolio-value entry while a loan is (or has been) open.
+   Cash already goes negative by the borrowed amount in `update-portfolio-map`,
+   so the loan balance is simply the negative cash balance: it grows when
+   interest is debited and shrinks when positions are sold. `loan` is the
+   amount the caller borrowed in this order (informational) or, when
+   `is-interest` is true, the interest to debit from cash. The equity return
+   is log(tot-value / prev-value); tot-value is already net of the loan, so
+   no leverage multiplier applies."
   [date loan is-interest]
-  (if (= is-interest true)
+  (when is-interest
       ;; deduct cash in portfolio
     (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) loan)}))
     ;; update portfolio-value record
   (let [tot-value (reduce + (map :tot-val (vals (deref portfolio))))
         prev-value (:tot-value (last (deref portfolio-value)))
-        new-loan (+ loan (get (last (deref portfolio-value)) :loan)) ; update total loan
-        new-leverage (/ new-loan tot-value) ; update leverage ratio = total debt / total equity
         cash (get-in (deref portfolio) [:cash :tot-val]) ; get total amount of cash
-        new-margin (/ tot-value (+ tot-value new-loan)) ; calculate portfolio margin
-        ret (* (log-10 (/ tot-value prev-value)) new-leverage) ; update return with formula: daily_ret_lev = log(tot_val/prev_val) * leverage
+        new-loan (max 0.0 (- (double cash))) ; loan outstanding = negative cash balance
+        gross-value (+ tot-value new-loan)
+        new-leverage (if (pos? tot-value) (/ new-loan tot-value) 0.0) ; total debt / total equity
+        new-margin (if (pos? gross-value) (/ tot-value gross-value) 0.0) ; equity / gross position value
+        ret (log-return tot-value prev-value)
         tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
         last-date (get (last (deref portfolio-value)) :date)]
     (do
@@ -158,8 +173,7 @@
       (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan :margin new-margin})))
       (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double new-leverage) (double new-loan) (double new-margin))))))
 
-
-  ;; Update the portfolio map
+;; Update the portfolio map
 (defn update-portfolio-map
   [date permno quantity price aprc loan]
 
@@ -197,8 +211,8 @@
           ; exist leverage
         (update-loan date loan false)
 
-          ; no leverage, update return with log formula: daily_ret = log(tot_val/prev_val)
-        (let [ret (log-10 (/ tot-value prev-value))
+          ; no leverage, update return with log formula: daily_ret = ln(tot_val/prev_val)
+        (let [ret (log-return tot-value prev-value)
               tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
               last-date (get (last (deref portfolio-value)) :date)]
           (do
@@ -213,8 +227,7 @@
           (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0 :margin 0.0})))
           (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0) (double 0.0))))))))
 
-
-  ;; Main function to update portfolio map + portfolio-value record when placing an order
+;; Main function to update portfolio map + portfolio-value record when placing an order
 (defn update-portfolio
   [date permno quantity price aprc loan]
   (update-portfolio-map date permno quantity price aprc loan)

@@ -1,12 +1,13 @@
 (ns clojure-backtesting.data
   (:require [clojure.data.csv :as csv] ;; Useful for CSV handling
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.set :as set]      ;;
+            [clojure.set :as set] ;;
             [clj-time.core :as t]
             [clj-time.format :as f]
             [clojure-backtesting.parameters :refer :all]
             [clojure.pprint :as pprint]
-            [clojure.string :as str])  ;; For input-output handling
+            [clojure.string :as str]) ;; For input-output handling
   (:import [java.util PriorityQueue]
            [java.util Base64]))
 
@@ -20,7 +21,7 @@
   (map zipmap ;; make the first row as headers and the following rows as values in a map structure e.g. {:tic AAPL} 
        (->> (first csv-data) ;; take the first row of the csv-data
             (map keyword) ;; make the header be the "key" in the map 
-            repeat)      ;; repeat the process for all the headers
+            repeat) ;; repeat the process for all the headers
        (rest csv-data))) ;; use the rest rows as values of the map
 
 (defn- csv->map-col
@@ -196,7 +197,7 @@
 ;;               (swap! cum-ret (fn [security-map] (conj security-map [security {:cumret (+ log-ret prev-cumret)}])))
 ;;             )
 ;;           )
-          
+
 ;;           (def security-initial-price (get-in (deref initial-price) [security :price]))
 ;;           (def curr-cumret (get-in (deref cum-ret) [security :cumret]))
 ;;           (def aprc (* security-initial-price (Math/pow Math/E curr-cumret)))
@@ -239,7 +240,7 @@
 
 (defn decode-filename
   [filename]
-  (first (read-string (decode-str filename))))
+  (first (edn/read-string (decode-str filename))))
 
 ;; Global functions to set the variables
 (defn get-file-date
@@ -248,11 +249,9 @@
         ;; file-name (subs file-name (+ (str/last-index-of file-name "/") 1))
         file-name (.getName file)
         ;; tmp (read-string file-name)
-        tmp (decode-filename file-name)
-        ]
+        tmp (decode-filename file-name)]
     ;; (first tmp)
-    tmp
-    ))
+    tmp))
 
 (defn load-dataset
   [dir name & [func]]
@@ -260,11 +259,11 @@
         file-dir (io/file (str dir "grouped"))
         files (rest (vec (file-seq file-dir)))
         file-date (mapv get-file-date files)
-        header (read-string (slurp (str dir "header")))
+        header (edn/read-string (slurp (str dir "header")))
         _headers (mapv keyword header)
         _data-files (into (sorted-map) (zipmap file-date files))
         tmp (if func (func dir _headers _data-files)) ;; change the file by the function
-        header (read-string (slurp (str dir "header")))
+        header (edn/read-string (slurp (str dir "header")))
         _headers (mapv keyword header)
         _data-files (into (sorted-map) (zipmap file-date files))]
     (cond
@@ -286,41 +285,27 @@
 (def cum-ret (atom {}))
 
 (defn add-aprc-file
-  "This function adds the adjusted price column to the dataset (data-CRSP-sorted-cleaned)."
+  "Appends INIT-PRICE, APRC and CUM-RET to every row of one daily file.
+   CUM-RET is the cumulative natural-log return since the security's first
+   appearance (0.0 on that first day), so APRC = INIT-PRICE * exp(CUM-RET)
+   and APRC(t) / APRC(t-1) = 1 + RET(t). Per-security state lives in the
+   `initial-price` and `cum-ret` atoms, which `add-aprc` resets."
   [data price-index ret-index security-index]
-  ; get price on 1st day for each security
- ; traverse row by row in dataset
   (mapv (fn [line]
-        (let [
-              ;; date (nth line date-index)
-              price (get line price-index)
-              ret (get line ret-index)
-              security (get line security-index)]
-          ;; check whether the initial-price map already has the security
-          (if-not (contains? (deref initial-price) security)
-            (do ;; security appears the first time 
-              (swap! initial-price (fn [security-map] (conj security-map [security {:price price}])))
-              (swap! cum-ret (fn [security-map] (conj security-map [security {:cumret ret}])))
-            )
-            ;; security does not appear the first time
-            (let [prev-cumret (get-in (deref cum-ret) [security :cumret])
-                  log-ret (log-10 (+ 1 ret)) ; log base 10 
-                 ] 
-              (swap! cum-ret (fn [security-map] (conj security-map [security {:cumret (+ log-ret prev-cumret)}])))
-            )
-          )
-
-          (def security-initial-price (get-in (deref initial-price) [security :price]))
-          (def curr-cumret (get-in (deref cum-ret) [security :cumret]))
-          (def aprc (* security-initial-price (Math/pow Math/E curr-cumret)))
-
-          (vec (concat line [security-initial-price aprc curr-cumret]))
-        )
-      )
-    data
-  )
-)
-
+          (let [price (get line price-index)
+                ret (get line ret-index)
+                security (get line security-index)]
+            (if (contains? (deref initial-price) security)
+              (swap! cum-ret update-in [security :cumret]
+                     + (if (number? ret) (Math/log (+ 1.0 ret)) 0.0))
+              (do ;; security appears the first time
+                (swap! initial-price assoc security {:price price})
+                (swap! cum-ret assoc security {:cumret 0.0})))
+            (let [init (get-in (deref initial-price) [security :price])
+                  cumret (get-in (deref cum-ret) [security :cumret])
+                  aprc (* init (Math/exp cumret))]
+              (vec (concat line [init aprc cumret])))))
+        data))
 
 (defn add-aprc
   "Data augmentation of adding aprc to each file"
@@ -330,28 +315,22 @@
     (let [price-index (.indexOf headers :PRC)
           ret-index (.indexOf headers :RET)
           security-index (.indexOf headers TICKER-KEY)]
+      (reset! initial-price {})
+      (reset! cum-ret {})
       (println "The below process will take a few hours to run for the first time.")
       (doseq [[date file] data-files]
-        (let [rdr (io/reader file)
-              data (map read-string (line-seq rdr))
-              data (set data)
-              new-data (add-aprc-file data price-index ret-index security-index)
-              new-data (str/join "\n" (mapv str new-data))]
-          (spit file new-data)
+        (let [data (with-open [rdr (io/reader file)]
+                     (set (map edn/read-string (line-seq rdr))))
+              new-data (add-aprc-file data price-index ret-index security-index)]
+          (spit file (str/join "\n" (map str new-data)))
           (println date)))
-      (spit (str dir "header") (str (vec (concat headers [:INIT-PRICE :APRC :CUM-RET])))))
-    ))
+      (spit (str dir "header") (str (vec (concat headers [:INIT-PRICE :APRC :CUM-RET])))))))
 
 (defn delete-dup
   "Delete the duplicated row of each file"
   [dir headers data-files]
-  (let []
-    (doseq [[date file] data-files]
-      (let [rdr (io/reader file)
-            data (map read-string (line-seq rdr))
-            new-data (set data)
-            new-data (str/join "\n" (mapv str new-data))]
-        (spit file new-data)
-        (println date)))
-    ;; (spit (str dir "header") (str (vec (concat headers [:INIT-PRICE :APRC :CUM-RET]))))
-    ))
+  (doseq [[date file] data-files]
+    (let [new-data (with-open [rdr (io/reader file)]
+                     (set (map edn/read-string (line-seq rdr))))]
+      (spit file (str/join "\n" (map str new-data)))
+      (println date))))
