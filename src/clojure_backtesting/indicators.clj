@@ -1,14 +1,8 @@
 (ns clojure-backtesting.indicators
-  (:require [clojure.test :refer :all]
-            [clojure-backtesting.data :refer :all]
+  (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.counter :refer :all]
-            [clojure-backtesting.data-management :refer :all]
-            [clojure.string :as str]
-            [clj-time.core :as clj-t]
-            [java-time :as t]
-            [clojure.core.matrix.stats :as stat] ;; For the standard deviation formula
-            ))
+            [clojure-backtesting.data-management :refer :all]))
 
 (defn avg
   "This function returns the mean of the list"
@@ -23,29 +17,18 @@
   "This function returns the s.d. of the list"
   [list]
   (try
-    (stat/sd list)
+    (sample-sd list)
     (catch Exception e nil)))
 
 (defn moving-sd
   "Returns volatility of a stock for the last n days."
   [permno n]
-    ;(println (get-prev-n-days PRICE-KEY days permno))
-    ;(println (map PRICE-KEY (get-prev-n-days PRICE-KEY days permno)))
   (sd (conj (map PRICE-KEY (get-permno-prev-n-days permno (- n 1))) (get-permno-price permno))))
 
 (defn moving-avg
   "Returns volatility of a stock for the last n days."
   [permno n]
-    ;(println (get-prev-n-days PRICE-KEY days permno))
-    ;(println (map PRICE-KEY (get-prev-n-days PRICE-KEY days permno)))
   (avg (conj (map PRICE-KEY (get-permno-prev-n-days permno (- n 1))) (get-permno-price permno))))
-
-;; (defn permno-EMA
-;;     "This function is a wrapper of EMA()."
-;;     ([permno key mode]
-;;         (EMA (get-price permno key mode)))
-;;     ([permno key prev-ema mode]
-;;         (EMA (get-price permno key mode) prev-ema)))
 
 (def ^:dynamic EMA-map (transient {}))
 (def ^:dynamic EMA-keys (atom []))
@@ -58,7 +41,6 @@
    price)
   ([prev-ema price]
    (if (and prev-ema price)
-    ;;  (/ (+ (* price 2) (* (- EMA-CYCLE 1) prev-ema)) (+ EMA-CYCLE 1))
      (+ (* EMA-K price) (* (- 1 EMA-K) prev-ema))
      price)))
 
@@ -71,11 +53,6 @@
         (def EMA-map (assoc! EMA-map permno [(get-date) ema]))
         ema)
       (nth prev-ema 1))
-    ;; (let [prev-data (conj (get-permno-prev-n-days permno (dec EMA-CYCLE)) (get-permno-info permno))]
-    ;;   (let [ema (reduce _EMA nil (map PRICE-KEY (reverse prev-data)))]
-    ;;     (def EMA-map (assoc! EMA-map permno [(get-date) ema]))
-    ;;     (swap! EMA-keys conj permno)
-    ;;     ema))
     (if-let [avg (moving-avg permno EMA-CYCLE)]
       (do
         (swap! EMA-keys conj permno)
@@ -107,7 +84,6 @@
                        (nth prev-ema 1))
                      (if-let [avg (moving-avg permno EMA-CYCLE)]
                        (do
-              ;; (println (get EMA-gen-keys id))
                          (swap! EMA-keys conj permno)
                          (swap! EMA-gen-map assoc id (assoc! EMA-map permno [(get-date) avg]))
                          avg)
@@ -124,7 +100,6 @@
    price)
   ([prev-ema price]
    (if (and prev-ema price)
-    ;;  (/ (+ (* price 2) (* (- EMA-CYCLE 1) prev-ema)) (+ EMA-CYCLE 1))
      (+ (* MACD-SIGNAL-K price) (* (- 1 MACD-SIGNAL-K) prev-ema))
      price)))
 
@@ -134,7 +109,6 @@
    price)
   ([prev-ema price]
    (if (and prev-ema price)
-    ;;  (/ (+ (* price 2) (* (- EMA-CYCLE 1) prev-ema)) (+ EMA-CYCLE 1))
      (+ (* MACD-SHORT-K price) (* (- 1 MACD-SHORT-K) prev-ema))
      price)))
 
@@ -144,7 +118,6 @@
    price)
   ([prev-ema price]
    (if (and prev-ema price)
-    ;;  (/ (+ (* price 2) (* (- EMA-CYCLE 1) prev-ema)) (+ EMA-CYCLE 1))
      (+ (* MACD-LONG-K price) (* (- 1 MACD-LONG-K) prev-ema))
      price)))
 
@@ -211,18 +184,12 @@
         long (MACD-long permno)]
     [(- short long) signal short long]))
 
-;; (def MACD-gen-map (atom {}))
-;; (def MACD-gen-keys (atom {}))
-;; (def MACD-gen-funcs (atom {}))
-
 (defn MACD-generator
   [signal short long]
   (let [MACD-signal (EMA-generator signal)
         MACD-short (EMA-generator short)
         MACD-long (EMA-generator long)
         func (fn [permno]
-              ;;  (if (and (get-permno-info permno) (= nil (get (get MACD :MACD-long) permno)))
-              ;;    (swap! MACD-keys conj permno))
                (let [signal (MACD-signal permno)
                      short (MACD-short permno)
                      long (MACD-long permno)]
@@ -361,10 +328,6 @@
 
 (defn keltner-channel
   [permno window prev-atr]
-    ; set window for EMA
-    ;; (if (not= EMA-CYCLE 20)
-    ;;     (CHANGE-EMA-CYCLE 20)
-    ;;     )
   (let [middle-line (EMA permno)
         upper-channel (+ middle-line (* 2 (ATR permno window prev-atr)))
         lower-channel (- middle-line (* 2 (ATR permno window prev-atr)))]
@@ -376,20 +339,14 @@
   (reset! EMA-keys [])
   (doseq [id (deref EMA-gen-sizes)]
     (swap! EMA-gen-map assoc id (transient {}))
-    (swap! EMA-gen-keys assoc id (atom []))
-    ;; (swap! EMA-gen-funcs assoc id func)
-    ;; (swap! EMA-gen-sizes conj size)
-    )
+    (swap! EMA-gen-keys assoc id (atom [])))
   (def MACD-map (transient {:MACD-sig (transient {}) :MACD-short (transient {}) :MACD-long (transient {})}))
   (reset! MACD-keys [])
   (def ^:dynamic RS-map (transient {}))
   (reset! RS-keys [])
   (doseq [id (deref RSI-gen-sizes)]
     (swap! RSI-gen-map assoc id (transient {}))
-    (swap! RSI-gen-keys assoc id (atom []))
-    ;; (swap! RSI-gen-funcs assoc id func)
-    ;; (swap! RSI-gen-sizes conj size)
-    ))
+    (swap! RSI-gen-keys assoc id (atom []))))
 
 (defn update-daily-indicators
   []
@@ -405,37 +362,3 @@
   (doseq [size (deref RSI-gen-sizes)]
     (doseq [permno (deref (get (deref RSI-gen-keys) size))]
       ((get (deref RSI-gen-funcs) size) permno))))
-
-;; ;; need to double-check
-;; (defn force-index
-;;     [permno mode window]
-;;     (if (= window 1)
-;;         ;; calculate force index for window = 1
-;;         (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY 1 permno)) PRICE-KEY))
-;;               curr-price (Double/parseDouble (get-price permno PRICE-KEY mode))
-;;               curr-volume (Double/parseDouble (get-by-key permno :VOL mode))]
-;;               (* (- curr-price prev-price) curr-volume)
-;;                 )
-;;         ;; calculate force index for window > 1
-;;         (do
-;;             ;; check EMA window
-;;             (if (not= EMA-CYCLE window)
-;;                 (CHANGE-EMA-CYCLE window))
-;;             ;; get EMA of force index(1)
-;;             (let [prev-price (Double/parseDouble (get (first (get-prev-n-days PRICE-KEY 1 permno)) PRICE-KEY))
-;;                   prev-fi (atom prev-price)
-;;                   ema-value (atom 0)]
-;;                   (doseq [prev-n-prices (get-prev-n-days PRICE-KEY window permno)]
-;;                     (do
-;;                         (let [curr-price (Double/parseDouble (get prev-n-prices PRICE-KEY))
-;;                               curr-fi (force-index permno mode 1)]
-;;                               (println (EMA curr-fi (deref prev-fi)))
-;;                               (reset! ema-value (EMA curr-fi (deref prev-fi)))
-;;                               (reset! prev-fi curr-fi))
-;;                         ))
-;;                     ;; return force index
-;;                     (deref ema-value)
-;;                 )
-;;             )
-;;         )
-;;     )

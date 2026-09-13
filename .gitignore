@@ -1,6 +1,4 @@
 .DS_Store
-.ipynb_checkpoints/
-.jovianrc
 .calva/
 .clj-kondo/
 .lsp/
@@ -12,35 +10,25 @@ pom.xml.asc
 /.lein-*
 /.nrepl-port
 /.prepl-port
-.hgignore
-.hg/
-Debugging/
+.gorilla-port
 
-# project specific
-specs.clj
-huri-test.clj
-
-data-*.csv
-Compustat-extract_sorted.csv
-CRSP-extract_sorted.csv
-debug.csv
-examples/out_evaluation_report.csv
-examples/out_order_record.csv
-examples/out_portfolio_value_record.csv
+# backtest output written to the working directory
 out_evaluation_report.csv
 out_order_record.csv
 out_portfolio_value_record.csv
+examples/out_evaluation_report.csv
+examples/out_order_record.csv
+examples/out_portfolio_value_record.csv
 
-Rplots.pdf
-
-# Clojask scipt
-clojask-script/.*
+# local datasets
 resources/*
 !resources/sample-data/
 CRSP/
 Compustat/
-!clojupyter/resources/
+data-*.csv
+
+# clojask-script
+clojask-script/.*
 .clojask/
 target/
 clojask-script/*.log
-

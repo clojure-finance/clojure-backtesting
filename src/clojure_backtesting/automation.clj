@@ -1,31 +1,19 @@
 (ns clojure-backtesting.automation
   (:require [java-time :as jt]
-            [clojure-backtesting.counter :refer :all]
-            ;; [clojure-backtesting.order :refer :all]
-            ))
+            [clojure-backtesting.counter :refer :all]))
 
 (defmacro action
   "Similar to clojure.core/defn, but saves the function's definition in the var's
    :source meta-data."
   [act]
-    ;; (with-meta act {:source &form}))
   `(do
-    ;;  (defn a# [] (~act))
-    ;;    (alter-meta! (var a#) assoc :source (quote ~&form))
-    ;;    [(var a#) ~act]
-    ;;  [(quote ~&form) ~act]
      (with-meta ~act {:source (first (drop 1 (quote ~&form)))})))
 
 (defmacro condition
   "Similar to clojure.core/defn, but saves the function's definition in the var's
    :source meta-data."
   [act]
-    ;; (with-meta act {:source &form}))
   `(do
-    ;;  (defn a# [] (~act))
-    ;;    (alter-meta! (var a#) assoc :source (quote ~&form))
-    ;;    [(var a#) ~act]
-    ;;  [(quote ~&form) ~act]
      (with-meta ~act {:source (first (drop 1 (quote ~&form)))})))
 
 ;; ============ Automated orders ============
@@ -41,7 +29,6 @@
   (swap! auto-counter inc)
   (swap! automated-conditions assoc (deref auto-counter) [condition order-function (atom max-dispatch) (if expiration
                                                                                                          (jt/plus (jt/local-date "yyyy-MM-dd" (get-date)) (jt/days expiration))
-                                                                                                        ;;  (t/format "yyyy-MM-dd" (t/plus (get-date) (t/days expiration)))
                                                                                                          nil)])
   (deref auto-counter))
 
@@ -71,76 +58,3 @@
   (reset! automated-conditions {})
   (reset! auto-counter 0)
   (reset! dispatch-history []))
-
-;; limit order wrappers
-;; (defn stop-buy
-;;   "This function executes a stop buy order."
-;;   [permno prc qty mode & [expiration]]
-;;   (if (= mode "non-lazy")
-;;     (set-automation
-;;       ; check if security adjusted price is greater than prc
-;;      #(and  (> (get-in (deref portfolio) [permno :aprc]) prc))
-;;      #(order permno qty)
-;;      :max-dispatch 1))
-;;   (if (= mode "lazy")
-;;     (set-automation
-;;       ; check if security adjusted price is greater than prc
-;;      #(> (get-in (deref portfolio) [permno :aprc]) prc)
-;;      #(order permno qty)
-;;      :max-dispatch 1))
-;;   (if (and (not= mode "lazy") (not= mode "non-lazy"))
-;;     (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")))
-
-;; (defn limit-buy
-;;   "This function executes a limit buy order."
-;;   [permno prc qty mode]
-;;   (if (= mode "non-lazy")
-;;     (set-automation
-;;       ; check if security adjusted price is smaller than prc
-;;      #(< (get-in (deref portfolio) [permno :aprc]) prc)
-;;      #(order permno qty)
-;;      :max-dispatch 1))
-;;   (if (= mode "lazy")
-;;     (set-automation
-;;       ; check if security adjusted price is smaller than prc
-;;      #(< (get-in (deref portfolio) [permno :aprc]) prc)
-;;      #(order permno qty)
-;;      :max-dispatch 1))
-;;   (if (and (not= mode "lazy") (not= mode "non-lazy"))
-;;     (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")))
-
-;; (defn stop-sell
-;;   "This function executes a stop sell order."
-;;   [permno prc qty mode]
-;;   (if (= mode "non-lazy")
-;;     (set-automation
-;;       ; check if security adjusted price is smaller than prc
-;;      #(< (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
-;;      #(order permno (* qty -1))
-;;      :max-dispatch 1))
-;;   (if (= mode "lazy")
-;;     (set-automation
-;;       ; check if security adjusted price is greater than prc
-;;      #(< (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
-;;      #(order permno (* qty -1))
-;;      :max-dispatch 1))
-;;   (if (and (not= mode "lazy") (not= mode "non-lazy"))
-;;     (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")))
-
-;; (defn limit-sell
-;;   "This function executes a limit sell order."
-;;   [permno prc qty mode]
-;;   (if (= mode "non-lazy")
-;;     (set-automation
-;;       ; check if security adjusted price is smaller than prc
-;;      #(> (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
-;;      #(order permno (* qty -1))
-;;      :max-dispatch 1))
-;;   (if (= mode "lazy")
-;;     (set-automation
-;;       ; check if security adjusted price is greater than prc
-;;      #(> (or (get-in (deref portfolio) [permno :aprc]) prc) prc)
-;;      #(order permno (* qty -1))
-;;      :max-dispatch 1))
-;;   (if (and (not= mode "lazy") (not= mode "non-lazy"))
-;;     (println "Stop order failed, <mode> could only be \"lazy\" or \"non-lazy\".")))

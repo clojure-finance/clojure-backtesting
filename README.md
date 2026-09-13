@@ -1,49 +1,27 @@
 # Clojure Backtesting Library
 
-A backtesting framework for quantitative investing and trading.
+A backtesting framework for quantitative investing and trading, driven by
+daily CRSP-style security data.
 
 ## Requirements
 
-
-- Java
-- Clojure Leiningen
-
-A good [tutorial](https://ericnormand.me/guide/how-to-install-clojure) about installing the above softwares. **Remember to reboot the system after changing the environment path every time.**
+- Java 11 or later
+- [Leiningen](https://leiningen.org/)
 
 ## How to install
 
-1. ### Lein REPL
+Clone the repository and start a REPL under it:
 
-   *No need to install extra softwares. **Recommended for new users.***
+```
+lein repl
+```
 
-   1. Clone the repo and decompress.
+or a [Gorilla REPL](http://gorilla-repl.org/), which can save strategies as
+notebooks:
 
-   2. Under the directory, run below command in the terminal to start a Lein REPL.
-
-      `lein repl`
-
-   3. Run the examples in the [`/examples`](/examples) folder line by line in the REPL.
-
-2. ### Gorilla REPL
-
-   *Can save strategies in notebooks.*
-
-   every time you open Gorilla REPL, run
-   ```
-   lein gorilla
-   ```
-
-3. ### Try it out online
-
-   *Only try out the basic APIs with a small dataset.*
-
-   [Online interactive notebook](https://mybinder.org/v2/gh/clojure-finance/clojure-backtesting/binder)
-
-## How to use
-
-1. Go through every examples in the [`/examples`](/examples) folder to get a basic understanding of the system.
-2. Documentations for every detailed APIs can be found [here](https://clojure-finance.github.io/clojure-backtesting-website/#part-ii-api-documentation).
-3. Learn to use the APIs to write your own strategy!
+```
+make start
+```
 
 ## Sample dataset
 
@@ -63,6 +41,19 @@ API without WRDS access:
 and end-to-end tests on a fresh copy. Regenerate it with
 `lein run -m clojure-backtesting.sample-data`.
 
+To use your own data, preprocess it with [`clojask-script`](clojask-script)
+into the same layout.
+
+## How to use
+
+1. Go through the examples in the [`/examples`](/examples) folder to get a
+   basic understanding of the system. They are Gorilla REPL worksheets;
+   change the dataset path in each to point at your data or the sample
+   dataset.
+2. Documentation for every API can be found
+   [here](https://clojure-finance.github.io/clojure-backtesting-website/#part-ii-api-documentation).
+3. Learn to use the APIs to write your own strategy!
+
 ## Dividends
 
 By default a holding's value follows the security's total return, i.e.
@@ -71,31 +62,14 @@ dividends are reinvested in the same security. Call
 dividends paid into cash instead; recognising splits in that mode needs the
 CRSP `CFACPR` column in the main dataset.
 
-## Update
-
-Make sure you have the latest version of the code installed by running after each clone:
-```
-make add_kernel
-```
-
-
-
 ## Report bugs
 
-As we are still working to fully debug the code and create more examples, feel free to report issues in the repository and we appreciate your kind support.  
+Feel free to report issues in the repository.
 
 ## Development
 
-To start an interactive prompt where you can enter arbitrary code to run in the context of your project:
-```
-lein repl
-```
-To run the default `:main` set in `project.clj`:
-```
-lein run
-```
-To run all tests written in the `test` namespace:
+To run all tests:
+
 ```
 lein test
 ```
-

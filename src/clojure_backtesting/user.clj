@@ -9,15 +9,8 @@
             [clojure-backtesting.automation :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.indicators :refer :all]
-            [clojure-backtesting.direct :refer :all]
-            [clojure.string :as str]
-            [clojure.java.io :as io]
-            [clojure.pprint :as pprint]
-            ;; [clj-time.core :as clj-t]
-            ;; [clojure.edn :as edn]
-            ;; [java-time :as jt]
-            ;; [clojupyter.kernel.version :as ver]
-            )(:gen-class))
+            [clojure-backtesting.direct :refer :all])
+  (:gen-class))
 
 (defn -main
   "A short run against the bundled sample dataset. Pass a directory to use
