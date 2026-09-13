@@ -43,6 +43,15 @@
   (try (Integer/parseInt str)
        (catch Exception e nil)))
 
+(defn ->double
+  "Coerces a number or a numeric string to a double. Returns nil for nil or
+   a blank string, so optional columns the preprocessor left as strings can
+   be read without knowing their type."
+  [x]
+  (cond (number? x) (double x)
+        (and (string? x) (not (str/blank? x))) (Double/parseDouble x)
+        :else nil))
+
 ; Returns a list of maps, e.g. ({:col1 1, :col2 2} {:col1 3, :col2 4})
 (defn read-csv-row
   "Read CSV data into memory by row"

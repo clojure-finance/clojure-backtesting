@@ -8,7 +8,8 @@
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.portfolio :refer :all]
             [clojure-backtesting.evaluate :refer :all]
-            [clojure-backtesting.order]))
+            [clojure-backtesting.order]
+            [clojure-backtesting.indicators]))
 
 (defn- close? [a b] (< (Math/abs (- (double a) (double b))) 1e-9))
 
@@ -95,9 +96,9 @@
   (let [incur #'clojure-backtesting.order/incur-transaction-cost]
     (with-redefs [portfolio (atom {:cash {:tot-val 1000.0}})
                   TRANSACTION-COST 0.01]
-      (incur 10 5.0 5.0)
+      (incur 10 5.0)
       (is (close? 999.5 (get-in @portfolio [:cash :tot-val])) "buy of 50 costs 0.5")
-      (incur -10 5.0 5.0)
+      (incur -10 5.0)
       (is (close? 999.0 (get-in @portfolio [:cash :tot-val])) "sell of 50 also costs 0.5"))))
 
 (deftest compustat-join-uses-latest-prior-filing
@@ -134,3 +135,47 @@
           (is (= crsp (merge-data crsp "2020-12-15")))))
       (finally
         (doseq [f (reverse (file-seq dir))] (io/delete-file f true))))))
+
+(deftest rsi-wilder-smoothing
+  (let [wilder #'clojure-backtesting.indicators/wilder-update
+        rsi-value #'clojure-backtesting.indicators/rsi-value]
+    (testing "a loss increases the average loss"
+      (let [[g l] (wilder [1.0 1.0] -3.0 14)]
+        (is (close? (/ 13.0 14) g))
+        (is (close? (/ 16.0 14) l))))
+    (testing "a gain increases the average gain"
+      (let [[g l] (wilder [1.0 1.0] 3.0 14)]
+        (is (close? (/ 16.0 14) g))
+        (is (close? (/ 13.0 14) l))))
+    (is (= 100 (rsi-value [1.0 0.0])))
+    (is (close? 50.0 (rsi-value [1.0 1.0])))
+    (is (close? 75.0 (rsi-value [3.0 1.0])))))
+
+(deftest rs-seed-is-an-average
+  (with-redefs [clojure-backtesting.data-management/get-permno-prev-n-days
+                (fn [_ n] (map (fn [p] {:PRC p}) [12.0 11.0 10.0]))
+                clojure-backtesting.data-management/get-permno-price
+                (fn [_] 13.0)]
+    ;; prices oldest to newest: 10 11 12 13 -> three gains of 1, no losses
+    (is (= [1.0 0.0] (clojure-backtesting.indicators/RS "X" 4))))
+  (with-redefs [clojure-backtesting.data-management/get-permno-prev-n-days
+                (fn [_ n] (map (fn [p] {:PRC p}) [9.0 12.0 10.0]))
+                clojure-backtesting.data-management/get-permno-price
+                (fn [_] 15.0)]
+    ;; 10 12 9 15 -> gains 2 and 6, loss 3, over three changes
+    (let [[g l] (clojure-backtesting.indicators/RS "X" 4)]
+      (is (close? (/ 8.0 3) g))
+      (is (close? 1.0 l)))))
+
+(deftest atr-uses-true-range-and-window
+  (with-redefs [clojure-backtesting.data-management/get-permno-by-key
+                (fn [_ k] (get {:BIDLO "98.0" :ASKHI 103.0} k))
+                clojure-backtesting.data-management/get-permno-prev-n-days
+                (fn [_ n] [{:PRC 95.0}])]
+    ;; high-low 5, high-prev 8, low-prev 3 -> true range 8; window 10 from prev-atr 4
+    (is (close? (/ (+ (* 4.0 9) 8.0) 10) (clojure-backtesting.indicators/ATR "X" 10 4.0))))
+  (with-redefs [clojure-backtesting.data-management/get-permno-by-key
+                (fn [_ k] (get {:BIDLO 98.0 :ASKHI 103.0} k))
+                clojure-backtesting.data-management/get-permno-prev-n-days
+                (fn [_ n] [])]
+    (is (close? (/ (+ (* 4.0 13) 5.0) 14) (clojure-backtesting.indicators/ATR "X" 14 4.0)))))
