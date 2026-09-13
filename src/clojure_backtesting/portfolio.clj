@@ -95,6 +95,7 @@
     ;; example: portfolio -> {:cash {:tot-val 10000} :"AAPL" {:price 400 :aprc adj-price :quantity 100 :tot-val 40000}}
     ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
 
+  (assert (some #{:APRC} headers) "The main dataset has no APRC column. Load it with (load-dataset dir \"main\" add-aprc).")
   (assert (< (compare (init-date date) (first (last data-files))) 0) "Please do not start from the last date. Init portfolio fails.")
 
     ;; output order record to csv file
@@ -173,34 +174,100 @@
       (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan :margin new-margin})))
       (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double new-leverage) (double new-loan) (double new-margin))))))
 
-;; Update the portfolio map
+;; ============ Holdings ============
+;;
+;; The portfolio map is {:cash {:tot-val dollars}, permno {:price :aprc :cfacpr
+;; :quantity :tot-val}, ...}. Cash and every :tot-val are in dollars (or
+;; whatever unit the price column is in). A position remembers the price,
+;; adjusted price and CFACPR of the last row it was valued on, so that the
+;; next revaluation can apply the total return earned since then.
+
+(declare record-portfolio-value)
+
+(defn- split-factor
+  "Shares held per share previously held, from CRSP's cumulative price
+   adjustment factor: 2.0 across a 2-for-1 split. 1.0 when either value is
+   missing, in which case a split is indistinguishable from a cash payout."
+  [prev-cfacpr curr-cfacpr]
+  (let [prev (->double prev-cfacpr)
+        curr (->double curr-cfacpr)]
+    (if (and prev curr (pos? curr))
+      (/ prev curr)
+      1.0)))
+
+(defn revalue-position
+  "Carries a position to today's data row `info`. Returns [position cash]
+   where cash is the dividend paid out to the cash balance.
+   With REINVEST-DIVIDENDS the position's value follows the security's
+   total return (the APRC ratio since it was last valued) and the share
+   count absorbs both dividends and splits; nothing is paid out.
+   Without it the share count changes only by the split factor and the
+   remainder of the total return is paid out as cash. Short positions pay
+   the dividend instead of receiving it."
+  [{:keys [price aprc quantity cfacpr] :as position} info]
+  (let [new-price (PRICE-KEY info)
+        new-aprc (:APRC info)
+        growth (/ new-aprc aprc) ; 1 + total return since the last valuation
+        carried (assoc position :price new-price :aprc new-aprc :cfacpr (:CFACPR info))]
+    (if REINVEST-DIVIDENDS
+      (let [scaled (* quantity growth (/ price new-price))
+            ;; on a day without distributions the scaling is 1 up to
+            ;; floating-point noise; keep the share count exact then
+            new-quantity (if (< (Math/abs (- scaled quantity)) (* 1e-9 (Math/abs quantity)))
+                           quantity
+                           scaled)]
+        [(assoc carried :quantity new-quantity :tot-val (* new-quantity new-price)) 0.0])
+      (let [factor (split-factor cfacpr (:CFACPR info))
+            new-quantity (* quantity factor)
+            payout (* quantity (- (* growth price) (* factor new-price)))]
+        [(assoc carried :quantity new-quantity :tot-val (* new-quantity new-price)) payout]))))
+
+(defn- credit-cash! [amount]
+  (when-not (zero? amount)
+    (swap! portfolio update-in [:cash :tot-val] + amount)))
+
+(defn- current-position
+  "The position in `permno` valued on today's row `info` (paying out any
+   dividend due), or an empty position if none is held."
+  [permno info]
+  (if-let [existing (get (deref portfolio) permno)]
+    (let [[position payout] (revalue-position existing info)]
+      (credit-cash! payout)
+      position)
+    {:price (PRICE-KEY info) :aprc (:APRC info) :cfacpr (:CFACPR info) :quantity 0.0 :tot-val 0.0}))
+
+(defn revalue-holdings!
+  "Brings every holding that has a row in today's `info-map` to today's
+   price, crediting dividends to cash, then records today's portfolio value."
+  [date info-map]
+  (doseq [[permno position] (deref portfolio)
+          :when (not= permno :cash)]
+    (when-let [info (get info-map permno)]
+      (let [[new-position payout] (revalue-position position info)]
+        (swap! portfolio assoc permno new-position)
+        (credit-cash! payout))))
+  (record-portfolio-value date 0))
+
+  ;; Update the portfolio map
 (defn update-portfolio-map
-  [date permno quantity price aprc loan]
-
-    ;; check whether the portfolio already has the security
-  (if-not (contains? (deref portfolio) permno)
-    (let [tot-val (* aprc quantity)
-          tot-val-real (* price quantity)]
-      (do
-        (swap! portfolio (fn [curr-port] (conj curr-port [permno {:price price :aprc aprc :quantity quantity :tot-val tot-val}])))
-        (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) tot-val)})))
-      ;; if already has it, just update the quantity
-    (let [[tot-val qty] [(* aprc quantity) (get-in (deref portfolio) [permno :quantity])] tot-val-real (* price quantity)]
-      (do
-        (swap! portfolio assoc permno {:quantity (+ qty quantity) :tot-val (* aprc (+ qty quantity))})
-        (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) tot-val)}))))
-
-    ;; then update the price & aprc of the securities in the portfolio
-  (doseq [[security -] (deref portfolio)]
-    (if (= security permno)
-      (let [qty-security (get-in (deref portfolio) [security :quantity])]
-        (if (or (= qty-security 0) (= qty-security 0.0))
-          (swap! portfolio dissoc security) ; remove security from portfolio if qty = 0
-          (swap! portfolio assoc security {:price price :aprc aprc :quantity qty-security :tot-val (* aprc qty-security)}))))))
+  "Buys (quantity > 0) or sells quantity shares of `permno` at the price in
+   today's row `info`, moving quantity * price between cash and the holding."
+  [date permno quantity info loan]
+  (let [position (current-position permno info)
+        price (PRICE-KEY info)
+        new-quantity (+ (:quantity position) quantity)]
+    (swap! portfolio update-in [:cash :tot-val] - (* quantity price))
+    (if (< (Math/abs (double new-quantity)) 1e-9)
+      (swap! portfolio dissoc permno) ; remove security from portfolio if qty = 0
+      (swap! portfolio assoc permno (assoc position :quantity new-quantity :tot-val (* new-quantity price))))))
 
   ;; Update the portfolio-value vector which records the daily portfolio value
-(defn update-portfolio-value-vector
-  [date permno quantity price aprc loan]
+(defn record-portfolio-value
+  "Appends (or replaces) today's entry in the portfolio-value vector from the
+   current portfolio map: total value, log return, cumulative return, loan,
+   leverage and margin. `loan` is the amount borrowed by the order that
+   triggered this, or 0 for a plain revaluation."
+  [date loan]
   (let [[tot-value prev-value] ;; get portfolio total
         [(reduce + (map :tot-val (vals (deref portfolio)))) (:tot-value (last (deref portfolio-value)))]]
 
@@ -229,9 +296,11 @@
 
 ;; Main function to update portfolio map + portfolio-value record when placing an order
 (defn update-portfolio
-  [date permno quantity price aprc loan]
-  (update-portfolio-map date permno quantity price aprc loan)
-  (update-portfolio-value-vector date permno quantity price aprc loan))
+  "Applies a trade of `quantity` shares of `permno` at today's row `info`
+   and records today's portfolio value. `loan` is the amount borrowed for it."
+  [date permno quantity info loan]
+  (update-portfolio-map date permno quantity info loan)
+  (record-portfolio-value date loan))
 
 (defn total-value
   "This function returns the remaining total value including the cash and stock value"
