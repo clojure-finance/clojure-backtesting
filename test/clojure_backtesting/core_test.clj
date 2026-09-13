@@ -2,7 +2,6 @@
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [clojure.core.matrix.stats :as stat]
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.data-management :refer :all]
             [clojure-backtesting.parameters :refer :all]
@@ -11,11 +10,15 @@
             [clojure-backtesting.order]
             [clojure-backtesting.indicators]))
 
-(defn- close? [a b] (< (Math/abs (- (double a) (double b))) 1e-9))
+(defn- close?
+  ([a b] (close? a b 1e-9))
+  ([a b tol] (< (Math/abs (- (double a) (double b))) tol)))
 
 (deftest math-calculation
-  (is (close? 1.0 (log-10 10)))
-  (is (= 6.25 (square 2.5)))
+  (is (= 2.0 (mean [1 2 3])))
+  (is (close? 1.0 (sample-sd [1 2 3])))
+  (is (close? 1.5811388 (sample-sd [1 2 3 4 5]) 1e-6))
+  (is (= 0.0 (sample-sd [7])))
   (is (close? 0.0 (log-return 100 100)))
   (is (close? (Math/log 1.05) (log-return 105 100)))
   (is (= 0.0 (log-return -5 100)) "non-positive equity gives a zero return instead of NaN"))
@@ -53,7 +56,7 @@
       (is (close? 0.2 (max-drawdown))))
     (testing "sharpe is annualised mean/sd of daily returns"
       (let [rets (get-daily-returns)
-            expected (* (/ (stat/mean rets) (stat/sd rets)) (Math/sqrt 252))]
+            expected (* (/ (mean rets) (sample-sd rets)) (Math/sqrt 252))]
         (is (close? expected (sharpe-ratio)))
         (is (close? expected (rolling-sharpe-ratio)) "window larger than history uses all of it"))))
   (testing "a single observation gives zeros rather than NaN or an exception"

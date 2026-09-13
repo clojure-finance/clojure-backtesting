@@ -5,81 +5,7 @@
             [clojure-backtesting.counter :refer :all]
             [clojure-backtesting.indicators :refer :all]
             [clojure-backtesting.automation :refer :all]
-            [clojure.string :as str]
-            [clojure.pprint :as pprint]
-            [java-time :as t]
-            [clojure.java.io :as io]
-            [clojure.math.numeric-tower :as math]))
-
-;; (def dataset-col (atom {}))
-;; (def lazy-mode (atom false))
-
-;; (defn set-main
-;;   "This function does the initialisation for the lazy mode."
-;;   [name]
-;;   (def pending-order (atom {}))
-;;   (def main-name name)
-;;   (reset! lazy-mode true))
-
-(defn valid-line
-  "Check if a line is valid in format"
-  [line]
-  (if (not= (get line TICKER-KEY) "")
-    true
-    false))
-
-;; (defn- lazy-init
-;;   "Go to the starting line of the dataset, the date should be large or equal the input date."
-;;   [date & [name]]
-;;   (loop [count 0 remaining (get (deref dataset-col) (or name main-name))]
-;;     (if (empty? remaining)
-;;       (do
-;;         (println "The date is beyond the date frame of the dataset.")
-;;         nil)
-;;       (let [first-line (first remaining)
-;;             next-remaining (rest remaining)
-;;             cur-date (get first-line :date)]
-;;          ;(println first-line)
-;;         (if (and (>= (compare cur-date date) 0) (valid-line first-line))
-;;              ;(reset! data-set remaining)
-;;              ;(println "-----")
-;;           (do
-;;              ;(println count)
-;;             (swap! dataset-col assoc (or name main-name) remaining)
-;;             (set-date cur-date)
-
-;;             ;; need to call next-day in large-data
-;;             ;; ============ Direct Copying ============
-;;             (let [date cur-date dataset (get (deref dataset-col) main-name)]
-;;               (reset! available-tics {})
-;;               (loop [count 0 remaining dataset]
-;;                 (if (or (<= MAXRANGE count) (empty? remaining))
-;;                   (do
-;;                     (println "Exceed the maximum-line buffer for one date or the dataset reaches the end.")
-;;                     (swap! dataset-col assoc (or name main-name) remaining))
-;;                   (let [first-line (first remaining)
-;;                         next-remaining (rest remaining)
-;;                         cur-date (get first-line :date)
-;;                         security (get first-line TICKER-KEY)]
-;;          ;(println first-line)        
-;;                     (if (and (not= cur-date date) (valid-line first-line))
-;;              ;(reset! data-set remaining)
-;;              ;(println "-----")
-;;                       (do
-;;              ;(println count)
-;;                         (swap! dataset-col assoc (or name main-name) remaining)
-;;                         )
-;;                       (do
-;;                         (swap! available-tics assoc security {:reference first-line})
-;;                         (recur (inc count) next-remaining)))))))
-;;             ;; ============= Direct Copy Ends ============
-
-;;             cur-date)
-;;           (if (< count 2000)
-;;             (recur (inc count) next-remaining)
-;;             (do
-;;               (swap! dataset-col assoc (or name main-name) remaining)
-;;               (recur 0 next-remaining))))))))
+            [clojure.java.io :as io]))
 
 (defn check-filepath
   "This function checks if a csv file is already created."
@@ -118,12 +44,6 @@
   (def portfolio (atom {:cash {:tot-val capital}}))
   (def portfolio-value (atom [{:date (get-date) :tot-value capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0 :margin 0.0}]))
 
-    ;; (if (not (deref lazy-mode))
-    ;;   (do
-    ;;     (init-date date)
-    ;;     (maintain-tics true))
-    ;;   ;; (lazy-init date)
-    ;;   )
   (reset-indicator-maps)
   (reset-automation)
 

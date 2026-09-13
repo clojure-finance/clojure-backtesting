@@ -4,12 +4,8 @@
 
 (def PRINT false)
 (def DIRECT true)
-(def MAXLOOKAHEAD 10) ; This parameter is used in `get-pre-date-and-content`
 (def ORDER-EXPIRATION 3)
 (def LEVERAGE true)
-(def MAXDISCONTINUITY 10)
-(def MAXRANGE 50000)
-(def MAXMERGERANGE "1 year")
 (def PRICE-KEY :PRC) ;; trade at closing price
 ;; (def PRICE-KEY :OPENPRC) uncomment this if you want to trade at opening price instead
 
@@ -54,7 +50,7 @@
 ;; ============ Parameters for margin requirements ============
 
 (def INITIAL-MARGIN 0.5)
-;; This is the min cash / order total 
+;; This is the min cash / order total
 ;; Set it to nil to enable infinite margin
 
 (def MAINTENANCE-MARGIN 0.25)
@@ -74,7 +70,7 @@
 (defn update-initial-margin
   "This function updates the initial margin."
   [new-im]
-  (if (or (> new-im 0) (= new-im nil))
+  (if (or (= new-im nil) (> new-im 0))
     (def INITIAL-MARGIN new-im)
     (println "Failed: The initial margin needs to be greater than zero.")))
 
@@ -86,16 +82,16 @@
     (println "Failed: The maintenance margin needs to be greater than zero.")))
 
 (defn update-interest-rate
-  "This function updates the interest rate."
+  "This function updates the interest rate. 0 switches interest off."
   [new-ir]
-  (if (and (pos? new-ir) (< new-ir 1))
+  (if (and (>= new-ir 0) (< new-ir 1))
     (def INTEREST-RATE new-ir)
     (println "Failed: The interest rate needs to be within the range of [0,1).")))
 
 (defn update-transaction-cost
-  "This function updates the transaction cost."
+  "This function updates the transaction cost. 0 switches commission off."
   [new-tc]
-  (if (and (pos? new-tc) (< new-tc 1))
+  (if (and (>= new-tc 0) (< new-tc 1))
     (def TRANSACTION-COST new-tc)
     (println "Failed: The transaction cost needs to be within the range of [0,1).")))
 
@@ -115,7 +111,6 @@
 
 ;; ============ FIXED PARAMETERS ============
 
-;; (def NOMATCH "2oif94ksdajf09934")
 (def ^:dynamic EMA-K (/ 2 (+ EMA-CYCLE 1)))
 (def MACD-SIGNAL-K (/ 2 (+ MACD-SIGNAL 1)))
 (def MACD-SHORT-K (/ 2 (+ MACD-SHORT 1)))
