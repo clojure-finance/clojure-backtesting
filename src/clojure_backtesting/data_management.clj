@@ -3,6 +3,7 @@
             [clojure-backtesting.data :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure.core.matrix.stats :as stat] ;; For the standard deviation formula
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.test :refer :all])
@@ -14,15 +15,13 @@
   []
   (let [date (.poll cache-queue)]
     (reset! (nth (get data-cache date) 0) nil)
-    (reset! (nth (get data-cache date) 1) nil))
-  )
+    (reset! (nth (get data-cache date) 1) nil)))
 
 (defn- cache-add-info
   [date info]
   (while (>= (.size cache-queue) CACHE-SIZE) (cache-pop))
   (.add cache-queue date)
-  (reset! (nth (get data-cache date) 0) info)
-  )
+  (reset! (nth (get data-cache date) 0) info))
 
 (defn- cache-add-map
   [date info]
@@ -40,13 +39,26 @@
 ;;                             (or (and (= month 6) (= day 30)) (= month 7) (= month 8) (and (= month 9) (<= day 30))) (str year "-6-" 30)
 ;;                             (or (and (= month 9) (= day 31)) (= month 10) (= month 11) (and (= month 12) (<= day 30))) (str year "-" 9 "-" 30))})))
 
+(def ^:private compustat-cache
+  "[datadate {security-id row}] for the most recently used Compustat file."
+  (atom nil))
+
 (defn- get-compustat-data
+  "Returns the Compustat rows dated `date`, indexed by TICKER-KEY.
+   Only the last date is cached, which is enough because consecutive trading
+   days almost always map to the same filing date."
   [date]
-  (let [comp-file (get data-files2 date)
-        comp (line-seq (io/reader comp-file))
-        comp (map read-string comp)
-        comp (map zipmap (repeat headers2) comp)]
-    comp))
+  (let [[cached-date index] (deref compustat-cache)]
+    (if (= cached-date date)
+      index
+      (let [index (with-open [rdr (io/reader (get data-files2 date))]
+                    (into {}
+                          (map (fn [line]
+                                 (let [row (zipmap headers2 (edn/read-string line))]
+                                   [(TICKER-KEY row) row])))
+                          (line-seq rdr)))]
+        (reset! compustat-cache [date index])
+        index))))
 
 (defn- compare-two-date [date1 date2]
   (let [date1-list (clojure.string/split date1 #"-")
@@ -55,31 +67,31 @@
     (if (and (<= difference 3) (>= difference -3))
       true
       false)))
-(defn merge-data [crsp date]
-  (let [comp-date (first (last (rsubseq data-files2 >= date)))
-        date-difference (compare-two-date date comp-date)]
-    (if date-difference
+(defn merge-data
+  "Left-joins the latest Compustat filing dated at or before `date` onto every
+   CRSP row, matching on TICKER-KEY. Rows without a match are returned
+   unchanged. Nothing is joined when there is no earlier filing yet or the
+   latest one is more than three months old. Note the join keys on the
+   filing's period-end date, not on when it became public, so there is still
+   some look-ahead between period end and the announcement date."
+  [crsp date]
+  (let [comp-date (first (first (rsubseq data-files2 <= date)))]
+    (if (and comp-date (compare-two-date date comp-date))
       (let [comp (get-compustat-data comp-date)]
-        (map (fn [row] (let [permno (TICKER-KEY row)
-                             comp-row (first (filter #(= permno (:permno %)) comp))]
-                            ;(println permno)
-                            ;; (if comp-row (println comp-row))
-                         (merge row comp-row))) crsp))
+        (mapv (fn [row] (merge row (get comp (TICKER-KEY row)))) crsp))
       crsp)))
 
 (defn- get-info-by-date
   "Get the full tics info.\n
    Returns a vector of maps."
-  ;; to do join the compustat
   [date]
   (if-let [file (get data-files date)]
     (if-let [ret (deref (nth (get data-cache date) 0))]
       ;; cache hit
       ret
       ;; cache miss
-      (let [data (line-seq (io/reader file))
-            data (map read-string data)
-            data (map zipmap (repeat headers) data)
+      (let [data (with-open [rdr (io/reader file)]
+                   (mapv #(zipmap headers (edn/read-string %)) (line-seq rdr)))
             data (if headers2 (merge-data data date) data)]
         (cache-add-info date data)))
     nil))
@@ -102,8 +114,7 @@
   ;;   info
   ;;   (let []
   ;;     (reset! tics-today (get-info-by-date (get-date)))))
-  (get-info-by-date (get-date))
-  )
+  (get-info-by-date (get-date)))
 
 (defn permno-tic
   [permno]
@@ -123,8 +134,7 @@
     ;; (if-let [tmp (deref tics-map-today)]
     ;;   tmp
     ;;   (reset! tics-map-today (zipmap (map TICKER-KEY (get-info)) (get-info))))
-    (get-info-map-by-date (get-date))
-    ))
+    (get-info-map-by-date (get-date))))
 
 (defn available-permnos
   "Gets all available permnos today in a sequence."
@@ -162,8 +172,7 @@
    (get (get-info-map) permno))
   ([date permno]
   ;;  (get (get-info-map (get-info-by-date date)) permno)
-   (get (get-info-map-by-date date) permno)
-   ))
+   (get (get-info-map-by-date date) permno)))
 
 (defn get-permno-price
   "Returns the price of a given security today, otherwise nil."
@@ -244,9 +253,7 @@
     ;;           (recur (conj! res (nth curr index)) data)
     ;;           ;; (recur (conj res row) data)
     ;;           (recur res data))))))
-    )
-  )
-
+    ))
 ;; ================ Deprecated =================
 
 ;; (defn- get-set

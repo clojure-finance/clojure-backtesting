@@ -8,9 +8,7 @@
             [clojure-backtesting.automation :refer :all]
             [clojure-backtesting.indicators :refer :all]
             [java-time :as jt] ;; [clojure.java.io :as io]
-            )
-    )
-
+            ))
 ;; ================ Deprecated Codes =================
 
 ;; (defn search-date
@@ -22,7 +20,7 @@
 
 ;;   ;; return [false 0 0] if no match
 ;;   ;; return [true price reference] otherwise
-  
+
 ;;   (loop [count 0 remaining dataset] ;(original line)
 ;;   ;(loop [count 0 remaining testfile1] 	;testing line, change the data-set to CRSP
 ;;     (if (empty? remaining)
@@ -37,7 +35,6 @@
 ;;             [true price aprc count])
 ;;           (recur (inc count) next-remaining)))))
 ;; )
-
 
 ;; (defn search-in-order
 ;;   "This function turns the order processed date"
@@ -127,28 +124,26 @@
 
   ;; return [false "No match date" 0 0 0] if no match
   ;; return [true T+1-date price aprc reference] otherwise
-  ()
-  )
+  ())
 
 (defn- incur-transaction-cost
-  "This private function deducts the commission fee for making an order."
+  "This private function deducts the commission fee for making an order.
+   The fee is charged on the absolute trade value, so a sell is charged as
+   well as a buy. It is in adjusted-price units, matching the cash flows in
+   `update-portfolio-map`."
   [quantity price adj-price]
   (if (> TRANSACTION-COST 0)
-    (let [cash-to-pay (* (* quantity adj-price) TRANSACTION-COST)]
-      (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) cash-to-pay)})
-    )
-  )
-)
+    (let [cash-to-pay (* (Math/abs (double (* quantity adj-price))) TRANSACTION-COST)]
+      (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) cash-to-pay)}))))
 
 (defn incur-interest-cost
   "This private function deducts the loan interests cost on every trading day."
   []
   (if (and (> INTEREST-RATE 0) (= (deref LOAN-EXIST) true))
-    (let 
-      [tot-loan (get-in (last (deref portfolio-value)) [:loan])
-       cash-to-pay (* (* INTEREST-RATE (/ 1 252)) tot-loan)]
-      (update-loan (get-date) cash-to-pay true)
-    )))
+    (let
+     [tot-loan (get-in (last (deref portfolio-value)) [:loan])
+      cash-to-pay (* (* INTEREST-RATE (/ 1 252)) tot-loan)]
+      (update-loan (get-date) cash-to-pay true))))
 
 (defn- place-order
   "This private function does the basic routine for an ordering - update portfolio and return record."
@@ -158,15 +153,12 @@
     (do
       (incur-transaction-cost quantity price adj-price)
       (update-portfolio date permno quantity price adj-price loan) ; w/o loan interest
-    )
-  )
+      ))
   (if print
     (println (format "Order: %s | %s | %f." date permno (double quantity))))
   (if direct
     (.write wrtr (format "%s,%s,%f,%f\n" date permno (double quantity) price)))
-  (swap! order-record conj {:date date :permno permno :price price :aprc (format "%.2f" adj-price) :quantity quantity})
-)
-
+  (swap! order-record conj {:date date :permno permno :price price :aprc (format "%.2f" adj-price) :quantity quantity}))
 
 (defn order-internal
   "This is the main order function"
@@ -245,16 +237,14 @@
           (do
             (order-internal (get-date) permno (:quantity arg) (:remaining arg) (:leverage arg) (:print arg) (:direct arg) (get-permno-info permno))
             (recur new-order remain))
-          (recur (assoc new-order (first pair) arg) remain)))))
-  )
+          (recur (assoc new-order (first pair) arg) remain))))))
 
 (defn update-holding-tickers
   "Update all the tickers in terms of portfolio"
   []
   (doseq [permno (rest (keys (deref portfolio)))]
     ;; (order-internal (get-date) permno "special" false true (deref data-set) false false)
-    (when (contains? (get-info-map) permno) (update-portfolio (get-date) permno 0 (get-permno-price permno) (get-permno-by-key permno :APRC) 0))
-    ))
+    (when (contains? (get-info-map) permno) (update-portfolio (get-date) permno 0 (get-permno-price permno) (get-permno-by-key permno :APRC) 0))))
 
 (defn end-order
   "Call this function at the end of the strategy."
@@ -289,37 +279,38 @@
   []
   (if (not (deref TERMINATED))
     (let [tot-value (get (last (deref portfolio-value)) :tot-value)
-          port-margin (get (last (deref portfolio-value)) :margin)]
+          port-margin (get (last (deref portfolio-value)) :margin)
+          margin-call (and (deref LOAN-EXIST) (< port-margin MAINTENANCE-MARGIN))]
       ;; original inequality: value of stocks (excl. shorted stocks) - net cash > 0
       ;; rearranging, equivalent to checking value of stocks (incld. shorted stocks) - cash > 0
       ;; where LHS = net worth
-      (when (or (= (get-next-date) nil) (< (compare tot-value 0) 0) (and (< port-margin MAINTENANCE-MARGIN) (= LOAN-EXIST true)))  ; if net worth < 0
+      (when (or (= (get-next-date) nil) (< (compare tot-value 0) 0) margin-call) ; if net worth < 0
         (cond
           (= (get-next-date) nil) (println "You have reached the end of the dataset. No more orders are allowed.")
-          (or (< (compare tot-value 0) 0) (and (< port-margin MAINTENANCE-MARGIN) (= LOAN-EXIST true))) (println (str (get-date) ": You have lost all cash. Closing all positions.")))
+          (< (compare tot-value 0) 0) (println (str (get-date) ": You have lost all cash. Closing all positions."))
+          margin-call (println (str (get-date) ": Portfolio margin " port-margin " is below the maintenance margin " MAINTENANCE-MARGIN ". Closing all positions.")))
         (println "To restart. Please call init-portfolio again.")
         (end-order)))))
 
 (defn next-date
   []
   (if (= (deref TERMINATED) false)
-   (if-let [_date (get-next-date)]
-    (do
-      (reset! date _date)
+    (if-let [_date (get-next-date)]
+      (do
+        (reset! date _date)
       ;; maintain tics
       ;; (if (= (deref tics-tomorrow) nil)
       ;;   (reset! tics-today nil)
       ;;   (do
-      (reset-daily-var)
-      (update-daily-indicators)
-      (incur-interest-cost) ;; 
-      (update-holding-tickers) ;; todo: order of these two
-      (check-terminating-condition)
-      (check-order)
-      (check-automation)
-      _date)
-    (do
-      (throw (Exception. "Reach unexpected code branch 1."))
+        (reset-daily-var)
+        (update-daily-indicators)
+        (incur-interest-cost) ;; 
+        (update-holding-tickers) ;; todo: order of these two
+        (check-terminating-condition)
+        (check-order)
+        (check-automation)
+        _date)
+      (do
+        (throw (Exception. "Reach unexpected code branch 1."))
       ;; (reset-daily-var)
-      nil)))
-  )
+        nil))))
