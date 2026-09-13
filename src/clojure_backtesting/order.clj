@@ -128,12 +128,11 @@
 
 (defn- incur-transaction-cost
   "This private function deducts the commission fee for making an order.
-   The fee is charged on the absolute trade value, so a sell is charged as
-   well as a buy. It is in adjusted-price units, matching the cash flows in
-   `update-portfolio-map`."
-  [quantity price adj-price]
+   The fee is charged on the absolute trade value in dollars, so a sell is
+   charged as well as a buy."
+  [quantity price]
   (if (> TRANSACTION-COST 0)
-    (let [cash-to-pay (* (Math/abs (double (* quantity adj-price))) TRANSACTION-COST)]
+    (let [cash-to-pay (* (Math/abs (double (* quantity price))) TRANSACTION-COST)]
       (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) cash-to-pay)}))))
 
 (defn incur-interest-cost
@@ -147,18 +146,18 @@
 
 (defn- place-order
   "This private function does the basic routine for an ordering - update portfolio and return record."
-  [date permno quantity price adj-price loan print direct]
-  ;; (println loan)
-  (if (not (deref TERMINATED))
-    (do
-      (incur-transaction-cost quantity price adj-price)
-      (update-portfolio date permno quantity price adj-price loan) ; w/o loan interest
-      ))
-  (if print
-    (println (format "Order: %s | %s | %f." date permno (double quantity))))
-  (if direct
-    (.write wrtr (format "%s,%s,%f,%f\n" date permno (double quantity) price)))
-  (swap! order-record conj {:date date :permno permno :price price :aprc (format "%.2f" adj-price) :quantity quantity}))
+  [date permno quantity info loan print direct]
+  (let [price (PRICE-KEY info)
+        adj-price (:APRC info)]
+    (if (not (deref TERMINATED))
+      (do
+        (incur-transaction-cost quantity price)
+        (update-portfolio date permno quantity info loan))) ; w/o loan interest
+    (if print
+      (println (format "Order: %s | %s | %f." date permno (double quantity))))
+    (if direct
+      (.write wrtr (format "%s,%s,%f,%f\n" date permno (double quantity) price)))
+    (swap! order-record conj {:date date :permno permno :price price :aprc (format "%.2f" adj-price) :quantity quantity})))
 
 (defn order-internal
   "This is the main order function"
@@ -167,8 +166,7 @@
 	;; @permno  trading security
 	;; @quantity exact number to buy(+) or sell(-)
   (let [date order-date
-        price (PRICE-KEY info)
-        adj-price (:APRC info)]
+        price (PRICE-KEY info)]
     (let [total (cond
                   (= (get (get (deref portfolio) permno) :quantity) nil) 0
                   :else (get (get (deref portfolio) permno) :quantity))
@@ -177,25 +175,24 @@
                      remaining (- quan total)
                      :else quan)]
       (if (and (not= quantity 0) (not= quantity 0.0) (not= quantity "special")) ;; ignore the empty order case
-        (if (and (and (>= (+ total quantity) 0) (or (<= quantity 0) (>= cash (* adj-price quantity)))))
-          (place-order date permno quantity price adj-price 0 print direct) ;loan is 0 here
+        (if (and (and (>= (+ total quantity) 0) (or (<= quantity 0) (>= cash (* price quantity)))))
+          (place-order date permno quantity info 0 print direct) ;loan is 0 here
           (do
             (if leverage
               (if (< (+ total quantity) 0)
-                (place-order date permno quantity price adj-price 0 print direct) ;This is the sell on margin case
+                (place-order date permno quantity info 0 print direct) ;This is the sell on margin case
                 (let [loan
                       (cond (<= cash 0)
-                            (* quantity adj-price)
-                            :else (- (* quantity adj-price) cash))]
+                            (* quantity price)
+                            :else (- (* quantity price) cash))]
                   (if (or (= INITIAL-MARGIN nil) (>= cash (* INITIAL-MARGIN (+ loan cash))))
-                    (place-order date permno quantity price adj-price loan print direct)
-                    (if (or true print)
-                      (println (format "Order request %s | %s | %d fails due to initial margin requirement." order-date permno quantity)))))) ;This is the buy on margin case
+                    (place-order date permno quantity info loan print direct)
+                    (println (format "Order request %s | %s | %s fails due to initial margin requirement." order-date permno (str quantity)))))) ;This is the buy on margin case
               (do
-                (println (format "Order request %s | %s | %d fails." order-date permno quantity))
+                (println (format "Order request %s | %s | %s fails." order-date permno (str quantity)))
                 (println (format "Failure reason: %s" "You do not have enough money to buy or have enough stock to sell. Try to solve by enabling leverage."))))))
         (if (= quantity "special")
-          (update-portfolio date permno 0 price adj-price 0)
+          (update-portfolio date permno 0 info 0)
           nil)))))
 
 ;; (defn order
@@ -240,39 +237,29 @@
           (recur (assoc new-order (first pair) arg) remain))))))
 
 (defn update-holding-tickers
-  "Update all the tickers in terms of portfolio"
+  "Revalues every holding at today's close, paying or reinvesting dividends."
   []
-  (doseq [permno (rest (keys (deref portfolio)))]
-    ;; (order-internal (get-date) permno "special" false true (deref data-set) false false)
-    (when (contains? (get-info-map) permno) (update-portfolio (get-date) permno 0 (get-permno-price permno) (get-permno-by-key permno :APRC) 0))))
+  (revalue-holdings! (get-date) (get-info-map)))
 
 (defn end-order
-  "Call this function at the end of the strategy."
+  "Call this function at the end of the strategy. Closes every position at
+   today's close; a security with no row today stays valued at its last
+   price and is reported as still held."
   []
   ;; close all positions
   (if (not (deref TERMINATED))
     (do
-      (doseq [[security] (deref portfolio)]
-        (if (not= security :cash)
-          (order-internal (get-date) security 0 true false false false (get (get-info-map) security))))
+      (doseq [[security] (deref portfolio)
+              :when (not= security :cash)]
+        (if-let [info (get (get-info-map) security)]
+          (order-internal (get-date) security 0 true false false false info)
+          (println (str (get-date) ": " security " has no price today and cannot be closed."))))
       (update-eval-report)
       (.close wrtr)
       (.close portvalue-wrtr)
       (.close evalreport-wrtr)
       (reset! pending-order (sorted-map))
-      (reset! TERMINATED true)
-
-      ;; reject any more orders unless user call load data again and call init-portfolio
-      ;; (reset! data-set nil)
-      ;; (reset! available-tics {})
-
-      ;; (if (deref lazy-mode)
-      ;;   (doseq [name (keys (deref dataset-col))]
-      ;;     (swap! dataset-col assoc name []))
-      ;;   (do
-      ;;     (reset! cur-reference [0 []])
-      ;;     (reset! tics-info [])))
-      )))
+      (reset! TERMINATED true))))
 
 (defn check-terminating-condition
   "Close all positions if net worth < 0 or portfolio margin < maintenance margin, i.e. user has lost all cash"
