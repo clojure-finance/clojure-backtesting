@@ -62,6 +62,12 @@ dividends are reinvested in the same security. Call
 dividends paid into cash instead; recognising splits in that mode needs the
 CRSP `CFACPR` column in the main dataset.
 
+## Output files
+
+Nothing is written to disk by default. Call `(update-output-dir "some/dir")`
+before `init-portfolio` to have the order record, the daily portfolio value
+and the evaluation report written there as CSV files during the run.
+
 ## Report bugs
 
 Feel free to report issues in the repository.

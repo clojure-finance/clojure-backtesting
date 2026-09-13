@@ -200,6 +200,28 @@
       (is (empty? (deref pending-order)))))
   (is (nil? (next-date)) "nothing moves after termination"))
 
+(deftest csv-records-are-written-only-on-request
+  (let [dir (io/file (System/getProperty "java.io.tmpdir") (str "clojure-backtesting-out-" (System/nanoTime)))]
+    (try
+      (with-redefs [OUTPUT-DIR (str dir)]
+        (init-portfolio "1990-01-02" 100000)
+        (order aaa 100)
+        (next-date)
+        (update-eval-report)
+        (end-order))
+      (doseq [[f header-cols rows] [["out_order_record.csv" 4 2]
+                                    ["out_portfolio_value_record.csv" 7 3]
+                                    ["out_evaluation_report.csv" 8 2]]]
+        (let [lines (clojure.string/split-lines (slurp (io/file dir f)))]
+          (is (= header-cols (count (clojure.string/split (first lines) #","))) f)
+          (is (= rows (count (rest lines))) f)))
+      (finally
+        (doseq [x (reverse (file-seq dir))] (io/delete-file x true)))))
+  (init-portfolio "1990-01-02" 100000)
+  (is (nil? (deref order-wrtr)) "no record is open without OUTPUT-DIR")
+  (is (not (.exists (io/file "out_order_record.csv"))) "nothing is written to the working directory")
+  (end-order))
+
 (deftest end-order-closes-positions-and-reports
   (init-portfolio "1990-01-02" 100000)
   (order aaa 100)
@@ -208,6 +230,10 @@
     (next-date)
     (update-eval-report))
   (is (= 2 (count (deref order-record))))
+  (is (nil? (MACD aaa)) "the 26-day EMA needs 26 closes")
+  (dotimes [_ 10]
+    (next-date)
+    (update-eval-report))
   (is (< 0 (RSI aaa) 100))
   (is (pos? (EMA aaa)))
   (is (= 4 (count (MACD aaa))))

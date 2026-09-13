@@ -95,11 +95,11 @@
   ;; run for about a week
   (do
     (let [[MA15 MA30] [(moving-avg "14593" 15) (moving-avg "14593" 30)]]
-      (if (> MA15 MA30)
+      (if (and MA15 MA30 (> MA15 MA30))
         (order "14593" 0.1 :print false)
         (order "14593" 0 :remaining true))))
   (let [[MA15 MA30] [(moving-avg "25785" 15) (moving-avg "25785" 30)]]
-    (if (> MA15 MA30)
+    (if (and MA15 MA30 (> MA15 MA30))
       (order "25785" 1  :print false)
       (order "25785" 0 :remaining true)))
   (update-eval-report)

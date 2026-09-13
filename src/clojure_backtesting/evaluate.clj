@@ -68,7 +68,7 @@
 (defn pnl-per-trade
   "This function returns the profit/loss per trade in dollars."
   []
-  (/ (- (portfolio-total) init-capital) (count (deref order-record))))
+  (/ (- (portfolio-total) (deref init-capital)) (count (deref order-record))))
 
 (defn max-drawdown
   "This function returns the maximum drawdown: the largest peak-to-trough
@@ -124,4 +124,4 @@
                                     :pnl-pt (str "$" (int pnl-per-trade-data))
                                     :max-drawdown (str (format "%.4f" (* max-drawdown-data 100)))})
       ; output to file
-      (.write evalreport-wrtr (format "%s,%f,%f,%f,%f,%f,%f,%f\n" date (double total-val-data) (double volatility-data) (double rolling-volatility-data) (double sharpe-ratio-data) (double rolling-sharpe-ratio-data) (double pnl-per-trade-data) (double max-drawdown-data))))))
+      (write-record! evalreport-wrtr (format "%s,%f,%f,%f,%f,%f,%f,%f\n" date (double total-val-data) (double volatility-data) (double rolling-volatility-data) (double sharpe-ratio-data) (double rolling-sharpe-ratio-data) (double pnl-per-trade-data) (double max-drawdown-data))))))

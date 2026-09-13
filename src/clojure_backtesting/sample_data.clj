@@ -41,7 +41,7 @@
        (remove #(> (jt/as % :day-of-week) 5))
        (mapv #(jt/format "yyyy-MM-dd" %))))
 
-(def ^:private encoder (Base64/getUrlEncoder))
+(def ^:private ^java.util.Base64$Encoder encoder (Base64/getUrlEncoder))
 
 (defn group-file-name
   "clojask names each date's file with the base64url of the EDN group key."

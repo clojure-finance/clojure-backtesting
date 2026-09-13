@@ -7,49 +7,66 @@
             [clojure-backtesting.automation :refer :all]
             [clojure.java.io :as io]))
 
-(defn check-filepath
-  "This function checks if a csv file is already created."
-  [filepath]
-  (try (io/delete-file filepath)
-       (catch Exception e (println (format "Detect that you run the program for the first time.\n We created a file named %s to store order records.
-                             \n You can find the file under the same directory of your runnning program.\n" filepath))))) ;First delete the file (act as emptying)
+;; ============ Run state ============
+;; Everything here is reset by init-portfolio.
+
+(def portfolio (atom {:cash {:tot-val 0}}))
+(def portfolio-value (atom []))
+(def order-record (atom []))
+(def eval-report-data (atom [])) ; evaluation report rows, formatted for printing
+(def eval-record (atom [])) ; evaluation report rows, as numbers
+(def init-capital (atom 0))
+(def LOAN-EXIST (atom false)) ; whether a loan has been taken during this run
+(def TERMINATED (atom true)) ; whether the run has ended; before the first run counts as ended
+
+;; CSV records, written only while OUTPUT-DIR is set
+(def order-wrtr (atom nil))
+(def portvalue-wrtr (atom nil))
+(def evalreport-wrtr (atom nil))
+
+(defn write-record!
+  "Appends `line` to the record held in `wrtr-atom`, if that record is being written."
+  [wrtr-atom line]
+  (when-let [w (deref wrtr-atom)]
+    (.write ^java.io.Writer w ^String line)))
+
+(defn- open-record! [wrtr-atom file-name header]
+  (let [f (io/file OUTPUT-DIR file-name)]
+    (io/make-parents f)
+    (reset! wrtr-atom (io/writer f))
+    (write-record! wrtr-atom header)))
+
+(defn close-records!
+  "Closes any open CSV records."
+  []
+  (doseq [wrtr-atom [order-wrtr portvalue-wrtr evalreport-wrtr]]
+    (when-let [w (deref wrtr-atom)]
+      (.close ^java.io.Writer w)
+      (reset! wrtr-atom nil))))
 
   ;; Backtester initialisation
 (defn init-portfolio
-  "This function initialises or restarts the backtester."
+  "This function initialises or restarts the backtester at `date` with
+   `capital` in cash. When OUTPUT-DIR is set, the order, portfolio-value
+   and evaluation records are also written there as CSV files."
   [date capital]
-    ;; example: portfolio -> {:cash {:tot-val 10000} :"AAPL" {:price 400 :aprc adj-price :quantity 100 :tot-val 40000}}
-    ;; example: portfolio-value {:date 1980-12-16 :tot-value 50000 :daily-ret 0 :loan 0 :leverage 0}
-
   (assert (some #{:APRC} headers) "The main dataset has no APRC column. Load it with (load-dataset dir \"main\" add-aprc).")
   (assert (< (compare (init-date date) (first (last data-files))) 0) "Please do not start from the last date. Init portfolio fails.")
-
-    ;; output order record to csv file
-  (check-filepath "./out_order_record.csv")
-  (def wrtr (io/writer "./out_order_record.csv" :append true))
-  (.write wrtr "date,security,quantity,price\n")
-    ;; output portfolio value record to csv file
-  (check-filepath "./out_portfolio_value_record.csv")
-  (def portvalue-wrtr (io/writer "./out_portfolio_value_record.csv" :append true))
-  (.write portvalue-wrtr "date,tot-value,daily-ret,tot-ret,loan,leverage,margin\n")
-    ;; output evaluation report to csv file
-  (check-filepath "./out_evaluation_report.csv")
-  (def evalreport-wrtr (io/writer "./out_evaluation_report.csv" :append true))
-  (.write evalreport-wrtr "date,tot-value,vol,r-vol,sharpe,r-sharpe,pnl-pt,max-drawdown\n")
-
-  (def order-record (atom []))
-  (def init-capital capital)
-  (def eval-report-data (atom [])) ; to store evaluation report (in string format, for printing)
-  (def eval-record (atom [])) ; to store evaluation report (in number format)
-  (def portfolio (atom {:cash {:tot-val capital}}))
-  (def portfolio-value (atom [{:date (get-date) :tot-value capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0 :margin 0.0}]))
-
+  (close-records!)
+  (when OUTPUT-DIR
+    (open-record! order-wrtr "out_order_record.csv" "date,security,quantity,price\n")
+    (open-record! portvalue-wrtr "out_portfolio_value_record.csv" "date,tot-value,daily-ret,tot-ret,loan,leverage,margin\n")
+    (open-record! evalreport-wrtr "out_evaluation_report.csv" "date,tot-value,vol,r-vol,sharpe,r-sharpe,pnl-pt,max-drawdown\n"))
+  (reset! order-record [])
+  (reset! init-capital capital)
+  (reset! eval-report-data [])
+  (reset! eval-record [])
+  (reset! portfolio {:cash {:tot-val capital}})
+  (reset! portfolio-value [{:date (get-date) :tot-value capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0 :margin 0.0}])
   (reset-indicator-maps)
   (reset-automation)
-
-    ;; ============ Global switches for internal use ============
-  (def LOAN-EXIST (atom false)) ; global swtich for storing whether loan exists
-  (def TERMINATED (atom false)) ; global switch for storing whether user has lost all cash
+  (reset! LOAN-EXIST false)
+  (reset! TERMINATED false)
   (str "Date: " (get-date) " Cash: $" (get (get (deref portfolio) :cash) :tot-val)))
 
 (defn log-return
@@ -92,7 +109,7 @@
 
         ; update portfolio-value vector
       (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan :margin new-margin})))
-      (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double new-leverage) (double new-loan) (double new-margin))))))
+      (write-record! portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double new-leverage) (double new-loan) (double new-margin))))))
 
 ;; ============ Holdings ============
 ;;
@@ -133,7 +150,7 @@
       (let [scaled (* quantity growth (/ price new-price))
             ;; on a day without distributions the scaling is 1 up to
             ;; floating-point noise; keep the share count exact then
-            new-quantity (if (< (Math/abs (- scaled quantity)) (* 1e-9 (Math/abs quantity)))
+            new-quantity (if (< (Math/abs (double (- scaled quantity))) (* 1e-9 (Math/abs (double quantity))))
                            quantity
                            scaled)]
         [(assoc carried :quantity new-quantity :tot-val (* new-quantity new-price)) 0.0])
@@ -206,13 +223,13 @@
             (if (= last-date date) ; check if date already exists
               (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value))))) ; drop last entry in old portfolio-value vector
             (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0 :margin 0.0})))
-            (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0) (double 0.0))))))
+            (write-record! portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0) (double 0.0))))))
         ; if prev_value is 0, let ret = 0.0
       (let [ret 0.0
             tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)]
         (do
           (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0 :margin 0.0})))
-          (.write portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0) (double 0.0))))))))
+          (write-record! portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0) (double 0.0))))))))
 
 ;; Main function to update portfolio map + portfolio-value record when placing an order
 (defn update-portfolio
