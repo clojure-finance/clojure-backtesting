@@ -38,7 +38,7 @@
     (if print
       (println (format "Order: %s | %s | %f." date permno (double quantity))))
     (if direct
-      (.write wrtr (format "%s,%s,%f,%f\n" date permno (double quantity) price)))
+      (write-record! order-wrtr (format "%s,%s,%f,%f\n" date permno (double quantity) price)))
     (swap! order-record conj {:date date :permno permno :price price :aprc (format "%.2f" adj-price) :quantity quantity})))
 
 (defn order-internal
@@ -119,12 +119,10 @@
       (doseq [[security] (deref portfolio)
               :when (not= security :cash)]
         (if-let [info (get (get-info-map) security)]
-          (order-internal (get-date) security 0 true false false false info)
+          (order-internal (get-date) security 0 true false PRINT DIRECT info)
           (println (str (get-date) ": " security " has no price today and cannot be closed."))))
       (update-eval-report)
-      (.close wrtr)
-      (.close portvalue-wrtr)
-      (.close evalreport-wrtr)
+      (close-records!)
       (reset! pending-order (sorted-map))
       (reset! TERMINATED true))))
 

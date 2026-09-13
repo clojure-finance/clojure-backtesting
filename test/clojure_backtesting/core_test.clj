@@ -71,7 +71,7 @@
                 portfolio-value (atom [{:date "d0" :tot-value 1000.0 :daily-ret 0.0 :tot-ret 0.0
                                         :loan 0.0 :leverage 0.0 :margin 0.0}])
                 LOAN-EXIST (atom false)
-                portvalue-wrtr (java.io.StringWriter.)]
+                portvalue-wrtr (atom nil)]
     (testing "the loan is the negative cash balance"
       (update-loan "d1" 500.0 false)
       (let [e (last @portfolio-value)]
@@ -182,3 +182,43 @@
                 clojure-backtesting.data-management/get-permno-prev-n-days
                 (fn [_ n] [])]
     (is (close? (/ (+ (* 4.0 13) 5.0) 14) (clojure-backtesting.indicators/ATR "X" 14 4.0)))))
+
+(deftest moving-average-needs-a-full-window
+  (with-redefs [clojure-backtesting.data-management/get-permno-prev-n-days
+                (fn [_ n] (take n [{:PRC 12.0} {:PRC 11.0}]))
+                clojure-backtesting.data-management/get-permno-price
+                (fn [_] 13.0)]
+    (is (close? 12.0 (clojure-backtesting.indicators/moving-avg "X" 3)))
+    (is (close? 1.0 (clojure-backtesting.indicators/moving-sd "X" 3)))
+    (is (nil? (clojure-backtesting.indicators/moving-avg "X" 4)) "only three prices exist")
+    (is (nil? (clojure-backtesting.indicators/moving-sd "X" 4)))))
+
+(deftest parabolic-sar-follows-the-trend
+  (let [sar clojure-backtesting.indicators/parabolic-SAR
+        day (fn [row prev-rows f]
+              (with-redefs [clojure-backtesting.data-management/get-permno-by-key (fn [_ k] (get row k))
+                            clojure-backtesting.data-management/get-permno-price (fn [_] (:PRC row))
+                            clojure-backtesting.data-management/get-permno-prev-n-days (fn [_ n] (take n prev-rows))]
+                (f)))
+        d0 {:PRC 10.0 :ASKHI 10.5 :BIDLO 9.5}
+        d1 {:PRC 11.0 :ASKHI 11.5 :BIDLO 10.5}
+        d2 {:PRC 11.8 :ASKHI 12.0 :BIDLO 11.0}
+        d3 {:PRC 9.2 :ASKHI 9.8 :BIDLO 9.0}
+        s1 (day d1 [d0] #(sar "X" nil))
+        s2 (day d2 [d1 d0] #(sar "X" s1))
+        s3 (day d3 [d2 d1] #(sar "X" s2))]
+    (testing "starts below an up move at the prior low"
+      (is (= :up (:trend s1)))
+      (is (close? 9.5 (:sar s1)))
+      (is (close? 11.5 (:ep s1)))
+      (is (close? 0.02 (:af s1))))
+    (testing "a new high accelerates and the stop never rises above recent lows"
+      (is (= :up (:trend s2)))
+      (is (close? 9.5 (:sar s2)))
+      (is (close? 12.0 (:ep s2)))
+      (is (close? 0.04 (:af s2))))
+    (testing "a low through the stop reverses to a down trend at the old extreme"
+      (is (= :down (:trend s3)))
+      (is (close? 12.0 (:sar s3)))
+      (is (close? 9.0 (:ep s3)))
+      (is (close? 0.02 (:af s3))))))

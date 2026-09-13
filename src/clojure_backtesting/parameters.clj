@@ -47,6 +47,9 @@
   [int]
   (def ^:dynamic RSI-CYCLE int))
 
+(def SAR-AF-STEP 0.02) ; parabolic SAR acceleration factor: start and increment
+(def SAR-AF-MAX 0.2) ; parabolic SAR acceleration factor: cap
+
 ;; ============ Parameters for margin requirements ============
 
 (def INITIAL-MARGIN 0.5)
@@ -108,6 +111,18 @@
   "This function switches dividend reinvestment on or off."
   [flag]
   (def REINVEST-DIVIDENDS (boolean flag)))
+
+;; ============ Output ============
+
+(def OUTPUT-DIR nil)
+;; Directory to write out_order_record.csv, out_portfolio_value_record.csv
+;; and out_evaluation_report.csv into during a run. nil (the default) writes
+;; no files.
+
+(defn update-output-dir
+  "This function sets the directory for the CSV records, or nil for none."
+  [dir]
+  (def OUTPUT-DIR dir))
 
 ;; ============ FIXED PARAMETERS ============
 
