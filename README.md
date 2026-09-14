@@ -47,12 +47,26 @@ into the same layout.
 ## How to use
 
 1. Go through the examples in the [`/examples`](/examples) folder to get a
-   basic understanding of the system. They are Gorilla REPL worksheets;
-   change the dataset path in each to point at your data or the sample
-   dataset.
+   basic understanding of the system. They are Gorilla REPL worksheets
+   that run against the sample dataset as they are; their outputs are
+   regenerated with `lein run -m clojure-backtesting.worksheet examples/*.clj`.
 2. Documentation for every API can be found
    [here](https://clojure-finance.github.io/clojure-backtesting-website/#part-ii-api-documentation).
 3. Learn to use the APIs to write your own strategy!
+
+## Orders, margin and fundamentals
+
+Orders fill at the next close and stay pending for `ORDER-EXPIRATION`
+trading days (three by default). Buying beyond your cash borrows the
+shortfall; selling shares you do not hold borrows the shares. Both count
+towards the margin, equity over the gross value of positions, which must
+stay above `MAINTENANCE-MARGIN` or every position is closed. New borrowing
+must respect `INITIAL-MARGIN`.
+
+A supplementary dataset is joined onto each day's rows using, per
+security, the latest filing that was public on that day: its period end
+must be on or before the day, and so must its report date when the data
+has an `rdq` column.
 
 ## Dividends
 

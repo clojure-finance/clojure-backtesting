@@ -25,46 +25,64 @@
   (reset! (nth (get data-cache date) 1) info))
 
 (def ^:private compustat-cache
-  "[datadate {security-id row}] for the most recently used Compustat file."
-  (atom nil))
+  "file path -> {security-id row} for recently used Compustat files."
+  (atom {}))
 
-(defn- get-compustat-data
-  "Returns the Compustat rows dated `date`, indexed by TICKER-KEY.
-   Only the last date is cached, which is enough because consecutive trading
-   days almost always map to the same filing date."
-  [date]
-  (let [[cached-date index] (deref compustat-cache)]
-    (if (= cached-date date)
-      index
-      (let [index (with-open [rdr (io/reader (get data-files2 date))]
-                    (into {}
-                          (map (fn [line]
-                                 (let [row (zipmap headers2 (edn/read-string line))]
-                                   [(TICKER-KEY row) row])))
-                          (line-seq rdr)))]
-        (reset! compustat-cache [date index])
-        index))))
+(defn- compustat-index
+  "The rows of the Compustat file dated `datadate`, indexed by TICKER-KEY."
+  [datadate]
+  (let [file (get data-files2 datadate)
+        path (str file)]
+    (or (get (deref compustat-cache) path)
+        (let [index (with-open [rdr (io/reader file)]
+                      (into {}
+                            (map (fn [line]
+                                   (let [row (zipmap headers2 (edn/read-string line))]
+                                     [(TICKER-KEY row) row])))
+                            (line-seq rdr)))]
+          (swap! compustat-cache (fn [cache] (assoc (if (< (count cache) 8) cache {}) path index)))
+          index))))
 
-(defn- compare-two-date [date1 date2]
-  (let [date1-list (clojure.string/split date1 #"-")
-        date2-list (clojure.string/split date2 #"-")
-        difference (+ (* (- (Integer/parseInt (nth date1-list 0)) (Integer/parseInt (nth date2-list 0))) 12) (- (Integer/parseInt (nth date1-list 1)) (Integer/parseInt (nth date2-list 1))))]
-    (if (and (<= difference 3) (>= difference -3))
-      true
-      false)))
+(defn- months-between
+  "Whole months from `from` to `to`, both yyyy-MM-dd strings; negative when
+   `to` is the earlier date."
+  [from to]
+  (let [[y1 m1] (map #(Integer/parseInt %) (take 2 (str/split from #"-")))
+        [y2 m2] (map #(Integer/parseInt %) (take 2 (str/split to #"-")))]
+    (+ (* 12 (- y2 y1)) (- m2 m1))))
+
+(defn- public-by?
+  "Whether a Compustat row was public on `date`: its :rdq (report date) is
+   on or before `date`, or it has none."
+  [row date]
+  (let [rdq (:rdq row)]
+    (or (nil? rdq)
+        (str/blank? (str rdq))
+        (<= (compare (str rdq) date) 0))))
+
 (defn merge-data
-  "Left-joins the latest Compustat filing dated at or before `date` onto every
-   CRSP row, matching on TICKER-KEY. Rows without a match are returned
-   unchanged. Nothing is joined when there is no earlier filing yet or the
-   latest one is more than three months old. Note the join keys on the
-   filing's period-end date, not on when it became public, so there is still
-   some look-ahead between period end and the announcement date."
+  "Left-joins onto every CRSP row the latest Compustat row for the same
+   TICKER-KEY that was public on `date`: among the filings dated at or
+   before `date`, at most MERGE-MAX-AGE-MONTHS old and at most four back,
+   newest first, the first row whose :rdq (report date) is on or before
+   `date`. Without an :rdq column the filing date itself is used. Rows
+   with no match are returned unchanged."
   [crsp date]
-  (let [comp-date (first (first (rsubseq data-files2 <= date)))]
-    (if (and comp-date (compare-two-date date comp-date))
-      (let [comp (get-compustat-data comp-date)]
-        (mapv (fn [row] (merge row (get comp (TICKER-KEY row)))) crsp))
-      crsp)))
+  (let [datadates (->> (rsubseq data-files2 <= date)
+                       (map first)
+                       (take-while #(<= (months-between % date) MERGE-MAX-AGE-MONTHS))
+                       (take 4))
+        indexes (map compustat-index datadates)]
+    (if (empty? datadates)
+      crsp
+      (mapv (fn [row]
+              (let [id (TICKER-KEY row)
+                    comp (some (fn [index]
+                                 (let [c (get index id)]
+                                   (when (and c (public-by? c date)) c)))
+                               indexes)]
+                (merge row comp)))
+            crsp))))
 
 (defn- get-info-by-date
   "Get the full tics info.\n
@@ -82,14 +100,15 @@
     nil))
 
 (defn- get-info-map-by-date
+  "{security-id row} for `date`, or nil for a date not in the dataset."
   [date]
-  (if-let [ret (deref (nth (get data-cache date) 1))]
-    ;; cache hit
-    ret
-    ;; cache miss
-    (if-let [info (get-info-by-date date)]
-      (cache-add-map date (zipmap (map TICKER-KEY info) info))
-      nil)))
+  (when-let [entry (get data-cache date)]
+    (if-let [ret (deref (nth entry 1))]
+      ;; cache hit
+      ret
+      ;; cache miss
+      (when-let [info (get-info-by-date date)]
+        (cache-add-map date (zipmap (map TICKER-KEY info) info))))))
 
 (defn get-info
   "Returns the whole information for the all the tics today.\n

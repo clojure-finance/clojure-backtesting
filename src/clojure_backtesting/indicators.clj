@@ -204,19 +204,20 @@
                      short (MACD-short permno)
                      long (MACD-long permno)]
                  (when (and signal short long)
-      [(- short long) signal short long])))]
+                   [(- short long) signal short long])))]
     func))
 
 (defn ROC
-  "Returns the rate of change (ROC) value, decimal format.\n
-     @n should be greater than 0"
+  "Returns the rate of change (ROC) over the last n trading days as a
+   decimal, or nil when fewer than n earlier days exist or either price is
+   missing.
+   @n should be greater than 0"
   [permno n] ; time window
-  (let [prev-n-date (get-prev-n-date n)
-        old-price (get-permno-price prev-n-date permno) ;; get price n days ago
-        curr-price (get-permno-price permno)] ;; get today's price
-    (if (and (not= old-price nil) (not= curr-price nil) (not= old-price 0))
-      (/ (- curr-price old-price) old-price) ; calculate ROC
-      )))
+  (when-let [prev-n-date (get-prev-n-date n)]
+    (let [old-price (get-permno-price prev-n-date permno) ;; get price n days ago
+          curr-price (get-permno-price permno)] ;; get today's price
+      (when (and old-price curr-price (not= old-price 0))
+        (/ (- curr-price old-price) old-price)))))
 
 (defn RS
   "Returns [average-gain average-loss] over the past n days (n prices, n-1

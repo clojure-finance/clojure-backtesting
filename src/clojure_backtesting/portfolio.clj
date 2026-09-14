@@ -55,14 +55,14 @@
   (close-records!)
   (when OUTPUT-DIR
     (open-record! order-wrtr "out_order_record.csv" "date,security,quantity,price\n")
-    (open-record! portvalue-wrtr "out_portfolio_value_record.csv" "date,tot-value,daily-ret,tot-ret,loan,leverage,margin\n")
+    (open-record! portvalue-wrtr "out_portfolio_value_record.csv" "date,tot-value,daily-ret,tot-ret,loan,short,leverage,margin\n")
     (open-record! evalreport-wrtr "out_evaluation_report.csv" "date,tot-value,vol,r-vol,sharpe,r-sharpe,pnl-pt,max-drawdown\n"))
   (reset! order-record [])
   (reset! init-capital capital)
   (reset! eval-report-data [])
   (reset! eval-record [])
   (reset! portfolio {:cash {:tot-val capital}})
-  (reset! portfolio-value [{:date (get-date) :tot-value capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :leverage 0.0 :margin 0.0}])
+  (reset! portfolio-value [{:date (get-date) :tot-value capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :short 0.0 :leverage 0.0 :margin 1.0}])
   (reset-indicator-maps)
   (reset-automation)
   (reset! LOAN-EXIST false)
@@ -76,40 +76,17 @@
     (Math/log (/ (double curr) (double prev)))
     0.0))
 
-  ;; Update loan in portfolio
-(defn update-loan
-  "Appends today's portfolio-value entry while a loan is (or has been) open.
-   Cash already goes negative by the borrowed amount in `update-portfolio-map`,
-   so the loan balance is simply the negative cash balance: it grows when
-   interest is debited and shrinks when positions are sold. `loan` is the
-   amount the caller borrowed in this order (informational) or, when
-   `is-interest` is true, the interest to debit from cash. The equity return
-   is log(tot-value / prev-value); tot-value is already net of the loan, so
-   no leverage multiplier applies."
-  [date loan is-interest]
-  (when is-interest
-      ;; deduct cash in portfolio
-    (swap! portfolio assoc :cash {:tot-val (- (get-in (deref portfolio) [:cash :tot-val]) loan)}))
-    ;; update portfolio-value record
-  (let [tot-value (reduce + (map :tot-val (vals (deref portfolio))))
-        prev-value (:tot-value (last (deref portfolio-value)))
-        cash (get-in (deref portfolio) [:cash :tot-val]) ; get total amount of cash
-        new-loan (max 0.0 (- (double cash))) ; loan outstanding = negative cash balance
-        gross-value (+ tot-value new-loan)
-        new-leverage (if (pos? tot-value) (/ new-loan tot-value) 0.0) ; total debt / total equity
-        new-margin (if (pos? gross-value) (/ tot-value gross-value) 0.0) ; equity / gross position value
-        ret (log-return tot-value prev-value)
-        tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
-        last-date (get (last (deref portfolio-value)) :date)]
-    (do
-      (if (= (deref LOAN-EXIST) false) ; check loan-exist switch
-        (reset! LOAN-EXIST true)) ; flip the switch
-      (if (= last-date date) ; check if date already exists
-        (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value))))) ; drop last entry in old portfolio-value vector
+(declare record-portfolio-value)
 
-        ; update portfolio-value vector
-      (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :leverage new-leverage :loan new-loan :margin new-margin})))
-      (write-record! portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double new-leverage) (double new-loan) (double new-margin))))))
+(defn update-loan
+  "Records today's portfolio value after a change in borrowing. When
+   `is-interest` is true, `amount` is interest debited from cash first;
+   otherwise it is the amount just borrowed, which is informational since
+   the loan balance is read from the cash balance."
+  [date amount is-interest]
+  (when is-interest
+    (swap! portfolio update-in [:cash :tot-val] - amount))
+  (record-portfolio-value date))
 
 ;; ============ Holdings ============
 ;;
@@ -183,7 +160,7 @@
       (let [[new-position payout] (revalue-position position info)]
         (swap! portfolio assoc permno new-position)
         (credit-cash! payout))))
-  (record-portfolio-value date 0))
+  (record-portfolio-value date))
 
   ;; Update the portfolio map
 (defn update-portfolio-map
@@ -198,38 +175,43 @@
       (swap! portfolio dissoc permno) ; remove security from portfolio if qty = 0
       (swap! portfolio assoc permno (assoc position :quantity new-quantity :tot-val (* new-quantity price))))))
 
-  ;; Update the portfolio-value vector which records the daily portfolio value
+(defn portfolio-exposure
+  "The current portfolio map summarised in dollars: :cash, :long (market
+   value of long positions), :short (absolute market value of short
+   positions), :equity (cash + long - short), :gross (long + short) and
+   :loan (cash borrowed, i.e. the negative cash balance)."
+  []
+  (let [p (deref portfolio)
+        cash (double (get-in p [:cash :tot-val]))
+        values (map :tot-val (vals (dissoc p :cash)))
+        long-value (reduce + 0.0 (filter pos? values))
+        short-value (- (reduce + 0.0 (filter neg? values)))]
+    {:cash cash
+     :long long-value
+     :short short-value
+     :equity (- (+ cash long-value) short-value)
+     :gross (+ long-value short-value)
+     :loan (max 0.0 (- cash))}))
+
 (defn record-portfolio-value
-  "Appends (or replaces) today's entry in the portfolio-value vector from the
-   current portfolio map: total value, log return, cumulative return, loan,
-   leverage and margin. `loan` is the amount borrowed by the order that
-   triggered this, or 0 for a plain revaluation."
-  [date loan]
-  (let [[tot-value prev-value] ;; get portfolio total
-        [(reduce + (map :tot-val (vals (deref portfolio)))) (:tot-value (last (deref portfolio-value)))]]
-
-    (if (and (not= prev-value 0) (not= prev-value 0.0)) ; check division by zero
-        ; if prev_value not 0
-      (if (or (not= loan 0) (deref LOAN-EXIST))
-
-          ; exist leverage
-        (update-loan date loan false)
-
-          ; no leverage, update return with log formula: daily_ret = ln(tot_val/prev_val)
-        (let [ret (log-return tot-value prev-value)
-              tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)
-              last-date (get (last (deref portfolio-value)) :date)]
-          (do
-            (if (= last-date date) ; check if date already exists
-              (swap! portfolio-value (fn [curr-port-val] (pop (deref portfolio-value))))) ; drop last entry in old portfolio-value vector
-            (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0 :margin 0.0})))
-            (write-record! portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0) (double 0.0))))))
-        ; if prev_value is 0, let ret = 0.0
-      (let [ret 0.0
-            tot-ret (+ (get (last (deref portfolio-value)) :tot-ret) ret)]
-        (do
-          (swap! portfolio-value (fn [curr-port-val] (conj curr-port-val {:date date :tot-value tot-value :daily-ret ret :tot-ret tot-ret :loan 0.0 :leverage 0.0 :margin 0.0})))
-          (write-record! portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f\n" date (double tot-value) (double ret) (double tot-ret) (double 0.0) (double 0.0) (double 0.0))))))))
+  "Appends (or replaces) today's entry in the portfolio-value vector from
+   the current portfolio map: equity as :tot-value, its log return, the
+   cumulative return, cash borrowed (:loan), the value of borrowed stock
+   (:short), :leverage = (loan + short) / equity and :margin = equity /
+   gross position value (1.0 with no positions)."
+  [date]
+  (let [{:keys [equity gross loan short]} (portfolio-exposure)
+        prev (last (deref portfolio-value))
+        ret (log-return equity (:tot-value prev))
+        tot-ret (+ (:tot-ret prev) ret)
+        margin (if (pos? gross) (/ equity gross) 1.0)
+        leverage (if (pos? equity) (/ (+ loan short) equity) 0.0)
+        entry {:date date :tot-value equity :daily-ret ret :tot-ret tot-ret
+               :loan loan :short short :leverage leverage :margin margin}]
+    (when (or (pos? loan) (pos? short))
+      (reset! LOAN-EXIST true))
+    (swap! portfolio-value (fn [entries] (conj (if (= (:date prev) date) (pop entries) entries) entry)))
+    (write-record! portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f,%f\n" date equity ret tot-ret loan short leverage margin))))
 
 ;; Main function to update portfolio map + portfolio-value record when placing an order
 (defn update-portfolio
@@ -237,7 +219,7 @@
    and records today's portfolio value. `loan` is the amount borrowed for it."
   [date permno quantity info loan]
   (update-portfolio-map date permno quantity info loan)
-  (record-portfolio-value date loan))
+  (record-portfolio-value date))
 
 (defn total-value
   "This function returns the remaining total value including the cash and stock value"

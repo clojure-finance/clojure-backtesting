@@ -1,12 +1,11 @@
 ;; gorilla-repl.fileformat = 1
 
 ;; **
-;;; ## Golden Cross Example	
+;;; ## Golden Cross Example
 ;; **
 
 ;; @@
-; import libraries from kernel
-(ns clojure-backtesting.updated_examples.goldencross
+(ns clojure-backtesting.examples.golden-cross
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.data-management :refer :all]
             [clojure-backtesting.portfolio :refer :all]
@@ -17,12 +16,7 @@
             [clojure-backtesting.automation :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.indicators :refer :all]
-            [clojure-backtesting.direct :refer :all]
-            [clojure.string :as str]
-            [clojure.java.io :as io]
-            [clojure.pprint :as pprint]
-  ) ;; require all libriaries from core
-)
+            [clojure-backtesting.direct :refer :all]))
 ;; @@
 ;; =>
 ;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
@@ -33,105 +27,56 @@
 ;; **
 
 ;; @@
-; path to dataset = "/Volumes/T7/CRSP"
-; change it to the relative path to your own dataset
-;
-(load-dataset "./Volumes/T7/CRSP" "main" add-aprc)
+(load-dataset "resources/sample-data/main" "main" add-aprc)
 ;; @@
 ;; ->
 ;;; The dataset is already furnished by add-aprc. No more modification is needed.
 ;;; 
 ;; <-
 ;; =>
-;;; {"type":"html","content":"<span class='clj-string'>&quot;Date range: 1972-01-03 ~ 2017-02-10&quot;</span>","value":"\"Date range: 1972-01-03 ~ 2017-02-10\""}
+;;; {"type":"html","content":"<span class='clj-string'>&quot;Date range: 1990-01-02 ~ 1990-03-30&quot;</span>","value":"\"Date range: 1990-01-02 ~ 1990-03-30\""}
 ;; <=
 
 ;; **
-;;; ### Initialise portfolio （Go back here everytime you want to restart.）
+;;; ### Initialise portfolio (go back here every time you want to restart)
 ;; **
 
 ;; @@
-;; initialise with current date and initial capital (= $1000)
-(init-portfolio "1981-12-15" 1000);
+(init-portfolio "1990-01-02" 10000)
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-string'>&quot;Date: 1981-12-15 Cash: $1000&quot;</span>","value":"\"Date: 1981-12-15 Cash: $1000\""}
-;; <=
-
-;; @@
-(get-date)
-;; @@
-;; =>
-;;; {"type":"html","content":"<span class='clj-string'>&quot;1981-12-15&quot;</span>","value":"\"1981-12-15\""}
+;;; {"type":"html","content":"<span class='clj-string'>&quot;Date: 1990-01-02 Cash: $10000&quot;</span>","value":"\"Date: 1990-01-02 Cash: $10000\""}
 ;; <=
 
 ;; **
 ;;; ### Write a strategy
 ;;; 
-;;; The following code implements a trading strategy called Golden Rule:
+;;; The following code implements the golden cross rule on two securities:
 ;;; 
-;;; MA 15 cross above the MA 30 (golden cross)
+;;; - MA 15 above MA 30 (golden cross): hold a position
+;;; - MA 15 below MA 30 (death cross): sell everything
 ;;; 
-;;; MA 15 cross below the MA 30 (death cross)
-;;; 
-;;; So in the codes, MA15 and MA30 are compared on a daily basis, if golden cross occurs, then you set a buy order; if death cross occurs, then you set a sell order first 
-;;; 
-;;; 
-;; **
-
-;; **
-;;; Should increase the cache size first to reduce repeatitive File IO
+;;; `moving-avg` returns nil until 30 closes are available, so the strategy does nothing for the first 30 trading days.
 ;; **
 
 ;; @@
-(CHANGE-CACHE-SIZE 30)
-;; @@
-;; =>
-;;; {"type":"html","content":"<span class='clj-var'>#&#x27;clojure-backtesting.parameters/CACHE-SIZE</span>","value":"#'clojure-backtesting.parameters/CACHE-SIZE"}
-;; <=
+(defn golden-cross [permno quantity]
+  (let [ma15 (moving-avg permno 15)
+        ma30 (moving-avg permno 30)]
+    (when (and ma15 ma30)
+      (if (> ma15 ma30)
+        (order permno quantity :print false)
+        (order permno 0 :remaining true)))))
 
-;; @@
-(while (< (compare (get-date) "1981-12-24") 0)
-  ;; run for about a week
-  (do
-    (let [[MA15 MA30] [(moving-avg "14593" 15) (moving-avg "14593" 30)]]
-      (if (and MA15 MA30 (> MA15 MA30))
-        (order "14593" 0.1 :print false)
-        (order "14593" 0 :remaining true))))
-  (let [[MA15 MA30] [(moving-avg "25785" 15) (moving-avg "25785" 30)]]
-    (if (and MA15 MA30 (> MA15 MA30))
-      (order "25785" 1  :print false)
-      (order "25785" 0 :remaining true)))
+(while (< (compare (get-date) "1990-03-29") 0)
+  (golden-cross "10001" 10)
+  (golden-cross "10002" 5)
   (update-eval-report)
   (next-date))
 (end-order)
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-unkown'>true</span>","value":"true"}
-;; <=
-
-;; @@
-;(pprint/print-table (take 200 (deref portfolio-value)))
-(print-order-record 10)
-;; @@
-;; ->
-;;; 
-;;; |      :date | :permno |  :price | :aprc | :quantity |
-;;; |------------+---------+---------+-------+-----------|
-;;; | 1981-12-16 |   14593 | 19.5625 | 22.43 |       0.1 |
-;;; | 1981-12-16 |   25785 |   17.25 | 55.94 |         1 |
-;;; | 1981-12-17 |   14593 | 21.1875 | 23.22 |       0.1 |
-;;; | 1981-12-17 |   25785 |  17.625 | 56.46 |         1 |
-;;; | 1981-12-18 |   14593 | 22.9375 | 24.03 |       0.1 |
-;;; | 1981-12-18 |   25785 |    18.0 | 56.98 |         1 |
-;;; | 1981-12-21 |   14593 | 21.9375 | 23.57 |       0.1 |
-;;; | 1981-12-21 |   25785 |    18.0 | 56.98 |         1 |
-;;; | 1981-12-22 |   14593 | 22.3125 | 23.75 |       0.1 |
-;;; | 1981-12-22 |   25785 |    17.5 | 56.29 |         1 |
-;;; 
-;; <-
-;; =>
-;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;;; {"type":"html","content":"<span class='clj-boolean'>true</span>","value":"true"}
 ;; <=
 
 ;; **
@@ -139,14 +84,22 @@
 ;; **
 
 ;; @@
-;; view final portfolio
-(print-portfolio)
+(print-order-record 10)
 ;; @@
 ;; ->
 ;;; 
-;;; | :asset | :price | :aprc | :quantity | :tot-val |
-;;; |--------+--------+-------+-----------+----------|
-;;; |   cash |    N/A |   N/A |       N/A |   996.42 |
+;;; |      :date | :permno | :price |  :aprc | :quantity |
+;;; |------------+---------+--------+--------+-----------|
+;;; | 1990-02-13 |   10002 | 128.45 | 128.45 |       5.0 |
+;;; | 1990-02-14 |   10002 | 129.49 | 129.49 |       5.0 |
+;;; | 1990-02-15 |   10002 | 129.32 | 129.32 |       5.0 |
+;;; | 1990-02-16 |   10002 |  131.6 | 131.60 |       5.0 |
+;;; | 1990-02-19 |   10002 | 132.31 | 132.31 |       5.0 |
+;;; | 1990-02-20 |   10002 |  134.2 | 134.20 |       5.0 |
+;;; | 1990-02-21 |   10002 | 135.08 | 135.08 |       5.0 |
+;;; | 1990-02-22 |   10002 | 133.11 | 133.11 |       5.0 |
+;;; | 1990-02-23 |   10002 | 133.44 | 133.44 |       5.0 |
+;;; | 1990-02-26 |   10002 | 131.03 | 131.03 |       5.0 |
 ;;; 
 ;; <-
 ;; =>
@@ -154,21 +107,36 @@
 ;; <=
 
 ;; @@
-;; view portfolio value and return
+(print-portfolio)
+;; @@
+;; ->
+;;; 
+;;; | :asset | :price | :aprc | :quantity | :tot-val |
+;;; |--------+--------+-------+-----------+----------|
+;;; |   cash |    N/A |   N/A |       N/A |  9960.90 |
+;;; 
+;; <-
+;; =>
+;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;; <=
+
+;; @@
 (print-portfolio-record 10)
 ;; @@
 ;; ->
 ;;; 
-;;; |      :date | :tot-value | :daily-ret | :tot-ret | :loan | :leverage | :margin |
-;;; |------------+------------+------------+----------+-------+-----------+---------|
-;;; | 1981-12-15 |   $1000.00 |      0.00% |    0.00% | $0.00 |      0.00 |   0.00% |
-;;; | 1981-12-16 |   $1000.00 |      0.00% |    0.00% | $0.00 |      0.00 |   0.00% |
-;;; | 1981-12-17 |   $1000.60 |     -0.00% |    0.03% | $0.00 |      0.00 |   0.00% |
-;;; | 1981-12-18 |   $1001.80 |      0.00% |    0.08% | $0.00 |      0.00 |   0.00% |
-;;; | 1981-12-21 |   $1001.67 |      0.00% |    0.07% | $0.00 |      0.00 |   0.00% |
-;;; | 1981-12-22 |    $998.96 |     -0.00% |   -0.05% | $0.00 |      0.00 |   0.00% |
-;;; | 1981-12-23 |    $995.33 |      0.00% |   -0.20% | $0.00 |      0.00 |   0.00% |
-;;; | 1981-12-24 |    $996.42 |      0.00% |   -0.16% | $0.00 |      0.00 |   0.00% |
+;;; |      :date | :tot-value | :daily-ret | :tot-ret | :loan | :short | :leverage | :margin |
+;;; |------------+------------+------------+----------+-------+--------+-----------+---------|
+;;; | 1990-01-02 |  $10000.00 |      0.00% |    0.00% | $0.00 |  $0.00 |      0.00 | 100.00% |
+;;; | 1990-01-03 |  $10000.00 |      0.00% |    0.00% | $0.00 | $-0.00 |      0.00 | 100.00% |
+;;; | 1990-01-04 |  $10000.00 |      0.00% |    0.00% | $0.00 | $-0.00 |      0.00 | 100.00% |
+;;; | 1990-01-05 |  $10000.00 |      0.00% |    0.00% | $0.00 | $-0.00 |      0.00 | 100.00% |
+;;; | 1990-01-08 |  $10000.00 |      0.00% |    0.00% | $0.00 | $-0.00 |      0.00 | 100.00% |
+;;; | 1990-01-09 |  $10000.00 |      0.00% |    0.00% | $0.00 | $-0.00 |      0.00 | 100.00% |
+;;; | 1990-01-10 |  $10000.00 |      0.00% |    0.00% | $0.00 | $-0.00 |      0.00 | 100.00% |
+;;; | 1990-01-11 |  $10000.00 |      0.00% |    0.00% | $0.00 | $-0.00 |      0.00 | 100.00% |
+;;; | 1990-01-12 |  $10000.00 |      0.00% |    0.00% | $0.00 | $-0.00 |      0.00 | 100.00% |
+;;; | 1990-01-15 |  $10000.00 |      0.00% |    0.00% | $0.00 | $-0.00 |      0.00 | 100.00% |
 ;;; 
 ;; <-
 ;; =>
@@ -184,15 +152,18 @@
 ;; @@
 ;; ->
 ;;; 
-;;; |      :date | :tot-value |    :vol |  :r-vol |               :sharpe |             :r-sharpe | :pnl-pt | :max-drawdown |
-;;; |------------+------------+---------+---------+-----------------------+-----------------------+---------+---------------|
-;;; | 1981-12-16 |      $1000 | 0.0000% | 0.0000% |               0.0000% |               0.0000% |      $0 |        0.0000 |
-;;; | 1981-12-17 |      $1000 | 0.0000% | 0.0000% |   9419676466259.1450% |   9419676466259.1450% |      $0 |        0.0000 |
-;;; | 1981-12-18 |      $1001 | 0.0000% | 0.0000% |  32469602626935.1760% |  32469602626935.1760% |      $0 |        0.0000 |
-;;; | 1981-12-21 |      $1001 | 0.0000% | 0.0000% |  33522685497906.6330% |  33522685497906.6330% |      $0 |        0.0000 |
-;;; | 1981-12-22 |       $998 | 0.0000% | 0.0000% | -18079259030964.3000% | -18079259030964.3000% |      $0 |        0.0000 |
-;;; | 1981-12-23 |       $995 | 0.0000% | 0.0000% | -86461715180573.6600% | -86461715180573.6600% |      $0 |        0.0000 |
-;;; | 1981-12-24 |       $996 | 0.0000% | 0.0000% | -69689219714318.2400% | -69689219714318.2400% |      $0 |        0.0000 |
+;;; |      :date | :tot-value |    :vol |  :r-vol | :sharpe | :r-sharpe | :pnl-pt | :max-drawdown |
+;;; |------------+------------+---------+---------+---------+-----------+---------+---------------|
+;;; | 1990-02-13 |     $10000 | 0.0000% | 0.0000% |  0.0000 |    0.0000 |      $0 |        0.0000 |
+;;; | 1990-02-14 |     $10005 | 0.0000% | 0.0000% | -2.8062 |   -2.8983 |      $2 |        0.0000 |
+;;; | 1990-02-15 |     $10003 | 0.0000% | 0.0000% | -3.9706 |   -4.1713 |      $1 |        0.0170 |
+;;; | 1990-02-16 |     $10037 | 0.0000% | 0.0000% | -3.9098 |   -4.1713 |      $9 |        0.0170 |
+;;; | 1990-02-19 |     $10051 | 0.0000% | 0.0000% | -3.8518 |   -4.1713 |     $10 |        0.0170 |
+;;; | 1990-02-20 |     $10099 | 0.0000% | 0.0000% | -3.7963 |   -4.1713 |     $16 |        0.0170 |
+;;; | 1990-02-21 |     $10125 | 0.0000% | 0.0000% | -3.7431 |   -4.1713 |     $17 |        0.0170 |
+;;; | 1990-02-22 |     $10056 | 0.0000% | 0.0000% | -3.6921 |   -4.1713 |      $7 |        0.6810 |
+;;; | 1990-02-23 |     $10069 | 0.0000% | 0.0000% | -3.6431 |   -4.1713 |      $7 |        0.6810 |
+;;; | 1990-02-26 |      $9961 | 0.0000% | 0.0000% | -3.5961 |   -4.1713 |     $-3 |        1.6216 |
 ;;; 
 ;; <-
 ;; =>
@@ -204,32 +175,16 @@
 ;; **
 
 ;; @@
-(def data (deref portfolio-value))
-;; @@
-;; =>
-;;; {"type":"html","content":"<span class='clj-var'>#&#x27;clojure-backtesting.updated_examples.goldencross/data</span>","value":"#'clojure-backtesting.updated_examples.goldencross/data"}
-;; <=
-
-;; @@
-; Add legend name to series
-(def data-to-plot
- (map #(assoc % :plot "portfolio")
-  data))
-;; @@
-;; =>
-;;; {"type":"html","content":"<span class='clj-var'>#&#x27;clojure-backtesting.updated_examples.goldencross/data-to-plot</span>","value":"#'clojure-backtesting.updated_examples.goldencross/data-to-plot"}
-;; <=
-
-;; @@
+(def data-to-plot (map #(assoc % :plot "portfolio") (deref portfolio-value)))
 (first data-to-plot)
 ;; @@
 ;; =>
-;;; {"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:date</span>","value":":date"},{"type":"html","content":"<span class='clj-string'>&quot;1981-12-15&quot;</span>","value":"\"1981-12-15\""}],"value":"[:date \"1981-12-15\"]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:tot-value</span>","value":":tot-value"},{"type":"html","content":"<span class='clj-long'>1000</span>","value":"1000"}],"value":"[:tot-value 1000]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:daily-ret</span>","value":":daily-ret"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:daily-ret 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:tot-ret</span>","value":":tot-ret"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:tot-ret 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:loan</span>","value":":loan"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:loan 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:leverage</span>","value":":leverage"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:leverage 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:margin</span>","value":":margin"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:margin 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:plot</span>","value":":plot"},{"type":"html","content":"<span class='clj-string'>&quot;portfolio&quot;</span>","value":"\"portfolio\""}],"value":"[:plot \"portfolio\"]"}],"value":"{:date \"1981-12-15\", :tot-value 1000, :daily-ret 0.0, :tot-ret 0.0, :loan 0.0, :leverage 0.0, :margin 0.0, :plot \"portfolio\"}"}
+;;; {"type":"html","content":"<span class='clj-unkown'>{:plot &quot;portfolio&quot;, :date &quot;1990-01-02&quot;, :leverage 0.0, :short 0.0, :tot-ret 0.0, :loan 0.0, :tot-value 10000, :daily-ret 0.0, :margin 1.0}</span>","value":"{:plot \"portfolio\", :date \"1990-01-02\", :leverage 0.0, :short 0.0, :tot-ret 0.0, :loan 0.0, :tot-value 10000, :daily-ret 0.0, :margin 1.0}"}
 ;; <=
 
 ;; @@
 (plot data-to-plot :plot :date :daily-ret true)
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;;; {"type":"html","content":"<span class='clj-string'>&quot;The chart opens in the browser when this cell runs in the Gorilla REPL.&quot;</span>","value":"\"The chart opens in the browser when this cell runs in the Gorilla REPL.\""}
 ;; <=

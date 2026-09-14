@@ -5,8 +5,7 @@
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.portfolio :refer :all]
             [clojure-backtesting.automation :refer :all]
-            [clojure-backtesting.indicators :refer :all]
-            [java-time :as jt]))
+            [clojure-backtesting.indicators :refer :all]))
 
 (defn- incur-transaction-cost
   "This private function deducts the commission fee for making an order.
@@ -41,6 +40,17 @@
       (write-record! order-wrtr (format "%s,%s,%f,%f\n" date permno (double quantity) price)))
     (swap! order-record conj {:date date :permno permno :price price :aprc (format "%.2f" adj-price) :quantity quantity})))
 
+(defn- short-within-margin?
+  "Whether equity still covers INITIAL-MARGIN of the gross position value
+   after trading `quantity` shares at `price` from a holding of `total`,
+   which leaves or extends a short position."
+  [total quantity price]
+  (or (nil? INITIAL-MARGIN)
+      (let [{:keys [equity gross]} (portfolio-exposure)
+            gross-after (+ (- gross (Math/abs (double (* total price))))
+                           (Math/abs (double (* (+ total quantity) price))))]
+        (>= equity (* INITIAL-MARGIN gross-after)))))
+
 (defn order-internal
   "This is the main order function"
   [order-date permno quan remaining leverage print direct info]
@@ -62,7 +72,9 @@
           (do
             (if leverage
               (if (< (+ total quantity) 0)
-                (place-order date permno quantity info 0 print direct) ;This is the sell on margin case
+                (if (short-within-margin? total quantity price)
+                  (place-order date permno quantity info 0 print direct) ;This is the sell on margin case
+                  (println (format "Order request %s | %s | %s fails due to initial margin requirement on the short position." order-date permno (str quantity))))
                 (let [loan
                       (cond (<= cash 0)
                             (* quantity price)
@@ -80,11 +92,16 @@
 (def pending-order (atom (sorted-map)))
 
 (defn order
+  "Queues an order of `quantity` shares of `permno`. It fills at the close
+   of the next trading day on which the security has a price, up to
+   `expiration` trading days after today (ORDER-EXPIRATION by default);
+   after that it is dropped. `:remaining true` makes `quantity` the target
+   holding instead of the amount to trade."
   ([permno quantity & {:keys [expiration remaining leverage print direct] :or {expiration ORDER-EXPIRATION remaining false leverage LEVERAGE print PRINT direct DIRECT}}]
    (if (= (deref TERMINATED) false)
      (let [place-date (get-date)
-           expire-date (jt/format "yyyy-MM-dd" (jt/plus (jt/local-date "yyyy-MM-dd" place-date) (jt/days expiration)))]
-       (swap! pending-order assoc [expire-date permno] {:place (get-date) :expire expire-date :permno permno :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))))
+           expire-date (date-after-n-trading-days place-date expiration)]
+       (swap! pending-order assoc [expire-date permno] {:place place-date :expire expire-date :permno permno :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))))
 
 (defn check-order
   []
@@ -140,7 +157,7 @@
         (cond
           (= (get-next-date) nil) (println "You have reached the end of the dataset. No more orders are allowed.")
           (< (compare tot-value 0) 0) (println (str (get-date) ": You have lost all cash. Closing all positions."))
-          margin-call (println (str (get-date) ": Portfolio margin " port-margin " is below the maintenance margin " MAINTENANCE-MARGIN ". Closing all positions.")))
+          margin-call (println (str (get-date) ": Portfolio margin " port-margin " (equity / gross position value) is below the maintenance margin " MAINTENANCE-MARGIN ". Closing all positions.")))
         (println "To restart. Please call init-portfolio again.")
         (end-order)))))
 
