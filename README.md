@@ -57,8 +57,12 @@ into the same layout.
 ## Orders, margin and fundamentals
 
 Orders fill at the next close and stay pending for `ORDER-EXPIRATION`
-trading days (three by default). Buying beyond your cash borrows the
-shortfall; selling shares you do not hold borrows the shares. Both count
+trading days (three by default); on a given day, orders that reduce a
+position fill before orders that add to one, so sale proceeds can pay for
+purchases. Buying beyond your cash borrows the shortfall; selling shares
+you do not hold borrows the shares. A holding whose security has had no
+price for `MISSING-DAYS-LIMIT` trading days in a row (ten by default) is
+treated as delisted and booked as cash at its last value. Both count
 towards the margin, equity over the gross value of positions, which must
 stay above `MAINTENANCE-MARGIN` or every position is closed. New borrowing
 must respect `INITIAL-MARGIN`.

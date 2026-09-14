@@ -180,6 +180,45 @@
     (is (close? 100000 (cash)))
     (end-order)))
 
+(deftest delisted-holdings-are-written-off
+  (testing "a holding that stops trading is booked as cash after MISSING-DAYS-LIMIT days"
+    (with-redefs [MISSING-DAYS-LIMIT 3]
+      (init-portfolio "1990-02-01" 100000)
+      (order ccc 100)
+      (next-date) ; fills 1990-02-02
+      (let [cash-after-fill (cash)
+            value (holding-value ccc)]
+        (step-to! "1990-02-06") ; two days without a price
+        (is (close? value (holding-value ccc)))
+        (next-date) ; third day: written off
+        (is (nil? (quantity ccc)))
+        (is (close? (+ cash-after-fill value) (cash)))
+        (is (close? (+ cash-after-fill value) (total-value)))))
+    (end-order))
+  (testing "end-order books an unpriced holding as cash at its last value"
+    (init-portfolio "1990-02-01" 100000)
+    (order ccc 100)
+    (next-date)
+    (let [value (holding-value ccc)
+          cash-before (cash)]
+      (step-to! "1990-02-07")
+      (end-order)
+      (is (= [:cash] (keys (deref portfolio))))
+      (is (close? (+ cash-before value) (cash))))))
+
+(deftest sales-fund-purchases-on-the-same-day
+  (init-portfolio "1990-01-02" 5000)
+  (order ccc 200 :leverage false) ; about $4,000
+  (next-date)
+  (is (close? 200.0 (quantity ccc)))
+  (order ccc 0 :remaining true) ; sell everything
+  (order aaa 80 :leverage false) ; about $4,000, more than the remaining cash
+  (next-date)
+  (is (nil? (quantity ccc)))
+  (is (close? 80.0 (quantity aaa)) "the sale, filled first, paid for the purchase")
+  (is (= 3 (count (deref order-record))))
+  (end-order))
+
 (deftest margin-interest-and-liquidation
   (with-redefs [INTEREST-RATE 0.10
                 TRANSACTION-COST 0.01]

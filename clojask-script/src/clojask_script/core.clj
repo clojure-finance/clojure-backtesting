@@ -3,6 +3,7 @@
             [clojask-io.input :as input]
             [clojask.api.gb-aggregate :as gb-agg]
             [clojask.onyx-comps :refer [start-onyx-groupby]]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]))
 
@@ -25,9 +26,7 @@
 (def daily-min-price nil)
 (def daily-max-price nil)
 
-
 ;; =============== END of Configurable Parameters ==============
-
 
 ;; =============== Do not change the code below ================
 
@@ -37,7 +36,6 @@
 ;; (def initial-price (atom {}))
 ;; ;; record cumulative return for each security
 ;; (def cum-ret (atom {}))
-
 
 (defn log-10 [n]
   (/ (Math/log n) (Math/log 10)))
@@ -128,7 +126,7 @@
 ;;       (if (= res "success")
 ;;         (do
 ;;           (println "Dataset grouped successfully.")))))
-  
+
 ;;   )
 
 (defn CRSP-action
@@ -152,9 +150,11 @@
       (ck/set-type df daily-max-price "double"))
     (ck/rename-col df security-identifier "PERMNO")
     (ck/rename-col df date-identifier "date")
-    (ck/group-by df "date")
     (io/make-parents (str output-dir "grouped/" "header"))
+    ;; column names must be read before group-by: afterwards clojask reports
+    ;; only the grouping column
     (let [headers (mapv keyword (ck/get-col-names df))
+          _ (ck/group-by df "date")
           tmp (spit (str output-dir "header") (str headers))
           groupby-keys (.getGroupbyKeys (:row-info df))
           groupby-index (vec (take (count headers) (iterate inc 0)))
@@ -169,9 +169,11 @@
   (let [df (ck/dataframe input-file)]
     (ck/rename-col df security-identifier "PERMNO")
     (ck/rename-col df date-identifier "datadate")
-    (ck/group-by df "datadate")
     (io/make-parents (str output-dir "grouped/" "header"))
+    ;; column names must be read before group-by: afterwards clojask reports
+    ;; only the grouping column
     (let [headers (mapv keyword (ck/get-col-names df))
+          _ (ck/group-by df "datadate")
           tmp (spit (str output-dir "header") (str headers))
           groupby-keys (.getGroupbyKeys (:row-info df))
           groupby-index (vec (take (count headers) (iterate inc 0)))
@@ -180,9 +182,35 @@
         (do
           (println "Dataset generated successfully."))))))
 
+(def ^:private parameter-vars
+  {:input-file #'input-file
+   :output-dir #'output-dir
+   :type-of-dataset #'type-of-dataset
+   :security-identifier #'security-identifier
+   :date-identifier #'date-identifier
+   :data-format-string #'data-format-string
+   :closing-price #'closing-price
+   :opening-price #'opening-price
+   :return-identifier #'return-identifier
+   :daily-min-price #'daily-min-price
+   :daily-max-price #'daily-max-price})
+
+(defn- apply-config!
+  "Overrides the parameters above with the entries of an EDN map, e.g.
+   {:input-file \"/data/crsp.csv\" :output-dir \"/data/CRSP\"}."
+  [path]
+  (let [config (edn/read-string (slurp path))]
+    (doseq [[k v] config]
+      (if-let [v-var (get parameter-vars k)]
+        (alter-var-root v-var (constantly v))
+        (throw (ex-info (str "Unknown parameter " k) {:known (keys parameter-vars)}))))))
+
 (defn -main
-  "Main function"
-  []
+  "Main function. Takes an optional path to an EDN file whose entries
+   override the parameters defined at the top of this file."
+  [& [config-path]]
+  (when config-path
+    (apply-config! config-path))
   (def output-dir (if (str/ends-with? output-dir "/") output-dir (str output-dir "/")))
   (println (str "Input file: " input-file))
   (println (str "Output dir: " output-dir))

@@ -22,7 +22,7 @@ This type of dataset will be used as the supplementary dataset to the CRSP-type 
 
 #### How will CRSP merge with Compustat
 
-It will be a forward rolling join between CRSP and Compustat, i.e. each row of CRSP will be merged with at most one Compustat row that has the latest earlier date (of course for the same security).
+Each CRSP row is merged with at most one Compustat row for the same security: the latest one whose date is on or before the CRSP date and, when the dataset has an `rdq` (report date) column, whose report date is also on or before it.
 
 ## Parameter Specification
 
@@ -54,11 +54,37 @@ You will mainly change parameters in `src/core.clj` file according to the nature
 
 ## Run the Script
 
-Just run the following command under the directory of `clojask-script`.
+Run the following command under the directory of `clojask-script`, after
+editing the parameters at the top of `src/clojask_script/core.clj`:
 
 ```
 lein run
 ```
+
+Alternatively, leave the source alone and pass an EDN file whose entries
+override those parameters:
+
+```
+lein run my-dataset.edn
+```
+
+```clojure
+{:input-file "/data/crsp-daily.csv"
+ :output-dir "/data/CRSP"
+ :type-of-dataset "CRSP"
+ :security-identifier "PERMNO"
+ :date-identifier "date"
+ :data-format-string "yyyy-MM-dd"
+ :closing-price "PRC"
+ :opening-price "OPENPRC"
+ :return-identifier "RET"
+ :daily-min-price "BIDLO"
+ :daily-max-price "ASKHI"}
+```
+
+Any other column in the input is kept as a string. The backtester reads
+`CFACPR` (to recognise splits when dividends are not reinvested) and, in a
+Compustat-type dataset, `rdq` (the report date) when they are present.
 
 ## The Resultant Dataset
 

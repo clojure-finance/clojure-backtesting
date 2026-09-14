@@ -16,6 +16,12 @@
   [size]
   (def CACHE-SIZE size))
 
+;; ============ Holdings ============
+
+(def MISSING-DAYS-LIMIT 10)
+;; A holding whose security has had no price for this many trading days in
+;; a row is treated as delisted: its last value is booked as cash.
+
 ;; ============ Supplementary data ============
 
 (def MERGE-MAX-AGE-MONTHS 6)

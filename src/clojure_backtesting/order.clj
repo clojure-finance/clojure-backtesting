@@ -104,21 +104,23 @@
        (swap! pending-order assoc [expire-date permno] {:place place-date :expire expire-date :permno permno :quantity quantity :remaining remaining :leverage leverage :print print :direct direct})))))
 
 (defn check-order
+  "Fills the pending orders whose security has a price today and drops the
+   ones that have expired. Orders that reduce a position are filled before
+   orders that add to one, so that sale proceeds can pay for purchases made
+   on the same day. Orders whose security has no price today stay pending."
   []
-
-  ;; traverse pending order for potential placing
-  (loop [new-order (sorted-map) pending (subseq (deref pending-order) >= [(get-date) ""])]
-    (if (= (count pending) 0)
-      (reset! pending-order new-order)
-      (let [pair (first pending)
-            permno (nth (first pair) 1)
-            arg (nth pair 1)
-            remain (rest pending)]
-        (if (get-permno-info permno)
-          (do
-            (order-internal (get-date) permno (:quantity arg) (:remaining arg) (:leverage arg) (:print arg) (:direct arg) (get-permno-info permno))
-            (recur new-order remain))
-          (recur (assoc new-order (first pair) arg) remain))))))
+  (let [today (get-date)
+        live (subseq (deref pending-order) >= [today ""])
+        fillable? (fn [[[_ permno] _]] (some? (get-permno-info permno)))
+        effective-quantity (fn [{:keys [permno quantity remaining]}]
+                             (if remaining
+                               (- quantity (get-in (deref portfolio) [permno :quantity] 0))
+                               quantity))
+        {sells true buys false} (group-by (fn [[_ arg]] (neg? (effective-quantity arg)))
+                                          (filter fillable? live))]
+    (doseq [[[_ permno] arg] (concat sells buys)]
+      (order-internal today permno (:quantity arg) (:remaining arg) (:leverage arg) (:print arg) (:direct arg) (get-permno-info permno)))
+    (reset! pending-order (into (sorted-map) (remove fillable? live)))))
 
 (defn update-holding-tickers
   "Revalues every holding at today's close, paying or reinvesting dividends."
@@ -127,8 +129,8 @@
 
 (defn end-order
   "Call this function at the end of the strategy. Closes every position at
-   today's close; a security with no row today stays valued at its last
-   price and is reported as still held."
+   today's close; a security with no price today is booked as cash at its
+   last value."
   []
   ;; close all positions
   (if (not (deref TERMINATED))
@@ -137,7 +139,10 @@
               :when (not= security :cash)]
         (if-let [info (get (get-info-map) security)]
           (order-internal (get-date) security 0 true false PRINT DIRECT info)
-          (println (str (get-date) ": " security " has no price today and cannot be closed."))))
+          (do
+            (println (str (get-date) ": " security " has no price today; its last value is booked as cash."))
+            (write-off! security)
+            (record-portfolio-value (get-date)))))
       (update-eval-report)
       (close-records!)
       (reset! pending-order (sorted-map))
