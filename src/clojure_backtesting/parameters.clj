@@ -16,6 +16,12 @@
   [size]
   (def CACHE-SIZE size))
 
+;; ============ Supplementary data ============
+
+(def MERGE-MAX-AGE-MONTHS 6)
+;; A Compustat filing older than this (by its period-end date) is no longer
+;; joined onto the daily data.
+
 ;; =============== Indicator ===============
 (def ^:dynamic EMA-CYCLE 20)
 (def MACD-SIGNAL 9)

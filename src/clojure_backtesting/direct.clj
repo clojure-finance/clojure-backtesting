@@ -9,9 +9,14 @@
   [n rows]
   (if (and n (> n 0)) (take n rows) rows))
 
+(defn- round4
+  "Rounds a share count to four decimals for display."
+  [q]
+  (if (number? q) (/ (Math/round (* (double q) 10000.0)) 10000.0) q))
+
 (defn print-order-record
   [& [n]]
-  (pp/print-table (first-n n (deref order-record))))
+  (pp/print-table (first-n n (map #(update % :quantity round4) (deref order-record)))))
 
 (defn print-automation-list
   []
@@ -37,6 +42,7 @@
                :daily-ret (str (format "%.2f" (* (get row :daily-ret) 100)) "%")
                :tot-ret (str (format "%.2f" (* (get row :tot-ret) 100)) "%")
                :loan (str "$" (format "%.2f" (get row :loan)))
+               :short (str "$" (format "%.2f" (get row :short 0.0)))
                :leverage (format "%.2f" (get row :leverage))
                :margin (str (format "%.2f" (* (get row :margin) 100)) "%")}))))
 
@@ -54,7 +60,7 @@
        {:asset security
         :price (get row :price)
         :aprc (format "%.4f" (get row :aprc))
-        :quantity (get row :quantity)
+        :quantity (round4 (get row :quantity))
         :tot-val (format "%.2f" (get row :tot-val))}))))
 
 (defn print-eval-report

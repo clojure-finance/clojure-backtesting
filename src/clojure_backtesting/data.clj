@@ -37,7 +37,7 @@
 
 ;; cache
 (def data-cache {})
-(def cache-queue (PriorityQueue.))
+(def ^java.util.PriorityQueue cache-queue (PriorityQueue.))
 
 ;; Global Variables for the dataset
 (def data-files {})
@@ -45,10 +45,10 @@
 (def headers nil)
 (def headers2 nil)
 
-(def decoder (Base64/getUrlDecoder))
+(def ^java.util.Base64$Decoder decoder (Base64/getUrlDecoder))
 (defn decode-str
   [s]
-  (String. (.decode decoder s)))
+  (String. ^bytes (.decode decoder ^String s)))
 
 (defn decode-filename
   [filename]
@@ -58,7 +58,7 @@
 (defn get-file-date
   "The date a grouped data file holds, decoded from its name."
   [file]
-  (decode-filename (.getName file)))
+  (decode-filename (.getName ^java.io.File file)))
 
 (defn load-dataset
   [dir name & [func]]
@@ -117,11 +117,11 @@
 (defn add-aprc
   "Data augmentation of adding aprc to each file"
   [dir headers data-files]
-  (if (and (.contains headers :INIT-PRICE) (.contains headers :APRC) (.contains headers :CUM-RET))
+  (if (every? (set headers) [:INIT-PRICE :APRC :CUM-RET])
     (println "The dataset is already furnished by add-aprc. No more modification is needed.")
-    (let [price-index (.indexOf headers :PRC)
-          ret-index (.indexOf headers :RET)
-          security-index (.indexOf headers TICKER-KEY)]
+    (let [price-index (.indexOf ^java.util.List headers :PRC)
+          ret-index (.indexOf ^java.util.List headers :RET)
+          security-index (.indexOf ^java.util.List headers TICKER-KEY)]
       (reset! initial-price {})
       (reset! cum-ret {})
       (println "The below process will take a few hours to run for the first time.")

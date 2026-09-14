@@ -24,6 +24,13 @@
   []
   (first (first (subseq data-files > (get-date)))))
 
+(defn date-after-n-trading-days
+  "The date n trading days after `date` in the dataset, or the dataset's
+   last date if fewer than n remain."
+  [date n]
+  (or (nth (map first (subseq data-files > date)) (dec (max 1 n)) nil)
+      (first (last data-files))))
+
 (defn get-prev-n-date
   "Returns the date of the previous n valid days.\n
    E.g. prev 1 of 1973-02-04 may be 1973-02-03 or 1973-02-02 or even 1973-02-01."

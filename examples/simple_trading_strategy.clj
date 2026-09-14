@@ -5,8 +5,7 @@
 ;; **
 
 ;; @@
-; import libraries from kernel
-(ns clojure-backtesting.updated_examples.simpleStrat
+(ns clojure-backtesting.examples.simple-strategy
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.data-management :refer :all]
             [clojure-backtesting.portfolio :refer :all]
@@ -17,12 +16,7 @@
             [clojure-backtesting.automation :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.indicators :refer :all]
-            [clojure-backtesting.direct :refer :all]
-            [clojure.string :as str]
-            [clojure.java.io :as io]
-            [clojure.pprint :as pprint]
-  ) ;; require all libriaries from core
-)
+            [clojure-backtesting.direct :refer :all]))
 ;; @@
 ;; =>
 ;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
@@ -30,20 +24,19 @@
 
 ;; **
 ;;; ### Import dataset
+;;; 
+;;; The bundled sample dataset has three securities over the first quarter of 1990: 10001 (AAA, pays a dividend on 1990-02-15), 10002 (BBB, splits 2-for-1 on 1990-03-01) and 10003 (CCC, no prices from 1990-02-05 to 1990-02-09). Point `load-dataset` at your own preprocessed data to use that instead.
 ;; **
 
 ;; @@
-; path to dataset = "/Volumes/T7/CRSP"
-; change it to the relative path to your own dataset
-;
-(load-dataset "./Volumes/T7/CRSP" "main" add-aprc)
+(load-dataset "resources/sample-data/main" "main" add-aprc)
 ;; @@
 ;; ->
 ;;; The dataset is already furnished by add-aprc. No more modification is needed.
 ;;; 
 ;; <-
 ;; =>
-;;; {"type":"html","content":"<span class='clj-string'>&quot;Date range: 1972-01-03 ~ 2017-02-10&quot;</span>","value":"\"Date range: 1972-01-03 ~ 2017-02-10\""}
+;;; {"type":"html","content":"<span class='clj-string'>&quot;Date range: 1990-01-02 ~ 1990-03-30&quot;</span>","value":"\"Date range: 1990-01-02 ~ 1990-03-30\""}
 ;; <=
 
 ;; **
@@ -51,75 +44,52 @@
 ;; **
 
 ;; @@
-;; initialise with current date and initial capital (= $10000)
-(init-portfolio "1980-12-16" 10000)
+(init-portfolio "1990-01-02" 10000)
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-string'>&quot;Date: 1980-12-16 Cash: $10000&quot;</span>","value":"\"Date: 1980-12-16 Cash: $10000\""}
+;;; {"type":"html","content":"<span class='clj-string'>&quot;Date: 1990-01-02 Cash: $10000&quot;</span>","value":"\"Date: 1990-01-02 Cash: $10000\""}
 ;; <=
 
 ;; **
 ;;; ### Write a strategy
 ;;; 
-;;; The following code implements a simple trading strategy:
+;;; In a timespan of 10 trading days:
+;;; - buy 50 shares of AAA on the first day
+;;; - sell 10 shares of AAA on every other day
 ;;; 
-;;; In a timespan of 10 days (inclusive of today),
-;;; - Buy 50 stocks of AAPL on the first day
-;;; - Sell 10 stocks of AAPL on every other day
-;; **
-
-;; **
-;;; ### (1) Running the strategy
-;;; - Note that you should have loaded the **extract** dataset
+;;; Orders fill at the close of the next trading day.
 ;; **
 
 ;; @@
-;; define the "time span", i.e. to trade in the coming 10 days 
-(def num-of-days (atom 10))                              
+(def num-of-days (atom 10))
 
-(while (pos? @num-of-days) ;; check if num-of-days is > 0
-    (do 
-        ;; write your trading strategy here
-        (if (= 10 @num-of-days) ;; check if num-of-days == 10
-            (do
-                (order "14593" 50 :print true) ; buy 50 stocks
-                ;; (println ((fn [date] (str "Buy 50 stocks of AAPL on " date)) (get-date)))
-            )
-        )
-        (if (odd? @num-of-days) ;; check if num-of-days is odd
-            (do
-                (order "14593" -10 :print true) ; sell 10 stocks
-                ;; (println ((fn [date] (str "Sell 10 stocks of AAPL on " date)) (get-date)))
-            )
-        )
-        
-        (update-eval-report) ;; update the evaluation metrics every day
-        (println (get-date))
-        ; move on to the next trading day
-        (next-date)
-        
-        ; decrement counter
-        (swap! num-of-days dec)
-    )
-)
+(while (pos? @num-of-days)
+  (when (= 10 @num-of-days)
+    (order "10001" 50 :print true)) ; buy 50 shares
+  (when (odd? @num-of-days)
+    (order "10001" -10 :print true)) ; sell 10 shares
+  (update-eval-report) ; update the evaluation metrics every day
+  (println (get-date))
+  (next-date) ; move on to the next trading day
+  (swap! num-of-days dec))
 ;; @@
 ;; ->
-;;; 1980-12-16
-;;; Order: 1980-12-17 | 14593 | 50.000000.
-;;; 1980-12-17
-;;; Order: 1980-12-18 | 14593 | -10.000000.
-;;; 1980-12-18
-;;; 1980-12-19
-;;; Order: 1980-12-22 | 14593 | -10.000000.
-;;; 1980-12-22
-;;; 1980-12-23
-;;; Order: 1980-12-24 | 14593 | -10.000000.
-;;; 1980-12-24
-;;; 1980-12-26
-;;; Order: 1980-12-29 | 14593 | -10.000000.
-;;; 1980-12-29
-;;; 1980-12-30
-;;; Order: 1980-12-31 | 14593 | -10.000000.
+;;; 1990-01-02
+;;; Order: 1990-01-03 | 10001 | 50.000000.
+;;; 1990-01-03
+;;; Order: 1990-01-04 | 10001 | -10.000000.
+;;; 1990-01-04
+;;; 1990-01-05
+;;; Order: 1990-01-08 | 10001 | -10.000000.
+;;; 1990-01-08
+;;; 1990-01-09
+;;; Order: 1990-01-10 | 10001 | -10.000000.
+;;; 1990-01-10
+;;; 1990-01-11
+;;; Order: 1990-01-12 | 10001 | -10.000000.
+;;; 1990-01-12
+;;; 1990-01-15
+;;; Order: 1990-01-16 | 10001 | -10.000000.
 ;;; 
 ;; <-
 ;; =>
@@ -135,14 +105,14 @@
 ;; @@
 ;; ->
 ;;; 
-;;; |      :date | :permno |  :price | :aprc | :quantity |
-;;; |------------+---------+---------+-------+-----------|
-;;; | 1980-12-17 |   14593 | 25.9375 | 25.35 |        50 |
-;;; | 1980-12-18 |   14593 | 26.6875 | 25.67 |       -10 |
-;;; | 1980-12-22 |   14593 | 29.6875 | 26.88 |       -10 |
-;;; | 1980-12-24 |   14593 | 32.5625 | 27.98 |       -10 |
-;;; | 1980-12-29 |   14593 | 36.0625 | 29.25 |       -10 |
-;;; | 1980-12-31 |   14593 | 34.1875 | 28.58 |       -10 |
+;;; |      :date | :permno | :price | :aprc | :quantity |
+;;; |------------+---------+--------+-------+-----------|
+;;; | 1990-01-03 |   10001 |  50.81 | 50.81 |      50.0 |
+;;; | 1990-01-04 |   10001 |  50.22 | 50.22 |     -10.0 |
+;;; | 1990-01-08 |   10001 |   50.4 | 50.40 |     -10.0 |
+;;; | 1990-01-10 |   10001 |  49.28 | 49.28 |     -10.0 |
+;;; | 1990-01-12 |   10001 |  49.29 | 49.29 |     -10.0 |
+;;; | 1990-01-16 |   10001 |  51.04 | 51.04 |     -10.0 |
 ;;; 
 ;; <-
 ;; =>
@@ -154,14 +124,13 @@
 ;; **
 
 ;; @@
-;; view final portfolio
 (print-portfolio)
 ;; @@
 ;; ->
 ;;; 
 ;;; | :asset | :price | :aprc | :quantity | :tot-val |
 ;;; |--------+--------+-------+-----------+----------|
-;;; |   cash |    N/A |   N/A |       N/A | 10116.11 |
+;;; |   cash |    N/A |   N/A |       N/A |  9961.80 |
 ;;; 
 ;; <-
 ;; =>
@@ -169,25 +138,23 @@
 ;; <=
 
 ;; @@
-;; view portfolio value and return
-; pass negative value to print-portfolio-record to get all records
 (print-portfolio-record -1)
 ;; @@
 ;; ->
 ;;; 
-;;; |      :date | :tot-value | :daily-ret | :tot-ret | :loan | :leverage | :margin |
-;;; |------------+------------+------------+----------+-------+-----------+---------|
-;;; | 1980-12-16 |  $10000.00 |      0.00% |    0.00% | $0.00 |      0.00 |   0.00% |
-;;; | 1980-12-17 |  $10000.00 |      0.00% |    0.00% | $0.00 |      0.00 |   0.00% |
-;;; | 1980-12-18 |  $10015.79 |      0.00% |    0.07% | $0.00 |      0.00 |   0.00% |
-;;; | 1980-12-19 |  $10042.49 |      0.12% |    0.18% | $0.00 |      0.00 |   0.00% |
-;;; | 1980-12-22 |  $10064.41 |      0.00% |    0.28% | $0.00 |      0.00 |   0.00% |
-;;; | 1980-12-23 |  $10078.98 |      0.06% |    0.34% | $0.00 |      0.00 |   0.00% |
-;;; | 1980-12-24 |  $10097.44 |      0.00% |    0.42% | $0.00 |      0.00 |   0.00% |
-;;; | 1980-12-26 |  $10119.28 |      0.09% |    0.51% | $0.00 |      0.00 |   0.00% |
-;;; | 1980-12-29 |  $10122.82 |     -0.00% |    0.53% | $0.00 |      0.00 |   0.00% |
-;;; | 1980-12-30 |  $10119.71 |     -0.01% |    0.52% | $0.00 |      0.00 |   0.00% |
-;;; | 1980-12-31 |  $10116.11 |      0.00% |    0.50% | $0.00 |      0.00 |   0.00% |
+;;; |      :date | :tot-value | :daily-ret | :tot-ret | :loan | :short | :leverage |  :margin |
+;;; |------------+------------+------------+----------+-------+--------+-----------+----------|
+;;; | 1990-01-02 |  $10000.00 |      0.00% |    0.00% | $0.00 |  $0.00 |      0.00 |  100.00% |
+;;; | 1990-01-03 |  $10000.00 |      0.00% |    0.00% | $0.00 | $-0.00 |      0.00 |  393.62% |
+;;; | 1990-01-04 |   $9970.50 |      0.00% |   -0.30% | $0.00 | $-0.00 |      0.00 |  496.34% |
+;;; | 1990-01-05 |   $9976.50 |      0.06% |   -0.24% | $0.00 | $-0.00 |      0.00 |  495.16% |
+;;; | 1990-01-08 |   $9977.70 |      0.00% |   -0.22% | $0.00 | $-0.00 |      0.00 |  659.90% |
+;;; | 1990-01-09 |   $9963.00 |     -0.15% |   -0.37% | $0.00 | $-0.00 |      0.00 |  665.40% |
+;;; | 1990-01-10 |   $9944.10 |      0.00% |   -0.56% | $0.00 | $-0.00 |      0.00 | 1008.94% |
+;;; | 1990-01-11 |   $9951.70 |      0.08% |   -0.48% | $0.00 | $-0.00 |      0.00 | 1001.98% |
+;;; | 1990-01-12 |   $9944.30 |      0.00% |   -0.56% | $0.00 | $-0.00 |      0.00 | 2017.51% |
+;;; | 1990-01-15 |   $9960.40 |      0.16% |   -0.40% | $0.00 | $-0.00 |      0.00 | 1956.86% |
+;;; | 1990-01-16 |   $9961.80 |      0.00% |   -0.38% | $0.00 | $-0.00 |      0.00 |  100.00% |
 ;;; 
 ;; <-
 ;; =>
@@ -195,7 +162,7 @@
 ;; <=
 
 ;; **
-;;; ### Generate evaluation report 
+;;; ### Generate evaluation report
 ;; **
 
 ;; @@
@@ -203,17 +170,17 @@
 ;; @@
 ;; ->
 ;;; 
-;;; |      :date | :tot-value |    :vol |  :r-vol |  :sharpe | :r-sharpe | :pnl-pt | :max-drawdown |
-;;; |------------+------------+---------+---------+----------+-----------+---------+---------------|
-;;; | 1980-12-17 |     $10000 | 0.0000% | 0.0000% |  0.0000% |   0.0000% |      $0 |        0.0000 |
-;;; | 1980-12-18 |     $10015 | 0.0000% | 0.0000% |  0.0000% |   0.0000% |      $7 |        0.0000 |
-;;; | 1980-12-19 |     $10042 | 0.0578% | 0.0578% |  3.1854% |   3.1854% |     $21 |      100.0000 |
-;;; | 1980-12-22 |     $10064 | 0.0517% | 0.0517% |  5.3929% |   5.3929% |     $21 |      100.0000 |
-;;; | 1980-12-23 |     $10078 | 0.0490% | 0.0490% |  6.9722% |   6.9722% |     $26 |      100.0000 |
-;;; | 1980-12-24 |     $10097 | 0.0461% | 0.0461% |  9.1301% |   9.1301% |     $24 |      100.0000 |
-;;; | 1980-12-26 |     $10119 | 0.0491% | 0.0491% | 10.4957% |  10.4957% |     $29 |      100.0000 |
-;;; | 1980-12-29 |     $10122 | 0.0473% | 0.0473% | 11.2136% |  11.2136% |     $24 |      100.0000 |
-;;; | 1980-12-30 |     $10119 | 0.0467% | 0.0467% | 11.0778% |  11.0778% |     $23 |      111.5205 |
+;;; |      :date | :tot-value |    :vol |  :r-vol | :sharpe | :r-sharpe | :pnl-pt | :max-drawdown |
+;;; |------------+------------+---------+---------+---------+-----------+---------+---------------|
+;;; | 1990-01-03 |     $10000 | 0.0000% | 0.0000% |  0.0000 |    0.0000 |      $0 |        0.0000 |
+;;; | 1990-01-04 |      $9970 | 0.0000% | 0.0000% |  0.0000 |    0.0000 |    $-14 |        0.2950 |
+;;; | 1990-01-05 |      $9976 | 0.0301% | 0.0301% |  7.9373 |    7.9373 |    $-11 |        0.2950 |
+;;; | 1990-01-08 |      $9977 | 0.0269% | 0.0269% |  7.0993 |    7.0993 |     $-7 |        0.2950 |
+;;; | 1990-01-09 |      $9963 | 0.0694% | 0.0694% | -3.3269 |   -3.3269 |    $-12 |        0.3700 |
+;;; | 1990-01-10 |      $9944 | 0.0636% | 0.0636% | -3.1121 |   -3.1121 |    $-13 |        0.5590 |
+;;; | 1990-01-11 |      $9951 | 0.0667% | 0.0667% | -0.3235 |   -0.3235 |    $-12 |        0.5590 |
+;;; | 1990-01-12 |      $9944 | 0.0624% | 0.0624% | -0.3074 |   -0.3074 |    $-11 |        0.5590 |
+;;; | 1990-01-15 |      $9960 | 0.0782% | 0.0782% |  3.0617 |    3.0617 |     $-7 |        0.5590 |
 ;;; 
 ;; <-
 ;; =>
@@ -222,146 +189,54 @@
 
 ;; **
 ;;; ### Plot variables
-;;; Below are example codes that show how to plot different variables in the portfolio record / evaluation record.
-;; **
-
-;; **
-;;; ### 1. Portfolio daily return
-;; **
-
-;; @@
-(def data (deref portfolio-value))
-;; @@
-;; =>
-;;; {"type":"html","content":"<span class='clj-var'>#&#x27;clojure-backtesting.updated_examples.simpleStrat/data</span>","value":"#'clojure-backtesting.updated_examples.simpleStrat/data"}
-;; <=
-
-;; @@
-; Add legend name to series
-(def data-to-plot
- (map #(assoc % :plot "port-value")
-  data))
-;; @@
-;; =>
-;;; {"type":"html","content":"<span class='clj-var'>#&#x27;clojure-backtesting.updated_examples.simpleStrat/data-to-plot</span>","value":"#'clojure-backtesting.updated_examples.simpleStrat/data-to-plot"}
-;; <=
-
-;; @@
-(first data-to-plot)
-;; @@
-;; =>
-;;; {"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:date</span>","value":":date"},{"type":"html","content":"<span class='clj-string'>&quot;1980-12-16&quot;</span>","value":"\"1980-12-16\""}],"value":"[:date \"1980-12-16\"]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:tot-value</span>","value":":tot-value"},{"type":"html","content":"<span class='clj-long'>10000</span>","value":"10000"}],"value":"[:tot-value 10000]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:daily-ret</span>","value":":daily-ret"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:daily-ret 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:tot-ret</span>","value":":tot-ret"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:tot-ret 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:loan</span>","value":":loan"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:loan 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:leverage</span>","value":":leverage"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:leverage 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:margin</span>","value":":margin"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:margin 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:plot</span>","value":":plot"},{"type":"html","content":"<span class='clj-string'>&quot;port-value&quot;</span>","value":"\"port-value\""}],"value":"[:plot \"port-value\"]"}],"value":"{:date \"1980-12-16\", :tot-value 10000, :daily-ret 0.0, :tot-ret 0.0, :loan 0.0, :leverage 0.0, :margin 0.0, :plot \"port-value\"}"}
-;; <=
-
-;; @@
-(plot data-to-plot :plot :date :daily-ret false)
-;; @@
-;; ->
-;;; [I 02:14:03.874 Clojupyter] oz.core:273 -- Starting up server on port 10666
-;;; [I 02:14:04.159 Clojupyter] oz.server:142 -- Web server is running at `http://localhost:10666/`
 ;;; 
-;; <-
-;; =>
-;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
-;; <=
+;;; Below are example codes that show how to plot different variables in the portfolio record and the evaluation record. Each chart opens in the browser.
+;; **
 
 ;; **
-;;; ### 2. Plot volatility
+;;; #### 1. Portfolio daily return
 ;; **
 
 ;; @@
-(def data (deref eval-record))
+(def data-to-plot (map #(assoc % :plot "portfolio") (deref portfolio-value)))
+(plot data-to-plot :plot :date :daily-ret true)
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-var'>#&#x27;clojure-backtesting.updated_examples.simpleStrat/data</span>","value":"#'clojure-backtesting.updated_examples.simpleStrat/data"}
+;;; {"type":"html","content":"<span class='clj-string'>&quot;The chart opens in the browser when this cell runs in the Gorilla REPL.&quot;</span>","value":"\"The chart opens in the browser when this cell runs in the Gorilla REPL.\""}
 ;; <=
 
-;; @@
-(first data)
-;; @@
-;; =>
-;;; {"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:date</span>","value":":date"},{"type":"html","content":"<span class='clj-string'>&quot;1980-12-17&quot;</span>","value":"\"1980-12-17\""}],"value":"[:date \"1980-12-17\"]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:tot-value</span>","value":":tot-value"},{"type":"html","content":"<span class='clj-double'>10000.0</span>","value":"10000.0"}],"value":"[:tot-value 10000.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:vol</span>","value":":vol"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:vol 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:r-vol</span>","value":":r-vol"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:r-vol 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:sharpe</span>","value":":sharpe"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:sharpe 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:r-sharpe</span>","value":":r-sharpe"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:r-sharpe 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:pnl-pt</span>","value":":pnl-pt"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:pnl-pt 0.0]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:max-drawdown</span>","value":":max-drawdown"},{"type":"html","content":"<span class='clj-double'>0.0</span>","value":"0.0"}],"value":"[:max-drawdown 0.0]"}],"value":"{:date \"1980-12-17\", :tot-value 10000.0, :vol 0.0, :r-vol 0.0, :sharpe 0.0, :r-sharpe 0.0, :pnl-pt 0.0, :max-drawdown 0.0}"}
-;; <=
+;; **
+;;; #### 2. Volatility
+;; **
 
 ;; @@
-; Add legend name to series
-(def data-to-plot
- (map #(assoc % :plot "volatility")
-  data))
-;; @@
-;; =>
-;;; {"type":"html","content":"<span class='clj-var'>#&#x27;clojure-backtesting.updated_examples.simpleStrat/data-to-plot</span>","value":"#'clojure-backtesting.updated_examples.simpleStrat/data-to-plot"}
-;; <=
-
-;; @@
-(print-eval-report)
-;; @@
-;; ->
-;;; 
-;;; |      :date | :tot-value |    :vol |  :r-vol |  :sharpe | :r-sharpe | :pnl-pt | :max-drawdown |
-;;; |------------+------------+---------+---------+----------+-----------+---------+---------------|
-;;; | 1980-12-17 |     $10000 | 0.0000% | 0.0000% |  0.0000% |   0.0000% |      $0 |        0.0000 |
-;;; | 1980-12-18 |     $10015 | 0.0000% | 0.0000% |  0.0000% |   0.0000% |      $7 |        0.0000 |
-;;; | 1980-12-19 |     $10042 | 0.0578% | 0.0578% |  3.1854% |   3.1854% |     $21 |      100.0000 |
-;;; | 1980-12-22 |     $10064 | 0.0517% | 0.0517% |  5.3929% |   5.3929% |     $21 |      100.0000 |
-;;; | 1980-12-23 |     $10078 | 0.0490% | 0.0490% |  6.9722% |   6.9722% |     $26 |      100.0000 |
-;;; | 1980-12-24 |     $10097 | 0.0461% | 0.0461% |  9.1301% |   9.1301% |     $24 |      100.0000 |
-;;; | 1980-12-26 |     $10119 | 0.0491% | 0.0491% | 10.4957% |  10.4957% |     $29 |      100.0000 |
-;;; | 1980-12-29 |     $10122 | 0.0473% | 0.0473% | 11.2136% |  11.2136% |     $24 |      100.0000 |
-;;; | 1980-12-30 |     $10119 | 0.0467% | 0.0467% | 11.0778% |  11.0778% |     $23 |      111.5205 |
-;;; 
-;; <-
-;; =>
-;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
-;; <=
-
-;; @@
+(def data-to-plot (map #(assoc % :plot "volatility") (deref eval-record)))
 (plot data-to-plot :plot :date :vol true)
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;;; {"type":"html","content":"<span class='clj-string'>&quot;The chart opens in the browser when this cell runs in the Gorilla REPL.&quot;</span>","value":"\"The chart opens in the browser when this cell runs in the Gorilla REPL.\""}
 ;; <=
 
 ;; **
-;;; ### 3. Plot sharpe ratio
+;;; #### 3. Sharpe ratio
 ;; **
 
 ;; @@
-(def data-to-plot
- (map #(assoc % :plot "sharpe ratio")
-  data))
-
+(def data-to-plot (map #(assoc % :plot "sharpe ratio") (deref eval-record)))
 (plot data-to-plot :plot :date :sharpe true)
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;;; {"type":"html","content":"<span class='clj-string'>&quot;The chart opens in the browser when this cell runs in the Gorilla REPL.&quot;</span>","value":"\"The chart opens in the browser when this cell runs in the Gorilla REPL.\""}
 ;; <=
 
 ;; **
-;;; ### 4. Plot stock price
+;;; #### 4. Fill prices
 ;; **
 
 ;; @@
-(def data (deref order-record))
-;; @@
-;; =>
-;;; {"type":"html","content":"<span class='clj-var'>#&#x27;clojure-backtesting.updated_examples.simpleStrat/data</span>","value":"#'clojure-backtesting.updated_examples.simpleStrat/data"}
-;; <=
-
-;; @@
-(first data)
-;; @@
-;; =>
-;;; {"type":"list-like","open":"<span class='clj-map'>{</span>","close":"<span class='clj-map'>}</span>","separator":", ","items":[{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:date</span>","value":":date"},{"type":"html","content":"<span class='clj-string'>&quot;1980-12-17&quot;</span>","value":"\"1980-12-17\""}],"value":"[:date \"1980-12-17\"]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:permno</span>","value":":permno"},{"type":"html","content":"<span class='clj-string'>&quot;14593&quot;</span>","value":"\"14593\""}],"value":"[:permno \"14593\"]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:price</span>","value":":price"},{"type":"html","content":"<span class='clj-double'>25.9375</span>","value":"25.9375"}],"value":"[:price 25.9375]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:aprc</span>","value":":aprc"},{"type":"html","content":"<span class='clj-string'>&quot;25.35&quot;</span>","value":"\"25.35\""}],"value":"[:aprc \"25.35\"]"},{"type":"list-like","open":"","close":"","separator":" ","items":[{"type":"html","content":"<span class='clj-keyword'>:quantity</span>","value":":quantity"},{"type":"html","content":"<span class='clj-long'>50</span>","value":"50"}],"value":"[:quantity 50]"}],"value":"{:date \"1980-12-17\", :permno \"14593\", :price 25.9375, :aprc \"25.35\", :quantity 50}"}
-;; <=
-
-;; @@
-(def data-to-plot
- (map #(assoc % :plot "price")
-  data))
-
+(def data-to-plot (map #(assoc % :plot "price") (deref order-record)))
 (plot data-to-plot :plot :date :price true)
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-nil'>nil</span>","value":"nil"}
+;;; {"type":"html","content":"<span class='clj-string'>&quot;The chart opens in the browser when this cell runs in the Gorilla REPL.&quot;</span>","value":"\"The chart opens in the browser when this cell runs in the Gorilla REPL.\""}
 ;; <=

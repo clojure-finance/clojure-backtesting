@@ -1,6 +1,5 @@
 (ns clojure-backtesting.automation
-  (:require [java-time :as jt]
-            [clojure-backtesting.counter :refer :all]))
+  (:require [clojure-backtesting.counter :refer :all]))
 
 (defmacro action
   "Similar to clojure.core/defn, but saves the function's definition in the var's
@@ -23,13 +22,16 @@
 (def dispatch-history (atom []))
 
 (defn set-automation
-  "This function set an automated order request that will be triggered by a certain condition.
-   Will return a unique int as identifier to the condition"
+  "Registers `condition`, a no-argument function checked at the end of every
+   trading day, and `order-function`, run when it returns true. Returns an
+   integer id for cancel-automation. `:max-dispatch` caps how many times it
+   can run; `:expiration` is the number of trading days after today it
+   stays active. Both default to unlimited."
   [condition order-function & {:keys [max-dispatch expiration] :or {max-dispatch nil expiration nil}}]
   (swap! auto-counter inc)
-  (swap! automated-conditions assoc (deref auto-counter) [condition order-function (atom max-dispatch) (if expiration
-                                                                                                         (jt/plus (jt/local-date "yyyy-MM-dd" (get-date)) (jt/days expiration))
-                                                                                                         nil)])
+  (swap! automated-conditions assoc (deref auto-counter)
+         [condition order-function (atom max-dispatch)
+          (when expiration (date-after-n-trading-days (get-date) expiration))])
   (deref auto-counter))
 
 (defn cancel-automation

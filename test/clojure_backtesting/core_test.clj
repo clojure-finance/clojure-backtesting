@@ -104,7 +104,7 @@
       (incur -10 5.0)
       (is (close? 999.0 (get-in @portfolio [:cash :tot-val])) "sell of 50 also costs 0.5"))))
 
-(deftest compustat-join-uses-latest-prior-filing
+(deftest compustat-join-uses-latest-public-filing
   (let [dir (doto (io/file (System/getProperty "java.io.tmpdir")
                            (str "clojure-backtesting-test-" (System/nanoTime)))
               .mkdirs)
@@ -112,33 +112,33 @@
                        (let [f (io/file dir datadate)]
                          (spit f (str/join "\n" (map str rows)))
                          f))
-        q1 (write-filing "2020-03-31" [["10001" "2020-03-31" "q1-a"] ["10002" "2020-03-31" "q1-b"]])
-        q2 (write-filing "2020-06-30" [["10001" "2020-06-30" "q2-a"]])
+        ;; columns: PERMNO datadate rdq atq
+        q1 (write-filing "2020-03-31" [["10001" "2020-03-31" "2020-05-01" "q1-a"]
+                                       ["10002" "2020-03-31" "2020-05-01" "q1-b"]])
+        q2 (write-filing "2020-06-30" [["10001" "2020-06-30" "2020-08-10" "q2-a"]])
         crsp [{:PERMNO "10001" :date "x" :PRC 1.0}
               {:PERMNO "10002" :date "x" :PRC 2.0}
-              {:PERMNO "10003" :date "x" :PRC 3.0}]]
+              {:PERMNO "10003" :date "x" :PRC 3.0}]
+        atq (fn [date] (mapv :atq (merge-data crsp date)))]
     (try
-      (with-redefs [headers2 [:PERMNO :datadate :atq]
+      (with-redefs [headers2 [:PERMNO :datadate :rdq :atq]
                     data-files2 (sorted-map "2020-03-31" q1 "2020-06-30" q2)]
-        (testing "the latest filing at or before the date is used, never a later one"
-          (let [joined (merge-data crsp "2020-05-15")]
-            (is (= "q1-a" (:atq (first joined))))
-            (is (= "q1-b" (:atq (second joined))))
-            (is (nil? (:atq (nth joined 2))) "unmatched security is left alone")
-            (is (= 3.0 (:PRC (nth joined 2))))))
-        (testing "a filing dated exactly on the date is used"
-          (is (= "q2-a" (:atq (first (merge-data crsp "2020-06-30"))))))
-        (testing "once a newer filing exists the older one is no longer used"
-          (let [joined (merge-data crsp "2020-07-15")]
-            (is (= "q2-a" (:atq (first joined))))
-            (is (nil? (:atq (second joined))) "security absent from the latest filing gets nothing")))
+        (testing "a filing is not used before its report date"
+          (is (= crsp (merge-data crsp "2020-04-15"))))
+        (testing "from the report date on, the filing is joined; unmatched rows are left alone"
+          (is (= ["q1-a" "q1-b" nil] (atq "2020-05-15")))
+          (is (= 3.0 (:PRC (nth (merge-data crsp "2020-05-15") 2)))))
+        (testing "a newer filing dated today but not yet reported is skipped"
+          (is (= ["q1-a" "q1-b" nil] (atq "2020-06-30")))
+          (is (= ["q1-a" "q1-b" nil] (atq "2020-07-15"))))
+        (testing "once reported, the newer filing wins; a security missing from it keeps the older one"
+          (is (= ["q2-a" "q1-b" nil] (atq "2020-08-15"))))
         (testing "no filing before the date means no join"
           (is (= crsp (merge-data crsp "2020-01-15"))))
-        (testing "a filing more than three months old is not joined"
-          (is (= crsp (merge-data crsp "2020-12-15")))))
+        (testing "filings older than MERGE-MAX-AGE-MONTHS are not joined"
+          (is (= crsp (merge-data crsp "2021-02-15")))))
       (finally
         (doseq [f (reverse (file-seq dir))] (io/delete-file f true))))))
-
 (deftest rsi-wilder-smoothing
   (let [wilder #'clojure-backtesting.indicators/wilder-update
         rsi-value #'clojure-backtesting.indicators/rsi-value]
