@@ -150,16 +150,32 @@
       position)
     {:price (PRICE-KEY info) :aprc (:APRC info) :cfacpr (:CFACPR info) :quantity 0.0 :tot-val 0.0}))
 
+(defn write-off!
+  "Books the holding in `permno` as cash at its last value and removes it,
+   for a security that has stopped trading."
+  [permno]
+  (credit-cash! (get-in (deref portfolio) [permno :tot-val] 0.0))
+  (swap! portfolio dissoc permno))
+
 (defn revalue-holdings!
   "Brings every holding that has a row in today's `info-map` to today's
-   price, crediting dividends to cash, then records today's portfolio value."
+   price, crediting dividends to cash, then records today's portfolio value.
+   A holding with no row for MISSING-DAYS-LIMIT trading days in a row is
+   treated as delisted and written off to cash at its last value."
   [date info-map]
   (doseq [[permno position] (deref portfolio)
           :when (not= permno :cash)]
-    (when-let [info (get info-map permno)]
-      (let [[new-position payout] (revalue-position position info)]
+    (if-let [info (get info-map permno)]
+      (let [[new-position payout] (revalue-position (dissoc position :missing) info)]
         (swap! portfolio assoc permno new-position)
-        (credit-cash! payout))))
+        (credit-cash! payout))
+      (let [missing (inc (get position :missing 0))]
+        (if (>= missing MISSING-DAYS-LIMIT)
+          (do
+            (println (str date ": " permno " has had no price for " missing " trading days; its last value "
+                          (format "%.2f" (double (:tot-val position))) " is booked as cash."))
+            (write-off! permno))
+          (swap! portfolio assoc-in [permno :missing] missing)))))
   (record-portfolio-value date))
 
   ;; Update the portfolio map
@@ -185,7 +201,7 @@
         cash (double (get-in p [:cash :tot-val]))
         values (map :tot-val (vals (dissoc p :cash)))
         long-value (reduce + 0.0 (filter pos? values))
-        short-value (- (reduce + 0.0 (filter neg? values)))]
+        short-value (- 0.0 (reduce + 0.0 (filter neg? values)))]
     {:cash cash
      :long long-value
      :short short-value
