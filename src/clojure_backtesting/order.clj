@@ -134,7 +134,7 @@
   []
   ;; close all positions
   (if (not (deref TERMINATED))
-    (do
+    (let [orders-before (count (deref order-record))]
       (doseq [[security] (deref portfolio)
               :when (not= security :cash)]
         (if-let [info (get (get-info-map) security)]
@@ -143,6 +143,7 @@
             (println (str (get-date) ": " security " has no price today; its last value is booked as cash."))
             (write-off! security)
             (record-portfolio-value (get-date)))))
+      (reset! close-out-orders (- (count (deref order-record)) orders-before))
       (update-eval-report)
       (close-records!)
       (reset! pending-order (sorted-map))

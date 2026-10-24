@@ -37,12 +37,14 @@
     (sample-sd xs)))
 
 (defn volatility
-  "This function returns the volatility of the portfolio in %."
+  "The volatility of the portfolio: sample standard deviation of all daily
+   log returns so far, as a fraction (the formatted report shows it in %)."
   []
   (sd-or-zero (get-daily-returns)))
 
 (defn rolling-volatility
-  "This function returns the volatility of the portfolio over the rolling time window in %."
+  "The volatility of the portfolio over the rolling time window, as a
+   fraction (the formatted report shows it in %)."
   []
   (sd-or-zero (take-last (deref ROLLING-TIME-WINDOW) (get-daily-returns))))
 
@@ -66,9 +68,12 @@
   (sharpe-of (take-last (deref ROLLING-TIME-WINDOW) (get-daily-returns))))
 
 (defn pnl-per-trade
-  "This function returns the profit/loss per trade in dollars."
+  "The profit/loss per trade in dollars: total profit over the number of
+   orders the strategy placed, not counting those end-order places to
+   close positions."
   []
-  (/ (- (portfolio-total) (deref init-capital)) (count (deref order-record))))
+  (/ (- (portfolio-total) (deref init-capital))
+     (- (count (deref order-record)) (deref close-out-orders))))
 
 (defn max-drawdown
   "This function returns the maximum drawdown: the largest peak-to-trough

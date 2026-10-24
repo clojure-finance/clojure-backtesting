@@ -338,7 +338,9 @@
     (let [report (last (deref eval-record))]
       (is (every? #(and (number? %) (not (Double/isNaN (double %))))
                   ((juxt :tot-value :vol :sharpe :max-drawdown :pnl-pt) report)))
-      (is (<= 0.0 (:max-drawdown report) 1.0)))
+      (is (<= 0.0 (:max-drawdown report) 1.0))
+      (is (close? (/ (- (:tot-value report) 100000) 2) (:pnl-pt report))
+          "pnl per trade counts the strategy's two orders, not the two close-outs"))
     (is (re-find #"%$" (:max-drawdown (last (deref eval-report-data))))
         "the formatted drawdown is a percentage")))
 

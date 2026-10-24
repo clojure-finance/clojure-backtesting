@@ -13,6 +13,7 @@
 (def portfolio (atom {:cash {:tot-val 0}}))
 (def portfolio-value (atom []))
 (def order-record (atom []))
+(def close-out-orders (atom 0)) ; how many orders in order-record end-order placed to close positions
 (def eval-report-data (atom [])) ; evaluation report rows, formatted for printing
 (def eval-record (atom [])) ; evaluation report rows, as numbers
 (def init-capital (atom 0))
@@ -58,6 +59,7 @@
     (open-record! portvalue-wrtr "out_portfolio_value_record.csv" "date,tot-value,daily-ret,tot-ret,loan,short,leverage,margin\n")
     (open-record! evalreport-wrtr "out_evaluation_report.csv" "date,tot-value,vol,r-vol,sharpe,r-sharpe,pnl-pt,max-drawdown\n"))
   (reset! order-record [])
+  (reset! close-out-orders 0)
   (reset! init-capital capital)
   (reset! eval-report-data [])
   (reset! eval-record [])

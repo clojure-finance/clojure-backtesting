@@ -124,11 +124,16 @@
           security-index (.indexOf ^java.util.List headers TICKER-KEY)]
       (reset! initial-price {})
       (reset! cum-ret {})
-      (println "The below process will take a few hours to run for the first time.")
-      (doseq [[date file] data-files]
-        (let [data (with-open [rdr (io/reader file)]
-                     (set (map edn/read-string (line-seq rdr))))
-              new-data (add-aprc-file data price-index ret-index security-index)]
-          (spit file (str/join "\n" (map str new-data)))
-          (println date)))
+      (println (str "Adding APRC to " (count data-files) " trading days of data (once per dataset)."))
+      (reduce (fn [prev-year [date file]]
+                (let [year (subs (str date) 0 4)
+                      data (with-open [rdr (io/reader file)]
+                             (set (map edn/read-string (line-seq rdr))))
+                      new-data (add-aprc-file data price-index ret-index security-index)]
+                  (when (not= year prev-year)
+                    (println year))
+                  (spit file (str/join "\n" (map str new-data)))
+                  year))
+              nil
+              data-files)
       (spit (str dir "header") (str (vec (concat headers [:INIT-PRICE :APRC :CUM-RET])))))))
