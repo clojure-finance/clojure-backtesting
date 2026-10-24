@@ -389,3 +389,33 @@
     (is (some #(> (Math/abs (double %)) 1e-6) (map :daily-ret entries)))
     (is (close? (Math/log (/ (:tot-value (last entries)) 100000.0)) (:tot-ret (last entries)) 1e-12)))
   (end-order))
+
+(defn- ema-step
+  "One EMA step with cycle n from prev to x."
+  [n x prev]
+  (let [k (/ 2.0 (+ n 1))]
+    (+ (* k x) (* (- 1 k) prev))))
+
+(deftest indicators-hold-through-a-gap
+  (init-portfolio "1990-01-02" 100000)
+  (let [gen (MACD-generator 3 5 10)
+        both (fn [] [(EMA ccc) (gen ccc)])]
+    (while (neg? (compare (get-date) "1990-02-02"))
+      (both)
+      (next-date))
+    (let [[ema-before [_ signal-before short-before long-before] :as before] (both)]
+      (is (some? ema-before))
+      (is (some? signal-before))
+      (step-to! "1990-02-07")
+      (is (nil? (price ccc)))
+      (is (= before (both)) "EMA and MACD keep their last values while there is no price")
+      (step-to! "1990-02-12")
+      (let [p (price ccc)
+            [ema-after [macd signal short long]] (both)]
+        (is (some? p))
+        (is (close? (ema-step EMA-CYCLE p ema-before) ema-after) "one step from the held value")
+        (is (close? (ema-step 5 p short-before) short))
+        (is (close? (ema-step 10 p long-before) long))
+        (is (close? (- short long) macd))
+        (is (close? (ema-step 3 macd signal-before) signal)))))
+  (end-order))

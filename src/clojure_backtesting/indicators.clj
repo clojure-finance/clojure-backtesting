@@ -45,13 +45,14 @@
 (def ^:dynamic MACD-keys (atom []))
 
 (defn- _EMA
-  "Returns the exponential moving average (EMA) using the recursion formula."
+  "Returns the exponential moving average (EMA) using the recursion formula,
+   or the previous EMA unchanged on a day without a price."
   ([price]
    price)
   ([prev-ema price]
    (if (and prev-ema price)
      (+ (* EMA-K price) (* (- 1 EMA-K) prev-ema))
-     price)))
+     (or prev-ema price))))
 
 (defn EMA
   "Get stable EMA of a security today."
@@ -104,22 +105,24 @@
       func)))
 
 (defn- _MACD-short
-  "Returns the exponential moving average (EMA) using the recursion formula."
+  "Returns the exponential moving average (EMA) using the recursion formula,
+   or the previous EMA unchanged on a day without a price."
   ([price]
    price)
   ([prev-ema price]
    (if (and prev-ema price)
      (+ (* MACD-SHORT-K price) (* (- 1 MACD-SHORT-K) prev-ema))
-     price)))
+     (or prev-ema price))))
 
 (defn- _MACD-long
-  "Returns the exponential moving average (EMA) using the recursion formula."
+  "Returns the exponential moving average (EMA) using the recursion formula,
+   or the previous EMA unchanged on a day without a price."
   ([price]
    price)
   ([prev-ema price]
    (if (and prev-ema price)
      (+ (* MACD-LONG-K price) (* (- 1 MACD-LONG-K) prev-ema))
-     price)))
+     (or prev-ema price))))
 
 (defn- MACD-short
   "compute EMA in MACD"
@@ -164,10 +167,11 @@
 (defn- next-signal
   "Advances a signal-line state by today's MACD value `macd`: collects the
    first n values, seeds the line with their mean, then applies the EMA
-   recursion with smoothing k. Steps at most once per date."
+   recursion with smoothing k. Steps at most once per date; a day without
+   a price (macd nil) leaves the state as it is."
   [state date macd n k]
   (cond
-    (= date (:date state)) state
+    (or (nil? macd) (= date (:date state))) state
     (:ema state) {:date date :ema (+ (* k macd) (* (- 1 k) (:ema state)))}
     :else (let [seed (conj (:seed state []) macd)]
             (if (= (count seed) n)
@@ -181,7 +185,8 @@
   [id permno short long n k]
   (when (and short long)
     (let [macd (- short long)
-          state (get (swap! MACD-signals update [id permno] next-signal (get-date) macd n k)
+          today (when (get-permno-price permno) macd)
+          state (get (swap! MACD-signals update [id permno] next-signal (get-date) today n k)
                      [id permno])]
       (when-let [signal (:ema state)]
         [macd signal short long]))))
