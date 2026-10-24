@@ -419,3 +419,32 @@
         (is (close? (- short long) macd))
         (is (close? (ema-step 3 macd signal-before) signal)))))
   (end-order))
+
+(defn- wilder-rsi
+  "RSI after one Wilder step with cycle n from [avg-gain avg-loss] by `change`."
+  [[g l] change n]
+  (let [g (/ (+ (* (- n 1) g) (max change 0.0)) n)
+        l (/ (+ (* (- n 1) l) (max (- change) 0.0)) n)]
+    (if (zero? l) 100 (- 100 (/ 100 (+ 1 (/ g l)))))))
+
+(deftest rsi-holds-through-a-gap
+  (init-portfolio "1990-01-02" 100000)
+  (let [gen (RSI-generator 5)
+        both (fn [] [(RSI ccc) (gen ccc)])
+        states (fn [] [(get RS-map ccc) (get (get (deref RSI-gen-map) 5) ccc)])]
+    (while (neg? (compare (get-date) "1990-02-02"))
+      (both)
+      (next-date))
+    (let [before (both)
+          [[_ rs14 last-price] [_ rs5]] (states)]
+      (is (every? some? before))
+      (is (= last-price (price ccc)))
+      (step-to! "1990-02-07")
+      (is (nil? (price ccc)))
+      (is (= before (both)) "RSI keeps its last value while there is no price")
+      (step-to! "1990-02-12")
+      (let [change (- (price ccc) last-price)
+            [rsi rsi5] (both)]
+        (is (close? (wilder-rsi rs14 change 14) rsi) "the change across the gap is one step")
+        (is (close? (wilder-rsi rs5 change 5) rsi5)))))
+  (end-order))

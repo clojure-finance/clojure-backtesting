@@ -264,27 +264,33 @@
 (def ^:dynamic RS-map (transient {}))
 (def ^:dynamic RS-keys (atom []))
 
+(defn- rsi-step
+  "Advances an RSI state [date [avg-gain avg-loss] last-price] to today with
+   cycle n, or seeds it with RS; nil while it cannot be seeded. A day without
+   a price leaves the state as it is, so the next change is measured from the
+   last known price."
+  [state permno n]
+  (let [date (get-date)
+        price (get-permno-price permno)]
+    (cond
+      (and state (or (= (first state) date) (nil? price))) state
+      state (let [[_ rs last-price] state]
+              [date (wilder-update rs (- price last-price) n) price])
+      :else (when-let [rs (RS permno n)]
+              [date rs price]))))
+
 (defn RSI
   "Returns the Relative Strength Index (RSI) over RSI-CYCLE days, seeded with
-   the simple average gain and loss and then Wilder-smoothed day by day."
+   the simple average gain and loss and then Wilder-smoothed day by day.
+   Through days without a price it keeps its last value; the change across
+   the gap counts as one day's change."
   [permno]
-  (try
-    (if-let [prev-RS (get RS-map permno)]
-      (if (= (first prev-RS) (get-date))
-        (rsi-value (nth prev-RS 1))
-        (let [curr-price (get-permno-price permno)
-              last-price (PRICE-KEY (first (get-permno-prev-n-days permno 1)))
-              rs (wilder-update (nth prev-RS 1) (- curr-price last-price) RSI-CYCLE)]
-          (def RS-map (assoc! RS-map permno [(get-date) rs]))
-          (rsi-value rs)))
-      (let [tmp (RS permno RSI-CYCLE)]
-        (if tmp
-          (do
-            (swap! RS-keys conj permno)
-            (def RS-map (assoc! RS-map permno [(get-date) tmp]))
-            (rsi-value tmp))
-          nil)))
-    (catch Exception e nil)))
+  (let [prev (get RS-map permno)]
+    (when-let [state (rsi-step prev permno RSI-CYCLE)]
+      (when (nil? prev)
+        (swap! RS-keys conj permno))
+      (def RS-map (assoc! RS-map permno state))
+      (rsi-value (second state)))))
 
 (def RSI-gen-map (atom {}))
 (def RSI-gen-keys (atom {}))
@@ -292,31 +298,19 @@
 (def RSI-gen-sizes (atom []))
 
 (defn RSI-generator
+  "Returns a function of permno like `RSI` but with cycle `size`."
   [size]
   (if-let [func (get (deref RSI-gen-funcs) size)]
     func
     (let [id size
           func (fn [permno]
-                 (binding [RSI-CYCLE size
-                           RS-map (get (deref RSI-gen-map) id)
-                           RS-keys (get (deref RSI-gen-keys) id)]
-                   (try
-                     (if-let [prev-RS (get RS-map permno)]
-                       (if (= (first prev-RS) (get-date))
-                         (rsi-value (nth prev-RS 1))
-                         (let [curr-price (get-permno-price permno)
-                               last-price (PRICE-KEY (first (get-permno-prev-n-days permno 1)))
-                               rs (wilder-update (nth prev-RS 1) (- curr-price last-price) RSI-CYCLE)]
-                           (swap! RSI-gen-map assoc id (assoc! RS-map permno [(get-date) rs]))
-                           (rsi-value rs)))
-                       (let [tmp (RS permno RSI-CYCLE)]
-                         (if tmp
-                           (do
-                             (swap! RS-keys conj permno)
-                             (swap! RSI-gen-map assoc id (assoc! RS-map permno [(get-date) tmp]))
-                             (rsi-value tmp))
-                           nil)))
-                     (catch Exception e nil))))]
+                 (let [rs-map (get (deref RSI-gen-map) id)
+                       prev (get rs-map permno)]
+                   (when-let [state (rsi-step prev permno size)]
+                     (when (nil? prev)
+                       (swap! (get (deref RSI-gen-keys) id) conj permno))
+                     (swap! RSI-gen-map assoc id (assoc! rs-map permno state))
+                     (rsi-value (second state)))))]
       (swap! RSI-gen-map assoc id (transient {}))
       (swap! RSI-gen-keys assoc id (atom []))
       (swap! RSI-gen-funcs assoc id func)
