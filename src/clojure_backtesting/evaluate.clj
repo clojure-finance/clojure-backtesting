@@ -122,6 +122,6 @@
                                     :sharpe (format "%.4f" sharpe-ratio-data)
                                     :r-sharpe (format "%.4f" rolling-sharpe-ratio-data)
                                     :pnl-pt (str "$" (int pnl-per-trade-data))
-                                    :max-drawdown (str (format "%.4f" (* max-drawdown-data 100)))})
+                                    :max-drawdown (str (format "%.4f" (* max-drawdown-data 100)) "%")})
       ; output to file
       (write-record! evalreport-wrtr (format "%s,%f,%f,%f,%f,%f,%f,%f\n" date (double total-val-data) (double volatility-data) (double rolling-volatility-data) (double sharpe-ratio-data) (double rolling-sharpe-ratio-data) (double pnl-per-trade-data) (double max-drawdown-data))))))

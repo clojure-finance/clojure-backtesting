@@ -87,6 +87,13 @@
         (is (close? 990.0 (:tot-value e)))
         (is (close? 510.0 (:loan e)))
         (is (close? (Math/log 0.99) (:daily-ret e)))))
+    (testing "a second entry on the same day replaces the first and keeps yesterday as the base"
+      (update-loan "d2" 10.0 true)
+      (let [e (last @portfolio-value)]
+        (is (= ["d0" "d1" "d2"] (map :date @portfolio-value)))
+        (is (close? 980.0 (:tot-value e)))
+        (is (close? (Math/log 0.98) (:daily-ret e)))
+        (is (close? (Math/log 0.98) (:tot-ret e)))))
     (testing "selling the position repays the loan"
       (swap! portfolio assoc :cash {:tot-val 990.0} "A" {:tot-val 0.0})
       (update-loan "d3" 0 false)
@@ -94,6 +101,21 @@
         (is (close? 0.0 (:loan e)))
         (is (close? 0.0 (:leverage e)))
         (is (close? 1.0 (:margin e)))))))
+
+(deftest first-day-return-is-from-starting-capital
+  (with-redefs [portfolio (atom {:cash {:tot-val 1000.0}})
+                portfolio-value (atom [{:date "d0" :tot-value 1000.0 :daily-ret 0.0 :tot-ret 0.0
+                                        :loan 0.0 :leverage 0.0 :margin 1.0}])
+                init-capital (atom 1000.0)
+                LOAN-EXIST (atom false)
+                portvalue-wrtr (atom nil)]
+    (update-loan "d0" 10.0 true)
+    (update-loan "d0" 10.0 true)
+    (let [[e :as entries] @portfolio-value]
+      (is (= 1 (count entries)))
+      (is (close? 980.0 (:tot-value e)))
+      (is (close? (Math/log 0.98) (:daily-ret e)))
+      (is (close? (Math/log 0.98) (:tot-ret e))))))
 
 (deftest transaction-cost-charged-on-sells
   (let [incur #'clojure-backtesting.order/incur-transaction-cost]

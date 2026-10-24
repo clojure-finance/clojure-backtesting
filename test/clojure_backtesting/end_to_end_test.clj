@@ -322,6 +322,10 @@
     (update-eval-report))
   (is (< 0 (RSI aaa) 100))
   (is (pos? (EMA aaa)))
+  (is (nil? (MACD aaa)) "the signal line needs 9 MACD values")
+  (dotimes [_ 5]
+    (next-date)
+    (update-eval-report))
   (is (= 4 (count (MACD aaa))))
   (is (pos? (ATR aaa 14 1.0)))
   (is (number? (ROC aaa 5)))
@@ -334,4 +338,54 @@
     (let [report (last (deref eval-record))]
       (is (every? #(and (number? %) (not (Double/isNaN (double %))))
                   ((juxt :tot-value :vol :sharpe :max-drawdown :pnl-pt) report)))
-      (is (<= 0.0 (:max-drawdown report) 1.0)))))
+      (is (<= 0.0 (:max-drawdown report) 1.0)))
+    (is (re-find #"%$" (:max-drawdown (last (deref eval-report-data))))
+        "the formatted drawdown is a percentage")))
+
+(defn- ema-series
+  "EMAs of xs with cycle n, seeded with the mean of the first n values; nil
+   before that."
+  [n xs]
+  (let [k (/ 2.0 (+ n 1))
+        seed (/ (reduce + (take n xs)) n)]
+    (concat (repeat (dec n) nil)
+            (reductions (fn [ema x] (+ (* k x) (* (- 1 k) ema))) seed (drop n xs)))))
+
+(deftest macd-signal-is-an-ema-of-macd
+  (init-portfolio "1990-01-02" 100000)
+  (let [days 45
+        results (vec (for [_ (range days)]
+                       (let [r [(price aaa) (MACD aaa)]]
+                         (next-date)
+                         r)))
+        prices (map first results)
+        macd (map (fn [s l] (when (and s l) (- s l))) (ema-series 12 prices) (ema-series 26 prices))
+        signal (concat (repeat 25 nil) (ema-series 9 (drop 25 macd)))]
+    (is (every? some? prices))
+    (is (every? nil? (map second (take 33 results))) "nil until 26 + 9 - 1 closes")
+    (doseq [[[_ actual] m s] (drop 33 (map vector results macd signal))]
+      (is (close? m (first actual)))
+      (is (close? s (second actual))))
+    (testing "a generator with the default cycles gives the same values"
+      (init-portfolio "1990-01-02" 100000)
+      (let [gen (MACD-generator 9 12 26)]
+        (dotimes [_ (dec days)]
+          (gen aaa)
+          (next-date))
+        (is (close? (last signal) (second (gen aaa)))))))
+  (end-order))
+
+(deftest daily-returns-span-trading-days
+  (init-portfolio "1990-01-02" 100000)
+  (dotimes [_ 15]
+    (order aaa 10)
+    (order bbb 5)
+    (next-date))
+  (let [entries (deref portfolio-value)]
+    (is (apply distinct? (map :date entries)) "one entry per trading day")
+    (doseq [[prev curr] (partition 2 1 entries)]
+      (is (close? (Math/log (/ (:tot-value curr) (:tot-value prev))) (:daily-ret curr) 1e-12)
+          "the daily return is measured from the previous day, even on days with fills"))
+    (is (some #(> (Math/abs (double %)) 1e-6) (map :daily-ret entries)))
+    (is (close? (Math/log (/ (:tot-value (last entries)) 100000.0)) (:tot-ret (last entries)) 1e-12)))
+  (end-order))

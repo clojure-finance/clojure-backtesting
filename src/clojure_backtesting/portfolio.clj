@@ -211,13 +211,18 @@
 
 (defn record-portfolio-value
   "Appends (or replaces) today's entry in the portfolio-value vector from
-   the current portfolio map: equity as :tot-value, its log return, the
-   cumulative return, cash borrowed (:loan), the value of borrowed stock
-   (:short), :leverage = (loan + short) / equity and :margin = equity /
-   gross position value (1.0 with no positions)."
+   the current portfolio map: equity as :tot-value, its log return since
+   the previous trading day's entry (or since the starting capital on the
+   first day), the cumulative return, cash borrowed (:loan), the value of
+   borrowed stock (:short), :leverage = (loan + short) / equity and
+   :margin = equity / gross position value (1.0 with no positions)."
   [date]
   (let [{:keys [equity gross loan short]} (portfolio-exposure)
-        prev (last (deref portfolio-value))
+        entries (deref portfolio-value)
+        ;; today's entry, if already recorded, is replaced, so the return is
+        ;; measured from the last entry before today
+        earlier (if (= (:date (peek entries)) date) (pop entries) entries)
+        prev (or (peek earlier) {:tot-value (deref init-capital) :tot-ret 0.0})
         ret (log-return equity (:tot-value prev))
         tot-ret (+ (:tot-ret prev) ret)
         margin (if (pos? gross) (/ equity gross) 1.0)
@@ -226,7 +231,7 @@
                :loan loan :short short :leverage leverage :margin margin}]
     (when (or (pos? loan) (pos? short))
       (reset! LOAN-EXIST true))
-    (swap! portfolio-value (fn [entries] (conj (if (= (:date prev) date) (pop entries) entries) entry)))
+    (reset! portfolio-value (conj earlier entry))
     (write-record! portvalue-wrtr (format "%s,%f,%f,%f,%f,%f,%f,%f\n" date equity ret tot-ret loan short leverage margin))))
 
 ;; Main function to update portfolio map + portfolio-value record when placing an order

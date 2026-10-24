@@ -41,7 +41,7 @@
 
 (def ^:dynamic EMA-map (transient {}))
 (def ^:dynamic EMA-keys (atom []))
-(def ^:dynamic MACD-map (transient {:MACD-sig (transient {}) :MACD-short (transient {}) :MACD-long (transient {})}))
+(def ^:dynamic MACD-map (transient {:MACD-short (transient {}) :MACD-long (transient {})}))
 (def ^:dynamic MACD-keys (atom []))
 
 (defn- _EMA
@@ -103,15 +103,6 @@
       (swap! EMA-gen-sizes conj size)
       func)))
 
-(defn- _MACD-signal
-  "Returns the exponential moving average (EMA) using the recursion formula."
-  ([price]
-   price)
-  ([prev-ema price]
-   (if (and prev-ema price)
-     (+ (* MACD-SIGNAL-K price) (* (- 1 MACD-SIGNAL-K) prev-ema))
-     price)))
-
 (defn- _MACD-short
   "Returns the exponential moving average (EMA) using the recursion formula."
   ([price]
@@ -129,23 +120,6 @@
    (if (and prev-ema price)
      (+ (* MACD-LONG-K price) (* (- 1 MACD-LONG-K) prev-ema))
      price)))
-
-(defn- MACD-signal
-  "compute EMA in MACD"
-  [permno]
-  (let [key :MACD-sig
-        EMA-map (get MACD-map key)]
-    (if-let [prev-ema (get EMA-map permno)]
-      (if (< (compare (first prev-ema) (get-date)) 0)
-        (let [ema (_MACD-signal (nth prev-ema 1) (get-permno-price permno))]
-          (def MACD-map (assoc! MACD-map key (assoc! EMA-map permno [(get-date) ema])))
-          ema)
-        (nth prev-ema 1))
-      (if-let [avg (moving-avg permno MACD-SIGNAL)]
-        (do
-          (def MACD-map (assoc! MACD-map key (assoc! EMA-map permno [(get-date) avg])))
-          avg)
-        nil))))
 
 (defn- MACD-short
   "compute EMA in MACD"
@@ -181,31 +155,65 @@
           avg)
         nil))))
 
+;; Signal-line state per [MACD id, permno]: {:date d :seed [macd ...]} while
+;; the first n MACD values are collected, then {:date d :ema signal}.
+(def ^:private MACD-signals (atom {}))
+(def ^:private MACD-gen-funcs (atom {}))
+(def ^:private MACD-gen-keys (atom {}))
+
+(defn- next-signal
+  "Advances a signal-line state by today's MACD value `macd`: collects the
+   first n values, seeds the line with their mean, then applies the EMA
+   recursion with smoothing k. Steps at most once per date."
+  [state date macd n k]
+  (cond
+    (= date (:date state)) state
+    (:ema state) {:date date :ema (+ (* k macd) (* (- 1 k) (:ema state)))}
+    :else (let [seed (conj (:seed state []) macd)]
+            (if (= (count seed) n)
+              {:date date :ema (avg seed)}
+              {:date date :seed seed}))))
+
+(defn- macd-with-signal
+  "[MACD signal short long] from today's short and long EMAs, advancing the
+   signal line kept under [id permno]; nil until both EMAs exist and the
+   signal line has been seeded from n MACD values."
+  [id permno short long n k]
+  (when (and short long)
+    (let [macd (- short long)
+          state (get (swap! MACD-signals update [id permno] next-signal (get-date) macd n k)
+                     [id permno])]
+      (when-let [signal (:ema state)]
+        [macd signal short long]))))
+
 (defn MACD
-  "Returns a vector: (MACD, 9-day EMA (signal), 12-day EMA (short), 26-day EMA (long))"
+  "Returns [MACD signal short-EMA long-EMA] for a security today. MACD is the
+   MACD-SHORT-day EMA of the price minus the MACD-LONG-day EMA; the signal
+   line is the MACD-SIGNAL-day EMA of MACD, seeded with the mean of its first
+   MACD-SIGNAL values. nil until then: with the defaults, the first value
+   comes on the 34th close (26 for the long EMA, then 9 MACD values)."
   [permno]
   (when (and (get-permno-info permno)
              (nil? (get (get MACD-map :MACD-long) permno))
              (not (some #{permno} (deref MACD-keys))))
     (swap! MACD-keys conj permno))
-  (let [signal (MACD-signal permno)
-        short (MACD-short permno)
-        long (MACD-long permno)]
-    (when (and signal short long)
-      [(- short long) signal short long])))
+  (macd-with-signal :default permno (MACD-short permno) (MACD-long permno)
+                    MACD-SIGNAL MACD-SIGNAL-K))
 
 (defn MACD-generator
+  "Returns a function of permno like `MACD` but with its own cycles.
+   Generators with the same cycles share one function and its state."
   [signal short long]
-  (let [MACD-signal (EMA-generator signal)
-        MACD-short (EMA-generator short)
-        MACD-long (EMA-generator long)
-        func (fn [permno]
-               (let [signal (MACD-signal permno)
-                     short (MACD-short permno)
-                     long (MACD-long permno)]
-                 (when (and signal short long)
-                   [(- short long) signal short long])))]
-    func))
+  (let [id [signal short long]]
+    (or (get (deref MACD-gen-funcs) id)
+        (let [short-ema (EMA-generator short)
+              long-ema (EMA-generator long)
+              k (/ 2 (+ signal 1))
+              func (fn [permno]
+                     (swap! MACD-gen-keys update id (fnil conj #{}) permno)
+                     (macd-with-signal id permno (short-ema permno) (long-ema permno) signal k))]
+          (swap! MACD-gen-funcs assoc id func)
+          func))))
 
 (defn ROC
   "Returns the rate of change (ROC) over the last n trading days as a
@@ -380,8 +388,10 @@
   (doseq [id (deref EMA-gen-sizes)]
     (swap! EMA-gen-map assoc id (transient {}))
     (swap! EMA-gen-keys assoc id (atom [])))
-  (def MACD-map (transient {:MACD-sig (transient {}) :MACD-short (transient {}) :MACD-long (transient {})}))
+  (def MACD-map (transient {:MACD-short (transient {}) :MACD-long (transient {})}))
   (reset! MACD-keys [])
+  (reset! MACD-signals {})
+  (reset! MACD-gen-keys {})
   (def ^:dynamic RS-map (transient {}))
   (reset! RS-keys [])
   (doseq [id (deref RSI-gen-sizes)]
@@ -397,6 +407,9 @@
       ((get (deref EMA-gen-funcs) size) permno)))
   (doseq [permno (deref MACD-keys)]
     (MACD permno))
+  (doseq [[id permnos] (deref MACD-gen-keys)
+          permno permnos]
+    ((get (deref MACD-gen-funcs) id) permno))
   (doseq [permno (deref RS-keys)]
     (RSI permno))
   (doseq [size (deref RSI-gen-sizes)]
