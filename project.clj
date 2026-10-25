@@ -1,4 +1,4 @@
-(defproject clojure-backtesting "1.1.0"
+(defproject clojure-backtesting "1.1.1"
   :description "A day-stepping backtesting framework for CRSP-style daily security data."
   :url "https://github.com/clojure-finance/clojure-backtesting"
   :license {:name "MIT"
