@@ -180,6 +180,18 @@
     (is (close? 100000 (cash)))
     (end-order)))
 
+(deftest restart-drops-pending-orders
+  (init-portfolio "1990-01-02" 10000)
+  (order aaa 50)
+  (is (= 1 (count (deref pending-order))))
+  (init-portfolio "1990-01-02" 10000) ; restart mid-run, before the order fills
+  (is (empty? (deref pending-order)))
+  (next-date)
+  (is (empty? (deref order-record)) "the previous run's order does not fill")
+  (is (nil? (quantity aaa)))
+  (is (close? 10000 (cash)))
+  (end-order))
+
 (deftest delisted-holdings-are-written-off
   (testing "a holding that stops trading is booked as cash after MISSING-DAYS-LIMIT days"
     (with-redefs [MISSING-DAYS-LIMIT 3]

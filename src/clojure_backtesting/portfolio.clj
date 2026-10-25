@@ -45,11 +45,24 @@
       (.close ^java.io.Writer w)
       (reset! wrtr-atom nil))))
 
+;; Run state kept in namespaces that depend on this one, such as the pending
+;; orders in clojure-backtesting.order, is cleared through these hooks.
+(defonce ^:private init-hooks (atom {}))
+
+(defn on-init-portfolio
+  "Registers `f`, a function of no arguments, to be called by every
+   init-portfolio so that it clears run state this namespace cannot reach.
+   Registering again under the same `key` replaces the earlier hook."
+  [key f]
+  (swap! init-hooks assoc key f))
+
   ;; Backtester initialisation
 (defn init-portfolio
   "This function initialises or restarts the backtester at `date` with
-   `capital` in cash. When OUTPUT-DIR is set, the order, portfolio-value
-   and evaluation records are also written there as CSV files."
+   `capital` in cash. A restart clears the previous run: the portfolio,
+   its records, indicators, automations and any orders still pending.
+   When OUTPUT-DIR is set, the order, portfolio-value and evaluation
+   records are also written there as CSV files."
   [date capital]
   (assert (some #{:APRC} headers) "The main dataset has no APRC column. Load it with (load-dataset dir \"main\" add-aprc).")
   (assert (< (compare (init-date date) (first (last data-files))) 0) "Please do not start from the last date. Init portfolio fails.")
@@ -67,6 +80,7 @@
   (reset! portfolio-value [{:date (get-date) :tot-value capital :daily-ret 0.0 :tot-ret 0.0 :loan 0.0 :short 0.0 :leverage 0.0 :margin 1.0}])
   (reset-indicator-maps)
   (reset-automation)
+  (doseq [f (vals (deref init-hooks))] (f))
   (reset! LOAN-EXIST false)
   (reset! TERMINATED false)
   (str "Date: " (get-date) " Cash: $" (get (get (deref portfolio) :cash) :tot-val)))

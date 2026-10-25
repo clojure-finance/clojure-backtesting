@@ -85,6 +85,8 @@ Run `lein run` for a quick strategy demo. Regenerate the sample dataset with
   it for a single order.
 - On a given day, orders that reduce a position fill before orders that add
   to one, so sale proceeds can pay for purchases.
+- Calling `init-portfolio` again restarts the backtest and drops any orders
+  still pending, so they cannot fill in the new run.
 - Buying beyond your cash borrows the shortfall; selling shares you do not
   hold borrows the shares.
 - A holding whose security has had no price for `MISSING-DAYS-LIMIT` trading

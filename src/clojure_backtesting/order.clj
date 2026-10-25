@@ -91,6 +91,9 @@
 
 (def pending-order (atom (sorted-map)))
 
+;; A restart must not let the previous run's orders fill in the new one.
+(on-init-portfolio ::pending-order #(reset! pending-order (sorted-map)))
+
 (defn order
   "Queues an order of `quantity` shares of `permno`. It fills at the close
    of the next trading day on which the security has a price, up to
