@@ -93,6 +93,8 @@
         _data-files (into (sorted-map) (zipmap file-date files))]
     (cond
       (= name "main") (do
+                        ;; the eviction queue holds dates of the previous dataset
+                        (.clear cache-queue)
                         (def headers _headers)
                         (def data-files _data-files)
                         (def data-cache (into (sorted-map) (zipmap file-date (map (fn [_] [(atom nil) (atom nil)]) file-date))))
