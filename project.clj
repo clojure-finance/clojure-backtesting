@@ -1,5 +1,5 @@
-(defproject clojure-backtesting "1.1.1"
-  :description "A day-stepping backtesting framework for CRSP-style daily security data."
+(defproject com.github.clojure-finance/clojure-backtesting "1.1.2"
+  :description "A day-stepping backtesting framework for daily security data from CRSP-style files or Yahoo Finance, with point-in-time fundamentals."
   :url "https://github.com/clojure-finance/clojure-backtesting"
   :license {:name "MIT"
             :url "https://opensource.org/licenses/MIT"}
@@ -9,8 +9,12 @@
                  [com.github.clojure-finance/clj-yfinance "0.1.10"]]
   :test-selectors {:default (complement :live)
                    :live :live}
+  ;; lein deploy clojars, credentials from CLOJARS_USERNAME / CLOJARS_PASSWORD
+  :deploy-repositories [["clojars" {:url "https://repo.clojars.org/"
+                                    :username :env/clojars_username
+                                    :password :env/clojars_password
+                                    :sign-releases false}]]
   :main clojure-backtesting.user/-main
-  :aot [clojure-backtesting.user]
   :repl-options {:init-ns clojure-backtesting.user
                  :timeout 180000}
   :plugins [[org.clojars.benfb/lein-gorilla "0.6.0"]]

@@ -39,6 +39,20 @@ designed for CRSP-style daily security data.
 - Java 11+
 - [Leiningen](https://leiningen.org/)
 
+## Installation
+
+As a library, from [Clojars](https://clojars.org/com.github.clojure-finance/clojure-backtesting):
+
+```clojure
+;; project.clj
+[com.github.clojure-finance/clojure-backtesting "1.1.2"]
+
+;; deps.edn
+com.github.clojure-finance/clojure-backtesting {:mvn/version "1.1.2"}
+```
+
+To run the examples and the bundled sample data, clone the repository.
+
 ## Quick Start
 
 Clone the repository and start a REPL:
