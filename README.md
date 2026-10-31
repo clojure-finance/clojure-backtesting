@@ -50,10 +50,10 @@ As a library, from [Clojars](https://clojars.org/com.github.clojure-finance/cloj
 
 ```clojure
 ;; project.clj
-[com.github.clojure-finance/clojure-backtesting "1.1.2"]
+[com.github.clojure-finance/clojure-backtesting "1.1.3"]
 
 ;; deps.edn
-com.github.clojure-finance/clojure-backtesting {:mvn/version "1.1.2"}
+com.github.clojure-finance/clojure-backtesting {:mvn/version "1.1.3"}
 ```
 
 To run the examples and the bundled sample data, clone the repository.
