@@ -13,6 +13,7 @@
             [clojure-backtesting.evaluate :refer :all]
             [clojure-backtesting.fundamentals :refer :all]
             [clojure-backtesting.strategy :refer :all]
+            [clojure-backtesting.yahoo :as yahoo]
             [clojure-backtesting.yahoo.build :as build]))
 
 (def ^:private raw-dir "resources/sample-yahoo/raw")
@@ -21,13 +22,19 @@
   ([a b] (close? a b 1e-9))
   ([a b tol] (<= (Math/abs (- (double a) (double b))) (* tol (max 1.0 (Math/abs (double b)))))))
 
+(def ^:private built-dir (atom nil))
+
+(defn- load-built! []
+  (load-dataset (str (io/file (deref built-dir) "main")) "main")
+  (load-fundamentals (io/file (deref built-dir) "fundamentals.edn")))
+
 (defn- with-yahoo-dataset [f]
   (let [dir (io/file (System/getProperty "java.io.tmpdir") (str "clojure-backtesting-yahoo-" (System/nanoTime)))]
     (alter-var-root #'clojure-backtesting.data/headers2 (constantly nil))
     (alter-var-root #'clojure-backtesting.data/data-files2 (constantly {}))
     (build/build-dataset! raw-dir dir)
-    (load-dataset (str (io/file dir "main")) "main")
-    (load-fundamentals (io/file dir "fundamentals.edn"))
+    (reset! built-dir dir)
+    (load-built!)
     (try
       (f)
       (finally
@@ -197,7 +204,9 @@
     (is (= "2024-07-30" (:report-date e)))
     (is (= "2024-06-30" (:period-end e)))
     (is (number? (:surprise-pct e)))
-    (is (= 0 (days-since-earnings "ALFA")) "public from the day after the after-close report")))
+    (is (= 0 (days-since-earnings "ALFA")) "public from the day after the after-close report")
+    (is (nil? (latest-earnings "NOPE")) "an unknown security has none")
+    (is (nil? (days-since-earnings "NOPE")))))
 
 (deftest a-monthly-value-strategy
   (init-portfolio "2024-01-02" 100000)
@@ -248,3 +257,21 @@
       (finally
         (reset! fundamentals-store original)))
     (is (= shares (shares-outstanding "ALFA")))))
+
+(deftest yahoo-dataset-builds-and-loads-into-out-dir
+  ;; the download is stubbed: the snapshots are copied into place instead
+  (let [dir (io/file (System/getProperty "java.io.tmpdir") (str "clojure-backtesting-yahoo-all-" (System/nanoTime)))
+        out (io/file dir "built")]
+    (try
+      (doseq [f (file-seq (io/file raw-dir)) :when (.isFile ^java.io.File f)]
+        (let [target (io/file dir "raw" (subs (str f) (inc (count raw-dir))))]
+          (io/make-parents target)
+          (io/copy f target)))
+      (with-redefs [yahoo/download-yahoo! (fn [& _] {:downloaded [] :skipped [] :failed {} :fx []})]
+        (with-out-str (yahoo/yahoo-dataset! (str dir) ["ALFA"] :out-dir (str out))))
+      (is (.exists (io/file out "fundamentals.edn")))
+      (is (= "2025-01-01" (first (last data-files))) "the built dataset is the one loaded")
+      (is (some? (fundamental-info-as-of "2024-07-31" "ALFA" :net-income :quarterly)))
+      (finally
+        (doseq [x (reverse (file-seq dir))] (io/delete-file x true))
+        (load-built!)))))

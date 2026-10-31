@@ -410,6 +410,11 @@
                          earnings-dates)]
     (vec (sort-by :public-date (latest-by :report-date (concat from-dates from-history))))))
 
+(defn- chart-snapshot
+  "The latest of `snapshots` whose download returned prices."
+  [snapshots]
+  (last (filter #(seq (get-in % [:chart :bars])) snapshots)))
+
 (defn fundamentals-entry
   "The point-in-time store entry for one security from its snapshots
    (oldest first). Options: :report-lag-days, :after-close-hour, :vintage.
@@ -421,7 +426,7 @@
    {frequency [[period-end value] ...]}} with values oldest first."
   [snapshots {:keys [report-lag-days after-close-hour vintage]
               :or {report-lag-days default-report-lag-days vintage :first}}]
-  (let [latest (or (last (filter #(seq (get-in % [:chart :bars])) snapshots)) (last snapshots))
+  (let [latest (or (chart-snapshot snapshots) (last snapshots))
         meta (get-in latest [:chart :meta])
         zone (exchange-zone meta)
         after-close-hour (close-hour zone after-close-hour)
@@ -503,8 +508,8 @@
        vec))
 
 (defn read-snapshots
-  "{ticker [snapshot ...]} for every security under `raw-dir`, oldest
-   snapshot first, plus {:fx {[from to] [snapshot ...]}}."
+  "The snapshots under `raw-dir`, oldest first: {:securities {ticker
+   [snapshot ...]} :fx {[from to] [snapshot ...]}}."
   [raw-dir]
   (let [dirs (filter #(.isDirectory ^java.io.File %) (.listFiles (io/file raw-dir)))
         {fx true securities false} (group-by #(= fx-dir-name (.getName ^java.io.File %)) dirs)]
@@ -547,7 +552,6 @@
    Returns the contents of dataset.edn."
   [raw-dir out-dir & {:keys [start end allow-mixed-currencies?] :as opts}]
   (let [{:keys [securities fx]} (read-snapshots raw-dir)
-        chart-snapshot (fn [snaps] (last (filter #(seq (get-in % [:chart :bars])) snaps)))
         usable (into (sorted-map)
                      (filter (fn [[_ snaps]] (chart-snapshot snaps)))
                      securities)
@@ -574,11 +578,14 @@
                      :when (within? (nth row 1) start end)]
                  row)
           rows-by-date (reduce (fn [m row] (update m (nth row 1) (fnil conj []) row)) (sorted-map) rows)
+          _ (when (empty? rows-by-date)
+              (throw (ex-info (str "No prices between " (or start "the start") " and " (or end "the end") ".")
+                              {:type :no-data :start start :end end})))
           main-dir (io/file out-dir "main")
           store (into (sorted-map)
                       (map (fn [[ticker snaps]] [ticker (fundamentals-entry snaps opts)]))
                       usable)
-          fx-table (into {} (map (fn [[pair snaps]] [pair (fx-series (:chart (last snaps)))])) fx)
+          fx-table (into {} (keep (fn [[pair snaps]] (some->> (chart-snapshot snaps) :chart fx-series (vector pair)))) fx)
           needed-fx (set (for [[ticker entry] store
                                :let [[major _] (major-currency (currencies ticker))]
                                c (distinct (keep :currency (vals (:reports entry))))
@@ -597,7 +604,7 @@
           info {:format 1
                 :built-at (str (Instant/now))
                 :raw-dir (str raw-dir)
-                :options (dissoc opts :allow-mixed-currencies?)
+                :options opts
                 :date-range [(first (keys rows-by-date)) (last (keys rows-by-date))]
                 :securities coverage
                 :fx-pairs (vec (sort (keys fx-table)))

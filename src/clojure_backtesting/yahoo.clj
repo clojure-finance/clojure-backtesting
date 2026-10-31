@@ -180,8 +180,8 @@
                                        f (io/file (snapshot-dir raw t) (build/snapshot-file-name (:fetched-at snap)))]
                                    (build/write-edn-file! f snap)
                                    (say (format "[%d/%d] %s: %s" (inc i) (count todo) t
-                                                (if-let [e (:errors snap)]
-                                                  (if (seq e) (str "errors in " (str/join ", " (map name (keys e)))) "ok")
+                                                (if-let [e (seq (:errors snap))]
+                                                  (str "errors in " (str/join ", " (map (comp name key) e)))
                                                   "ok")))
                                    snap))))
         fx (when fundamentals?
@@ -240,7 +240,7 @@
     (when (seq (:failed result))
       (println "Not downloaded:" (str/join ", " (keys (:failed result)))))
     (apply build-yahoo-dataset! dir (mapcat identity (apply dissoc opts download-keys)))
-    (load-yahoo-dataset dir)))
+    (load-yahoo-dataset (or (:out-dir opts) dir))))
 
 (defn dataset-info
   "The description build-yahoo-dataset! wrote to <dir>/dataset.edn."

@@ -8,8 +8,8 @@
    back in the share basis of the backtest date, so per-share figures and
    share counts match the day's quoted price even when a later split has
    been applied to the source data, and in the security's trading currency
-   (major unit: pounds, not pence), converted at the day's FX rate when the
-   company reports in another currency. A value that cannot be stated that
+   (major unit: pounds, not pence), converted at the previous day's FX rate
+   when the company reports in another currency. A value that cannot be stated that
    way (no FX rate, nothing public yet, or a period that ended more than
    FUNDAMENTALS-MAX-AGE-MONTHS ago) is nil, never guessed.
 
@@ -21,15 +21,18 @@
      :trailing   Yahoo's own trailing-twelve-month figure
      :ttm        twelve months: Yahoo's trailing figure, the sum of the last
                  four quarters, or the last fiscal year, whichever ends
-                 latest (flow fields only)
+                 latest (flow fields only; share counts and rates take the
+                 latest quarter instead of a sum)
      :latest     the latest quarter or fiscal year, whichever ends latest
    With no frequency, income-statement and cash-flow fields use :ttm and
    balance-sheet fields :latest."
   (:require [clojure.edn :as edn]
             [clojure-backtesting.counter :refer [get-date]]
             [clojure-backtesting.data-management :refer [get-permno-price]]
-            [clojure-backtesting.parameters :refer :all])
-  (:import [java.time LocalDate]))
+            [clojure-backtesting.parameters :refer :all]
+            [clojure-backtesting.yahoo.build :refer [major-currency]])
+  (:import [java.time LocalDate]
+           [java.time.temporal ChronoUnit]))
 
 ;; ============ Store ============
 
@@ -83,12 +86,6 @@
   [splits date]
   (transduce (comp (filter #(pos? (compare (first %) date))) (map second)) * 1.0 splits))
 
-(defn- major-unit
-  "[major-currency factor] for a quote currency; pence are 0.01 pounds."
-  [currency]
-  (get {"GBp" ["GBP" 0.01] "GBX" ["GBP" 0.01] "ZAc" ["ZAR" 0.01] "ZAC" ["ZAR" 0.01] "ILA" ["ILS" 0.01]}
-       currency [currency 1.0]))
-
 (defn fx-rate
   "Units of `to` per unit of `from` known on `date`: the latest rate dated
    before it, since a day's FX close comes after many markets close. 1.0
@@ -105,7 +102,7 @@
    `entry`'s trading currency. nil when the FX rate is unknown."
   [entry kind value currency date]
   (let [basis (split-factor-after (:splits entry) date)
-        [major _] (major-unit (:trading-currency entry))
+        [major _] (major-currency (:trading-currency entry))
         v (case kind
             :per-share (* value basis)
             :shares (/ value basis)
@@ -154,10 +151,10 @@
        :report-date-source (:source r)
        :reported-value value
        :reported-currency currency
-       :currency (first (major-unit (:trading-currency entry)))})))
+       :currency (first (major-currency (:trading-currency entry)))})))
 
 (defn- consecutive-quarters? [period-ends]
-  (every? (fn [[a b]] (<= 70 (.between java.time.temporal.ChronoUnit/DAYS (LocalDate/parse b) (LocalDate/parse a)) 110))
+  (every? (fn [[a b]] (<= 70 (.between ChronoUnit/DAYS (LocalDate/parse b) (LocalDate/parse a)) 110))
           (partition 2 1 period-ends)))
 
 (defn- ttm-candidates
@@ -234,14 +231,6 @@
            vec)
       [])))
 
-(defn fundamentals-snapshot
-  "{field value} of the given fields (all known fields by default) for
-   `permno` on the backtest date, each at its default frequency."
-  [permno & fields]
-  (into (sorted-map)
-        (map (fn [f] [f (fundamental permno f)]))
-        (or (seq fields) (available-fields permno))))
-
 ;; ============ Earnings announcements ============
 
 (defn latest-earnings
@@ -250,7 +239,7 @@
    :surprise-pct}, or nil. :surprise-pct is in percent."
   [permno]
   (let [date (get-date)]
-    (->> (get-in (deref fundamentals-store) [permno :earnings])
+    (->> (get-in (deref fundamentals-store) [permno :earnings] [])
          rseq
          (filter #(not (pos? (compare (:public-date %) date))))
          first)))
@@ -259,7 +248,7 @@
   "Calendar days since the latest public earnings announcement, or nil."
   [permno]
   (when-let [{:keys [public-date]} (latest-earnings permno)]
-    (.between java.time.temporal.ChronoUnit/DAYS (LocalDate/parse public-date) (LocalDate/parse (get-date)))))
+    (.between ChronoUnit/DAYS (LocalDate/parse public-date) (LocalDate/parse (get-date)))))
 
 ;; ============ Prices in fundamental terms ============
 
@@ -267,7 +256,7 @@
   "Today's price in the major unit of the trading currency."
   [permno]
   (when-let [p (get-permno-price permno)]
-    (* (double p) (second (major-unit (get-in (deref fundamentals-store) [permno :trading-currency]))))))
+    (* (double p) (second (major-currency (get-in (deref fundamentals-store) [permno :trading-currency]))))))
 
 (defn- ratio [a b]
   (when (and a b (not (zero? b)))
@@ -416,7 +405,7 @@
          latest (first history)
          target (some-> latest :period-end LocalDate/parse (.minusYears 1))
          earlier (when target
-                   (first (filter #(<= (Math/abs (.between java.time.temporal.ChronoUnit/DAYS target (LocalDate/parse (:period-end %)))) 20)
+                   (first (filter #(<= (Math/abs (.between ChronoUnit/DAYS target (LocalDate/parse (:period-end %)))) 20)
                                   (rest history))))]
      (when (and latest earlier
                 (= (:period-end latest) (:period-end (fundamental-info permno field frequency))))

@@ -275,3 +275,22 @@
                                          (snap "2025-06-30T00:00:00Z" [(row "2025-02-04T21:00:00")])]
                                         {})]
     (is (= "2025-02-04" (get-in entry [:reports [:quarterly "2024-12-31"] :report-date])))))
+
+(deftest empty-ranges-and-failed-fx-downloads
+  (let [dir (io/file (System/getProperty "java.io.tmpdir") (str "yahoo-build-test-" (System/nanoTime)))
+        snap {:format 1 :ticker "AAA" :fetched-at "2025-01-02T00:00:00Z"
+              :chart {:meta ny :bars [(bar "2024-01-02" 1.0) (bar "2024-01-03" 1.1)] :events {}}
+              :statements [] :earnings-history [] :earnings-dates [] :errors {}}
+        fx {:format 1 :ticker "EURUSD=X" :from "EUR" :to "USD" :fetched-at "2025-01-02T00:00:00Z"
+            :chart {:meta {:exchange-timezone-name "Europe/London"} :bars [(bar "2024-01-02" 1.1)] :events {}}}]
+    (try
+      (build/write-edn-file! (io/file dir "raw" "AAA" "20250102T000000Z.edn") snap)
+      (build/write-edn-file! (io/file dir "raw" "_fx" "EURUSD=X" "20250102T000000Z.edn") fx)
+      (build/write-edn-file! (io/file dir "raw" "_fx" "EURUSD=X" "20250203T000000Z.edn")
+                             (assoc fx :fetched-at "2025-02-03T00:00:00Z" :chart nil))
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"No prices between"
+                            (build/build-dataset! (io/file dir "raw") dir :start "2025-01-01")))
+      (is (= [["EUR" "USD"]] (:fx-pairs (build/build-dataset! (io/file dir "raw") dir)))
+          "a failed FX download keeps the earlier rates")
+      (finally
+        (doseq [f (reverse (file-seq dir))] (io/delete-file f true))))))

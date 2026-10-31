@@ -12,7 +12,6 @@
    reproducible: `lein run -m clojure-backtesting.sample-data` rewrites
    resources/sample-data, furnished with the adjusted-price columns."
   (:require [clojure.java.io :as io]
-            [clojure.string :as str]
             [clojure-backtesting.data :as data]
             [java-time :as jt])
   (:import [java.util Random]))
