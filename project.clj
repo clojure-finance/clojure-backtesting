@@ -5,7 +5,10 @@
             :url "https://opensource.org/licenses/MIT"}
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [clojure.java-time "1.4.3"]
-                 [metasoarous/oz "1.6.0-alpha31"]]
+                 [metasoarous/oz "1.6.0-alpha31"]
+                 [com.github.clojure-finance/clj-yfinance "0.2.0-SNAPSHOT"]]
+  :test-selectors {:default (complement :live)
+                   :live :live}
   :main clojure-backtesting.user/-main
   :aot [clojure-backtesting.user]
   :repl-options {:init-ns clojure-backtesting.user

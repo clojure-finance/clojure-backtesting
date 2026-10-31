@@ -9,7 +9,10 @@
             [clojure-backtesting.automation :refer :all]
             [clojure-backtesting.parameters :refer :all]
             [clojure-backtesting.indicators :refer :all]
-            [clojure-backtesting.direct :refer :all])
+            [clojure-backtesting.direct :refer :all]
+            [clojure-backtesting.fundamentals :refer :all]
+            [clojure-backtesting.strategy :refer :all]
+            [clojure-backtesting.yahoo :refer :all])
   (:gen-class))
 
 (defn -main
