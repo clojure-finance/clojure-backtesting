@@ -54,6 +54,24 @@
   [filename]
   (first (edn/read-string (decode-str filename))))
 
+(def ^:private ^java.util.Base64$Encoder encoder (Base64/getUrlEncoder))
+
+(defn group-file-name
+  "The name clojask gives a date's file: the base64url of the EDN group key."
+  [date]
+  (.encodeToString encoder (.getBytes (str [date]) "UTF-8")))
+
+(defn write-grouped-dataset
+  "Writes a dataset in the layout clojask-script produces: <dir>/header holds
+   the column names and <dir>/grouped one file per date with one EDN vector
+   per row. `rows-by-date` maps each yyyy-MM-dd date to its rows."
+  [dir columns rows-by-date]
+  (let [grouped (io/file dir "grouped")]
+    (.mkdirs grouped)
+    (spit (io/file dir "header") (str (vec columns)))
+    (doseq [[date rows] rows-by-date]
+      (spit (io/file grouped (group-file-name date)) (str/join "\n" (map pr-str rows))))))
+
 ;; Global functions to set the variables
 (defn get-file-date
   "The date a grouped data file holds, decoded from its name."

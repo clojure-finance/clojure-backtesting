@@ -15,7 +15,7 @@
             [clojure.string :as str]
             [clojure-backtesting.data :as data]
             [java-time :as jt])
-  (:import [java.util Base64 Random]))
+  (:import [java.util Random]))
 
 (def main-columns ["PERMNO" "date" "TICKER" "PRC" "OPENPRC" "BIDLO" "ASKHI" "RET" "CFACPR"])
 (def compustat-columns ["PERMNO" "datadate" "rdq" "atq" "ceqq" "niq"])
@@ -40,13 +40,6 @@
        (take-while #(not (jt/after? % (jt/local-date 1990 3 30))))
        (remove #(> (jt/as % :day-of-week) 5))
        (mapv #(jt/format "yyyy-MM-dd" %))))
-
-(def ^:private ^java.util.Base64$Encoder encoder (Base64/getUrlEncoder))
-
-(defn group-file-name
-  "clojask names each date's file with the base64url of the EDN group key."
-  [date]
-  (.encodeToString encoder (.getBytes (str [date]))))
 
 (defn- round2 [x] (/ (Math/round (* (double x) 100.0)) 100.0))
 
@@ -86,22 +79,13 @@
        (group-by second)
        (into (sorted-map))))
 
-(defn write-grouped-dataset
-  "Writes <dir>/header and one file per date under <dir>/grouped."
-  [dir columns rows-by-date]
-  (let [grouped (io/file dir "grouped")]
-    (.mkdirs grouped)
-    (spit (io/file dir "header") (str columns))
-    (doseq [[date rows] rows-by-date]
-      (spit (io/file grouped (group-file-name date)) (str/join "\n" (map str rows))))))
-
 (defn write-sample-dataset
   "Writes the raw main dataset to <dir>/main and the supplementary dataset
    to <dir>/compustat. Returns dir. The main dataset still needs add-aprc,
    which (load-dataset main-dir \"main\" add-aprc) applies in place."
   [dir]
-  (write-grouped-dataset (io/file dir "main") main-columns (main-rows-by-date))
-  (write-grouped-dataset (io/file dir "compustat") compustat-columns (into (sorted-map) compustat-rows))
+  (data/write-grouped-dataset (io/file dir "main") main-columns (main-rows-by-date))
+  (data/write-grouped-dataset (io/file dir "compustat") compustat-columns (into (sorted-map) compustat-rows))
   dir)
 
 (defn -main
