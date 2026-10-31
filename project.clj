@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [clojure.java-time "1.4.3"]
                  [metasoarous/oz "1.6.0-alpha31"]
-                 [com.github.clojure-finance/clj-yfinance "0.2.0-SNAPSHOT"]]
+                 [com.github.clojure-finance/clj-yfinance "0.1.10"]]
   :test-selectors {:default (complement :live)
                    :live :live}
   :main clojure-backtesting.user/-main
