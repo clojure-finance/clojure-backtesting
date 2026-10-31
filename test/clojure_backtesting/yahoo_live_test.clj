@@ -26,6 +26,15 @@
   (is (empty? (:failed (deref dataset))) (str "download failures: " (:failed (deref dataset))))
   (load-yahoo-dataset dir))
 
+;; Cleanup only: the download itself is the delay above. With no live test
+;; selected the directory does not exist and there is nothing to delete.
+(use-fixtures :once
+  (fn [f]
+    (try
+      (f)
+      (finally
+        (doseq [x (reverse (file-seq dir))] (io/delete-file x true))))))
+
 (deftest ^:live nvda-trades-at-its-pre-split-price
   (load!)
   ;; NVDA closed at 1208.88 on 2024-06-07, then split 10-for-1 on 2024-06-10
