@@ -23,6 +23,7 @@ examples/out_portfolio_value_record.csv
 # local datasets
 resources/*
 !resources/sample-data/
+!resources/sample-yahoo/
 CRSP/
 Compustat/
 data-*.csv

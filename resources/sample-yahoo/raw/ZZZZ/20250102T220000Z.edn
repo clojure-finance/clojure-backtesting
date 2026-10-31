@@ -1,0 +1,1 @@
+{:errors {:chart {:type :http-error, :status 404, :message "No data found, symbol may be delisted"}}, :format 1, :request {:start "2022-01-03"}, :earnings-dates [], :ticker "ZZZZ", :source {:library "clj-yfinance", :version "synthetic"}, :chart nil, :fetched-at "2025-01-02T22:00:00Z", :earnings-history [], :statements []}
