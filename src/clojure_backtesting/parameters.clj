@@ -28,6 +28,21 @@
 ;; A Compustat filing older than this (by its period-end date) is no longer
 ;; joined onto the daily data.
 
+;; ============ Point-in-time fundamentals ============
+
+(def FUNDAMENTALS-MAX-AGE-MONTHS 18)
+;; A fundamental value whose period ended more than this many months before
+;; the day is treated as unavailable (the company has stopped reporting, or
+;; the source has no newer period).
+
+(defn update-fundamentals-max-age
+  "This function sets how many months after its period end a fundamental
+   value stays usable."
+  [months]
+  (if (pos? months)
+    (def FUNDAMENTALS-MAX-AGE-MONTHS months)
+    (println "Failed: The maximum age needs to be greater than zero.")))
+
 ;; =============== Indicator ===============
 (def ^:dynamic EMA-CYCLE 20)
 (def MACD-SIGNAL 9)

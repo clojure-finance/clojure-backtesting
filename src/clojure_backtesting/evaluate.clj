@@ -1,6 +1,7 @@
 (ns clojure-backtesting.evaluate
   (:require [clojure-backtesting.data :refer :all]
             [clojure-backtesting.counter :refer :all]
+            [clojure-backtesting.data-management :refer [get-permno-by-key]]
             [clojure-backtesting.portfolio :refer :all]))
 
 ;; Configuration
@@ -130,3 +131,47 @@
                                     :max-drawdown (str (format "%.4f" (* max-drawdown-data 100)) "%")})
       ; output to file
       (write-record! evalreport-wrtr (format "%s,%f,%f,%f,%f,%f,%f,%f\n" date (double total-val-data) (double volatility-data) (double rolling-volatility-data) (double sharpe-ratio-data) (double rolling-sharpe-ratio-data) (double pnl-per-trade-data) (double max-drawdown-data))))))
+
+;; ============ Benchmark ============
+
+(defn- covariance [xs ys]
+  (let [mx (mean xs) my (mean ys)]
+    (/ (reduce + 0.0 (map (fn [x y] (* (- x mx) (- y my))) xs ys))
+       (dec (count xs)))))
+
+(defn benchmark-stats
+  "Compares the portfolio with security `permno` of the main dataset (an
+   index or ETF, say) over the run so far, on the days both have a value:
+   {:days :portfolio-return :benchmark-return :excess-return :beta :alpha
+   :correlation :tracking-error :information-ratio}. Returns are total
+   returns over the period as fractions; the benchmark's comes from its
+   adjusted price, so it includes dividends. :alpha (zero risk-free rate),
+   :tracking-error and :information-ratio are annualised from daily log
+   returns. nil with fewer than two common days."
+  [permno]
+  (let [pairs (->> (partition 2 1 (deref portfolio-value))
+                   (keep (fn [[prev curr]]
+                           (let [a0 (get-permno-by-key (:date prev) permno :APRC)
+                                 a1 (get-permno-by-key (:date curr) permno :APRC)]
+                             (when (and a0 a1 (pos? a0) (pos? a1))
+                               [(:daily-ret curr) (Math/log (/ (double a1) (double a0)))])))))
+        rp (mapv first pairs)
+        rb (mapv second pairs)
+        n (count pairs)]
+    (when (>= n 2)
+      (let [active (mapv - rp rb)
+            var-b (covariance rb rb)
+            beta (when (pos? var-b) (/ (covariance rp rb) var-b))
+            sd-p (sample-sd rp)
+            sd-b (sample-sd rb)
+            te (sample-sd active)
+            annual (Math/sqrt TRADING-DAYS-PER-YEAR)]
+        {:days n
+         :portfolio-return (- (Math/exp (reduce + rp)) 1.0)
+         :benchmark-return (- (Math/exp (reduce + rb)) 1.0)
+         :excess-return (- (Math/exp (reduce + rp)) (Math/exp (reduce + rb)))
+         :beta beta
+         :alpha (when beta (* TRADING-DAYS-PER-YEAR (- (mean rp) (* beta (mean rb)))))
+         :correlation (when (and (pos? sd-p) (pos? sd-b)) (/ (covariance rp rb) (* sd-p sd-b)))
+         :tracking-error (* te annual)
+         :information-ratio (when (pos? te) (* annual (/ (mean active) te)))}))))
