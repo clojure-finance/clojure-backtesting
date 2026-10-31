@@ -58,9 +58,10 @@
   (next-date)
   (update-eval-report))
 (end-order)
+(update-transaction-cost 0.0) ; back to the default for other runs in this session
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-boolean'>true</span>","value":"true"}
+;;; {"type":"html","content":"<span class='clj-unkown'>#'clojure-backtesting.parameters/TRANSACTION-COST</span>","value":"#'clojure-backtesting.parameters/TRANSACTION-COST"}
 ;; <=
 
 ;; **

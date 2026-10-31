@@ -15,7 +15,7 @@ This type of dataset will be used as the backbone dataset for the backtester tha
 
 ### Compustat Type
 
-This type of dataset will be used as the supplementary dataset to the CRSP-type dataset. It can contain information such as fundamental data, economic data, etc. It should contain at least the essential columns below. The backtester currently supports only one Computstat-like dataset.
+This type of dataset will be used as the supplementary dataset to the CRSP-type dataset. It can contain information such as fundamental data, economic data, etc. It should contain at least the essential columns below. The backtester currently supports only one Compustat-like dataset.
 
 - security identifier
 - date: effective until this date
