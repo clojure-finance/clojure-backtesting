@@ -119,9 +119,17 @@
 (defn- snapshot-dir [raw-dir ticker]
   (io/file raw-dir (build/encode-ticker ticker)))
 
-(defn- downloaded-today? [dir]
-  (let [today (str/replace (str (LocalDate/now ZoneOffset/UTC)) "-" "")]
-    (some #(str/starts-with? (.getName ^java.io.File %) today) (.listFiles (io/file dir)))))
+(defn- downloaded-today?
+  "True when `dir` holds a snapshot downloaded today (UTC) without errors.
+   A snapshot with errors, or one cut off while being written, is
+   downloaded again."
+  [dir]
+  (let [today (str/replace (str (LocalDate/now ZoneOffset/UTC)) "-" "")
+        complete? (fn [f] (try (empty? (:errors (build/read-edn-file f)))
+                               (catch Exception _ false)))]
+    (boolean (some (fn [^java.io.File f]
+                     (and (str/starts-with? (.getName f) today) (complete? f)))
+                   (.listFiles (io/file dir))))))
 
 (defn- run-bounded
   "Runs the no-argument functions `fs` on `n` threads; returns their results in order."
@@ -154,9 +162,10 @@
 (defn download-yahoo!
   "Downloads `tickers` from Yahoo Finance into <dir>/raw, one snapshot per
    security, plus the exchange rates needed to state foreign-currency
-   fundamentals in each security's trading currency. A security already
-   downloaded today (UTC) is skipped unless :force? is true, so an
-   interrupted download can simply be run again. Prices run up to today
+   fundamentals in each security's trading currency. A security or rate
+   already downloaded today (UTC) without errors is skipped unless :force?
+   is true, so an interrupted or partly failed download can simply be run
+   again: it fetches the rest and retries the failures. Prices run up to today
    (end them earlier with build-yahoo-dataset!'s :end). Options:
      :start            yyyy-MM-dd start of the price history (all of it by default)
      :fundamentals?    also fetch statements and earnings dates (true)

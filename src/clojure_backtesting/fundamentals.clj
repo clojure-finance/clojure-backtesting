@@ -418,6 +418,14 @@
   [permno field]
   (into {} (map (juxt :period-end :value)) (fundamental-history permno field :annual 4)))
 
+(defn- above?
+  "a exceeds b by more than rounding (a relative 1e-9). Two years' ratios
+   that are equal in the reports can differ in their last digits, more so
+   after currency conversion, and must not count as a rise or a fall."
+  [a b]
+  (let [a (double a) b (double b)]
+    (> (- a b) (* 1e-9 (max (Math/abs a) (Math/abs b))))))
+
 (defn piotroski-signals
   "The nine signals of Piotroski's (2000) F-score from the last two fiscal
    years, each true, false, or nil when its inputs are missing:
@@ -427,7 +435,8 @@
    :delta-liquidity (current ratio rose), :no-dilution (shares did not
    increase), :delta-margin (gross margin rose), :delta-turnover (revenue
    over beginning assets rose). Years are aligned on the fiscal years of
-   total assets."
+   total assets. Comparisons ignore differences within rounding, so two
+   equal ratios neither rose nor fell."
   [permno]
   (let [years (mapv :period-end (fundamental-history permno :total-assets :annual 3))
         [ni ta cfo ltd ca cl sh gp rev]
@@ -436,16 +445,18 @@
               :current-liabilities :ordinary-shares-number :gross-profit :total-revenue])
         at (fn [m i] (some->> (get years i) (get m)))
         roa (fn [i] (ratio (at ni i) (at ta (inc i))))
-        cmp (fn [a b f] (when (and a b) (f a b)))]
+        cmp (fn [a b f] (when (and a b) (f a b)))
+        below? (fn [a b] (above? b a))
+        not-above? (complement above?)]
     {:roa (some-> (roa 0) pos?)
      :cfo (some-> (at cfo 0) pos?)
-     :delta-roa (cmp (roa 0) (roa 1) >)
-     :accrual (cmp (at cfo 0) (at ni 0) >)
-     :delta-leverage (cmp (ratio (at ltd 0) (at ta 0)) (ratio (at ltd 1) (at ta 1)) <)
-     :delta-liquidity (cmp (ratio (at ca 0) (at cl 0)) (ratio (at ca 1) (at cl 1)) >)
-     :no-dilution (cmp (at sh 0) (at sh 1) <=)
-     :delta-margin (cmp (ratio (at gp 0) (at rev 0)) (ratio (at gp 1) (at rev 1)) >)
-     :delta-turnover (cmp (ratio (at rev 0) (at ta 1)) (ratio (at rev 1) (at ta 2)) >)}))
+     :delta-roa (cmp (roa 0) (roa 1) above?)
+     :accrual (cmp (at cfo 0) (at ni 0) above?)
+     :delta-leverage (cmp (ratio (at ltd 0) (at ta 0)) (ratio (at ltd 1) (at ta 1)) below?)
+     :delta-liquidity (cmp (ratio (at ca 0) (at cl 0)) (ratio (at ca 1) (at cl 1)) above?)
+     :no-dilution (cmp (at sh 0) (at sh 1) not-above?)
+     :delta-margin (cmp (ratio (at gp 0) (at rev 0)) (ratio (at gp 1) (at rev 1)) above?)
+     :delta-turnover (cmp (ratio (at rev 0) (at ta 1)) (ratio (at rev 1) (at ta 2)) above?)}))
 
 (defn piotroski-f-score
   "The F-score (0 to 9): the number of piotroski-signals that hold. nil

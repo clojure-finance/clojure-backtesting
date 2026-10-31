@@ -48,14 +48,14 @@
 (piotroski-signals "GAMA")
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-unkown'>{:delta-liquidity false, :no-dilution true, :accrual true, :delta-margin true, :delta-leverage false, :cfo true, :delta-turnover false, :delta-roa false, :roa true}</span>","value":"{:delta-liquidity false, :no-dilution true, :accrual true, :delta-margin true, :delta-leverage false, :cfo true, :delta-turnover false, :delta-roa false, :roa true}"}
+;;; {"type":"html","content":"<span class='clj-unkown'>{:delta-liquidity false, :no-dilution true, :accrual true, :delta-margin false, :delta-leverage false, :cfo true, :delta-turnover false, :delta-roa false, :roa true}</span>","value":"{:delta-liquidity false, :no-dilution true, :accrual true, :delta-margin false, :delta-leverage false, :cfo true, :delta-turnover false, :delta-roa false, :roa true}"}
 ;; <=
 
 ;; @@
 (for [p ["ALFA" "BETA" "GAMA"]] {:security p :f-score (piotroski-f-score p)})
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-unkown'>({:security &quot;ALFA&quot;, :f-score 4} {:security &quot;BETA&quot;, :f-score 4} {:security &quot;GAMA&quot;, :f-score 5})</span>","value":"({:security \"ALFA\", :f-score 4} {:security \"BETA\", :f-score 4} {:security \"GAMA\", :f-score 5})"}
+;;; {"type":"html","content":"<span class='clj-unkown'>({:security &quot;ALFA&quot;, :f-score 4} {:security &quot;BETA&quot;, :f-score 4} {:security &quot;GAMA&quot;, :f-score 4})</span>","value":"({:security \"ALFA\", :f-score 4} {:security \"BETA\", :f-score 4} {:security \"GAMA\", :f-score 4})"}
 ;; <=
 
 ;; **

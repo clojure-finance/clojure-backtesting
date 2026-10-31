@@ -198,6 +198,22 @@
     (is (nil? (pe-ratio "BETA")))
     (is (neg? (earnings-yield "BETA")))))
 
+(deftest equal-ratios-neither-rise-nor-fall
+  ;; GAMA's ratios are the same every year and its values are converted
+  ;; from euros, so without a tolerance the exchange rate decided its score
+  (let [scores (for [d ["2024-06-03" "2024-06-04" "2024-08-01" "2024-09-02" "2024-11-15"]]
+                 (do (init-portfolio d 100000) (piotroski-f-score "GAMA")))]
+    (is (= [4] (distinct scores)) "the same score on every date"))
+  (let [signals (piotroski-signals "GAMA")]
+    (is (false? (:delta-margin signals)))
+    (is (false? (:delta-turnover signals)))
+    (is (true? (:no-dilution signals)) "an unchanged share count is no dilution"))
+  (let [above? #'clojure-backtesting.fundamentals/above?]
+    (is (not (above? 0.5200000000000001 0.52)))
+    (is (above? 0.5201 0.52))
+    (is (above? -0.1 -0.2))
+    (is (not (above? -0.2 -0.2)))))
+
 (deftest earnings-announcements
   (init-portfolio "2024-07-31" 100000)
   (let [e (latest-earnings "ALFA")]
@@ -275,3 +291,33 @@
       (finally
         (doseq [x (reverse (file-seq dir))] (io/delete-file x true))
         (load-built!)))))
+
+(deftest a-rerun-retries-failed-downloads
+  ;; the download is stubbed: "BAD" fails on the first run only
+  (let [dir (io/file (System/getProperty "java.io.tmpdir") (str "clojure-backtesting-yahoo-rerun-" (System/nanoTime)))
+        runs (atom 0)
+        fetched (atom [])
+        fetch (fn [ticker _]
+                (swap! fetched conj ticker)
+                {:format 1 :ticker ticker
+                 :fetched-at (str (.truncatedTo (java.time.Instant/now) java.time.temporal.ChronoUnit/SECONDS))
+                 :chart {:meta {} :bars [] :events {}}
+                 :errors (if (and (= ticker "BAD") (= 1 @runs)) {:chart {:message "rate limited"}} {})})
+        download! #(do (swap! runs inc)
+                       (with-out-str (yahoo/download-yahoo! (str dir) ["GOOD" "BAD"] :fundamentals? false :pause-ms 0)))]
+    (try
+      (with-redefs [yahoo/fetch-snapshot fetch]
+        (download!)
+        (is (= #{"GOOD" "BAD"} (set @fetched)))
+        (reset! fetched [])
+        (download!)
+        (is (= ["BAD"] @fetched) "only the failure is downloaded again")
+        (reset! fetched [])
+        (download!)
+        (is (empty? @fetched) "both are done for today"))
+      (testing "a snapshot cut off while being written counts as not downloaded"
+        (let [f (first (.listFiles (io/file dir "raw" "GOOD")))]
+          (spit f "{:format 1 :ticker")
+          (is (not (#'clojure-backtesting.yahoo/downloaded-today? (.getParentFile f))))))
+      (finally
+        (doseq [x (reverse (file-seq dir))] (io/delete-file x true))))))

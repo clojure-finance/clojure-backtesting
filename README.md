@@ -169,7 +169,8 @@ To try it without a network connection, build the synthetic snapshots in
 
 `download-yahoo!` saves Yahoo's answers unchanged under `data/tech/raw`, one
 snapshot per security and download. It skips securities already downloaded
-today, so an interrupted download can be run again, and it also fetches the
+today without errors, so an interrupted or partly failed download can be run
+again: it fetches the rest and retries the failures. It also fetches the
 exchange rates needed when a company reports in another currency than it
 trades in. Prices always run up to today (end them earlier with the build's
 `:end`). Options: `:start`, `:fundamentals?` (true), `:fields`
@@ -347,8 +348,8 @@ have no setter; override them for a session with, for example,
 
 ## Documentation
 
-Full API documentation:
-[clojure-finance.github.io/clojure-backtesting-website](https://clojure-finance.github.io/clojure-backtesting-website/#part-ii-api-documentation)
+Guides, examples and the full API reference:
+[clojure-finance.github.io/clojure-backtesting-website](https://clojure-finance.github.io/clojure-backtesting-website/)
 
 ## Development
 
