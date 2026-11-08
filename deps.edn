@@ -1,0 +1,38 @@
+{:paths ["src"]
+
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        clojure.java-time/clojure.java-time {:mvn/version "1.4.3"}
+        metasoarous/oz {:mvn/version "1.6.0-alpha31"}
+        com.github.clojure-finance/clj-yfinance {:mvn/version "0.1.10"}}
+
+ :aliases
+ {;; clojure -M:run — short demo strategy on the bundled sample dataset
+  :run {:main-opts ["-m" "clojure-backtesting.user"]}
+
+  ;; clojure -M:repl — REPL starting in clojure-backtesting.user
+  :repl {:main-opts ["-e" "(require 'clojure-backtesting.user) (in-ns 'clojure-backtesting.user)"
+                     "-r"]}
+
+  ;; clojure -M:nrepl — nREPL server on a free port, test paths included
+  :nrepl {:extra-paths ["test"]
+          :extra-deps {nrepl/nrepl {:mvn/version "1.7.0"}}
+          :main-opts ["-m" "nrepl.cmdline" "--port" "0"]}
+
+  ;; clojure -X:test — offline tests; clojure -X:test:live — the live Yahoo tests
+  :test {:extra-paths ["test"]
+         :extra-deps {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1"
+                                                            :git/sha "dfb30dd"}}
+         :main-opts ["-m" "cognitect.test-runner"]
+         :exec-fn cognitect.test-runner.api/test
+         :exec-args {:excludes [:live]}}
+  :live {:exec-args {:includes [:live] :excludes []}}
+
+  ;; clojure -M:gorilla — Gorilla REPL for the example worksheets, port 8990
+  :gorilla {:extra-deps {org.clojars.benfb/gorilla-repl {:mvn/version "0.6.0"}}
+            :main-opts ["-e"
+                        "(require 'gorilla-repl.core) (gorilla-repl.core/run-gorilla-server {:port 8990 :version \"0.6.0\"}) @(promise)"]}
+
+  ;; clojure -T:build clean / jar / uber / deploy
+  :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.10"}
+                 slipset/deps-deploy {:mvn/version "0.2.2"}}
+          :ns-default build}}}

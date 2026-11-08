@@ -1,6 +1,6 @@
 (ns clojure-backtesting.yahoo-live-test
   "Downloads real data from Yahoo Finance and checks it against known
-   facts. Needs the network, so it only runs with `lein test :live`."
+   facts. Needs the network, so it only runs with `clojure -X:test:live`."
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
             [clj-yfinance.experimental.fundamentals :as yff]

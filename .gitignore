@@ -4,10 +4,7 @@
 .lsp/
 /target
 /classes
-/checkouts
-pom.xml
-pom.xml.asc
-/.lein-*
+.cpcache/
 /.nrepl-port
 /.prepl-port
 .gorilla-port

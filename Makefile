@@ -1,6 +1,6 @@
 clean:
-	lein clean
+	clojure -T:build clean
 install:
-	lein uberjar;
+	clojure -T:build uber
 start:
-	lein gorilla;
+	clojure -M:gorilla

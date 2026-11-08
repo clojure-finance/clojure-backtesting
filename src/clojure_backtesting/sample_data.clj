@@ -9,7 +9,7 @@
 
    plus a supplementary Compustat-style dataset with two filing dates for
    AAA and BBB only. Prices follow a seeded random walk, so the files are
-   reproducible: `lein run -m clojure-backtesting.sample-data` rewrites
+   reproducible: `clojure -M -m clojure-backtesting.sample-data` rewrites
    resources/sample-data, furnished with the adjusted-price columns."
   (:require [clojure.java.io :as io]
             [clojure-backtesting.data :as data]

@@ -2,7 +2,7 @@
   "Re-runs Gorilla REPL worksheets and rewrites their output cells, so the
    examples under examples/ show results from the current code:
 
-     lein run -m clojure-backtesting.worksheet examples/*.clj
+     clojure -M -m clojure-backtesting.worksheet examples/*.clj
 
    Each code cell is evaluated in order, in the namespace the worksheet's
    own ns form creates, with printed output captured. Plots are not opened;

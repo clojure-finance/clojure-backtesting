@@ -20,7 +20,7 @@
    plus the EURUSD=X exchange rate. Like Yahoo, the snapshots quote prices,
    volumes, dividends and per-share figures in the share basis of the day
    they were downloaded, and hold four fiscal years and five quarters of
-   statements. `lein run -m clojure-backtesting.sample-yahoo` rewrites
+   statements. `clojure -M -m clojure-backtesting.sample-yahoo` rewrites
    resources/sample-yahoo."
   (:require [clojure.java.io :as io]
             [clojure-backtesting.yahoo.build :as build])
